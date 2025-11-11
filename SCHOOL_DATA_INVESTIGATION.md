@@ -320,11 +320,189 @@ Building a school selection dashboard for Berlin is **definitely feasible** and 
 
 ---
 
-## Questions for You
+## User Requirements (Updated 2025-11-11)
 
-1. **What is "Chroma Web Sync"?** Can you provide more details or a link?
-2. **Dashboard Scope**: Are you focusing only on Berlin, or planning to expand to other German cities?
-3. **Target Users**: Who will use this dashboard? Parents, students, researchers?
-4. **Update Frequency**: How often does school data need to be refreshed?
-5. **Additional Data Sources**: Besides sekundarschulen-berlin.de, are there other sources you want to include?
-6. **Technical Preferences**: Do you have preferred technologies (Python vs Node.js, React vs Vue, etc.)?
+### Confirmed Requirements
+
+1. **"Chroma Web Sync"**: ❌ Not a real tool - can be ignored
+   - User thought it might be a Firecrawl + vector store hybrid
+   - Will use Chroma vector DB separately if needed
+
+2. **Dashboard Scope**:
+   - ✅ Start with **Berlin only**
+   - 🔮 Expand to other German cities later
+   - ⚠️ Challenge: Each German state has different data sources (education is state-level)
+
+3. **Target Users**:
+   - 🎯 **Parents** (primary audience)
+   - UX should be parent-friendly, intuitive, decision-focused
+
+4. **Update Frequency & Historical Tracking**:
+   - ✅ School information: **Annual updates** (sufficient)
+   - 📊 **CRITICAL REQUIREMENT**: Year-over-year comparisons for all metrics
+   - Must show **% change** between years for:
+     - Student numbers (this year vs last year, 2 years ago vs 1 year ago)
+     - Teacher numbers
+     - Student/teacher ratio
+     - Performance metrics (Abitur rates, grades)
+   - **Implication**: Need to store historical snapshots, not just current data
+
+5. **Additional Data Sources**: sekundarschulen-berlin.de for performance metrics
+
+6. **Technical Preferences**: Not specified (will use modern, maintainable stack)
+
+## POC Technical Stack
+
+### Backend
+- **Language**: Python 3.11+
+- **Framework**: FastAPI (modern, fast, great for APIs)
+- **Data Processing**: Pandas (for metrics calculations)
+- **ORM**: SQLAlchemy (database abstraction)
+- **API Client**: httpx (for async API calls)
+
+### Database
+- **Primary**: PostgreSQL 15+
+  - Time-series data support
+  - JSON fields for flexible data
+  - Strong query performance
+  - Historical snapshots with year columns
+
+### Frontend (Future)
+- **Framework**: Next.js 14+ (React)
+- **Styling**: Tailwind CSS
+- **Charts**: Recharts or Chart.js
+- **Maps**: Leaflet or Mapbox
+
+### Data Collection
+- **Official API**: Direct WFS/CKAN integration
+- **Web Scraping**: Playwright (when needed for performance metrics)
+
+## Database Schema Design
+
+### Historical Data Model
+
+```sql
+-- Core school information (slowly changing)
+CREATE TABLE schools (
+    id SERIAL PRIMARY KEY,
+    school_id VARCHAR(255) UNIQUE NOT NULL,  -- Official ID from Berlin
+    name VARCHAR(500) NOT NULL,
+    school_type VARCHAR(100),  -- Gymnasium, Sekundarschule, etc.
+    address TEXT,
+    district VARCHAR(100),
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    public_private VARCHAR(20),
+    contact_info JSONB,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Annual snapshot data (for year-over-year comparisons)
+CREATE TABLE school_metrics_annual (
+    id SERIAL PRIMARY KEY,
+    school_id VARCHAR(255) REFERENCES schools(school_id),
+    year INTEGER NOT NULL,  -- e.g., 2024, 2023
+
+    -- Student metrics
+    total_students INTEGER,
+    students_change_percent DECIMAL(5, 2),  -- % change from previous year
+
+    -- Teacher metrics
+    total_teachers INTEGER,
+    teachers_change_percent DECIMAL(5, 2),
+
+    -- Ratio metrics
+    student_teacher_ratio DECIMAL(5, 2),
+    ratio_change_percent DECIMAL(5, 2),
+
+    -- Performance metrics (from sekundarschulen-berlin.de)
+    abitur_success_rate DECIMAL(5, 2),  -- % who pass Abitur
+    abitur_success_change_percent DECIMAL(5, 2),
+    abitur_average_grade DECIMAL(3, 2),  -- e.g., 2.5
+    abitur_grade_change DECIMAL(3, 2),   -- absolute change
+
+    -- Demand metrics
+    demand_score INTEGER,  -- Number of applications
+    demand_change_percent DECIMAL(5, 2),
+
+    -- Demographics
+    migration_background_percent DECIMAL(5, 2),
+
+    -- Raw data storage (for flexibility)
+    raw_data JSONB,
+
+    data_source VARCHAR(100),  -- 'berlin_open_data', 'sekundarschulen-berlin.de'
+    collected_at TIMESTAMP DEFAULT NOW(),
+
+    UNIQUE(school_id, year)
+);
+
+-- Enrollment areas (geospatial data)
+CREATE TABLE enrollment_areas (
+    id SERIAL PRIMARY KEY,
+    school_id VARCHAR(255) REFERENCES schools(school_id),
+    year INTEGER NOT NULL,
+    area_geom GEOMETRY(POLYGON, 4326),  -- PostGIS extension
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Data collection log (for tracking updates)
+CREATE TABLE collection_log (
+    id SERIAL PRIMARY KEY,
+    source VARCHAR(100),
+    collection_date DATE,
+    year_collected INTEGER,
+    schools_updated INTEGER,
+    status VARCHAR(50),  -- 'success', 'partial', 'failed'
+    error_log TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_school_metrics_year ON school_metrics_annual(year DESC);
+CREATE INDEX idx_school_metrics_school_year ON school_metrics_annual(school_id, year DESC);
+CREATE INDEX idx_schools_district ON schools(district);
+CREATE INDEX idx_schools_type ON schools(school_type);
+```
+
+### Key Features of Schema
+
+1. **Historical Tracking**: `school_metrics_annual` table stores one row per school per year
+2. **Pre-calculated Changes**: Store % changes alongside raw values for performance
+3. **Flexible Storage**: JSONB fields for raw data that might not fit structured columns
+4. **Multi-source**: Track which data came from which source
+5. **Audit Trail**: `collection_log` tracks all data collection runs
+6. **Year-over-year Queries**: Easy to query multiple years for trend analysis
+
+### Example Queries
+
+```sql
+-- Get school with 3 years of student data for trend analysis
+SELECT
+    s.name,
+    m.year,
+    m.total_students,
+    m.students_change_percent,
+    m.student_teacher_ratio,
+    m.ratio_change_percent
+FROM schools s
+JOIN school_metrics_annual m ON s.school_id = m.school_id
+WHERE s.school_id = 'some-school-id'
+    AND m.year >= 2022
+ORDER BY m.year DESC;
+
+-- Find schools in Mitte with improving Abitur success rates
+SELECT
+    s.name,
+    s.district,
+    m2024.abitur_success_rate as current_rate,
+    m2023.abitur_success_rate as last_year_rate,
+    (m2024.abitur_success_rate - m2023.abitur_success_rate) as improvement
+FROM schools s
+JOIN school_metrics_annual m2024 ON s.school_id = m2024.school_id AND m2024.year = 2024
+JOIN school_metrics_annual m2023 ON s.school_id = m2023.school_id AND m2023.year = 2023
+WHERE s.district = 'Mitte'
+    AND m2024.abitur_success_rate > m2023.abitur_success_rate
+ORDER BY improvement DESC;
+```

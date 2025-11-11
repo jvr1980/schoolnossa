@@ -1,0 +1,77 @@
+"""Pydantic schemas for API requests and responses"""
+
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
+from datetime import datetime
+from decimal import Decimal
+
+
+class SchoolResponse(BaseModel):
+    """Basic school information response"""
+    school_id: str
+    name: str
+    school_type: Optional[str] = None
+    address: Optional[str] = None
+    district: Optional[str] = None
+    latitude: Optional[Decimal] = None
+    longitude: Optional[Decimal] = None
+    public_private: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class SchoolDetailResponse(BaseModel):
+    """Detailed school information response"""
+    school_id: str
+    name: str
+    school_type: Optional[str] = None
+    address: Optional[str] = None
+    district: Optional[str] = None
+    latitude: Optional[Decimal] = None
+    longitude: Optional[Decimal] = None
+    public_private: Optional[str] = None
+    contact_info: Optional[Dict[str, Any]] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class SchoolMetricsResponse(BaseModel):
+    """School metrics annual data response"""
+    year: int
+    total_students: Optional[int] = None
+    students_change_percent: Optional[Decimal] = None
+    total_teachers: Optional[int] = None
+    teachers_change_percent: Optional[Decimal] = None
+    student_teacher_ratio: Optional[Decimal] = None
+    ratio_change_percent: Optional[Decimal] = None
+    abitur_success_rate: Optional[Decimal] = None
+    abitur_success_change_percent: Optional[Decimal] = None
+    abitur_average_grade: Optional[Decimal] = None
+    abitur_grade_change: Optional[Decimal] = None
+    demand_score: Optional[int] = None
+    demand_change_percent: Optional[Decimal] = None
+    migration_background_percent: Optional[Decimal] = None
+    data_source: Optional[str] = None
+    collected_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ImportResultResponse(BaseModel):
+    """Data import result response"""
+    status: str
+    created: int
+    updated: int
+    errors: int
+    total_processed: int
+
+
+class DistrictsResponse(BaseModel):
+    """Districts and school types response"""
+    districts: List[str]
+    school_types: List[str]
