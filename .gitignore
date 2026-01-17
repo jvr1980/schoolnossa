@@ -51,3 +51,9 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Scraper debug output
+debug_html/
+
+# Data files (keep structure, ignore CSVs)
+data/*.csv

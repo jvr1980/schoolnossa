@@ -21,8 +21,10 @@ requests==2.31.0
 # geopandas==0.14.1
 # shapely==2.0.2
 
-# Web scraping (for future use)
+# Web scraping
 playwright==1.40.0
+beautifulsoup4==4.12.3
+lxml==5.1.0
 
 # Development
 pytest==7.4.3
