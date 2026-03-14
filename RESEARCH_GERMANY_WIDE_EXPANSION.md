@@ -218,6 +218,178 @@ As a complement to the ML approach:
 
 ---
 
+## Part D: Adapting GreenspaceFinder's Architecture for SchoolNossa
+
+### The Core Insight
+
+GreenspaceFinder and SchoolNossa's expansion solve structurally identical problems:
+
+| Concept | GreenspaceFinder | SchoolNossa |
+|---------|-----------------|-------------|
+| **Entity** | Retail store | School |
+| **Question** | "How good is this location for a new store?" | "How good is this school likely to perform?" |
+| **Method** | Profile catchment area with multiple dimensions | Profile catchment area with multiple dimensions |
+| **Scoring** | Rules-based + optional regression | Same approach applies |
+| **Training data** | Existing stores with known performance | Berlin schools with known Abitur/MSA |
+| **Prediction targets** | Candidate locations without performance data | Schools in other states without published data |
+
+### What We Can Reuse Directly
+
+#### 1. Catchment Profiling Engine (GSF Steps 5-6 → SchoolNossa)
+
+GreenspaceFinder's `step5_profile.py` builds a `CatchmentProfile` for each location by querying multiple data sources within a radius. SchoolNossa needs the exact same pattern:
+
+**GSF dimensions we keep as-is:**
+- `transit_count` / `transit_nearest_m` — public transport accessibility matters for school choice
+- `population_density` / `catchment_population` — enrollment pool
+- `crime_index` — neighborhood safety (parents care deeply about this)
+
+**GSF dimensions we adapt:**
+- `competitor_count` → `other_schools_count` (schools of same type within catchment)
+- `competitor_nearest_m` → `nearest_same_type_m` (distance to nearest competing school)
+- `retail_count` → `cultural_pois` (libraries, museums, bookstores — educational environment proxy)
+
+**New dimensions specific to schools:**
+- `adult_education_level` — % of adults with Abitur/university degree in catchment (from Zensus 2022)
+- `migration_background_pct` — % with migration background (from Zensus 2022 grid)
+- `avg_rent_level` — housing cost as socioeconomic proxy (from Zensus 2022 grid)
+- `youth_population_pct` — % aged 6-18 in catchment (from Zensus 2022 grid)
+- `unemployment_rate` — from Regionalstatistik at Gemeinde/Kreis level
+- `green_space_density` — parks/playgrounds within catchment (from OSM)
+- `university_proximity` — distance to nearest university (higher education aspiration proxy)
+
+#### 2. Scoring Pipeline (GSF Step 7 → SchoolNossa)
+
+GreenspaceFinder's `step7_score.py` has two scoring modes that map perfectly:
+
+**Rules-based scoring** (works immediately, no training data needed):
+```
+school_score = Σ(weight[d] × normalized[d]) / Σ(weights)
+```
+- Parents set weights based on what they value (safety vs. academics vs. accessibility)
+- Dimensions marked "lower_better" (crime, distance to transit) are inverted
+- This gives a **parent-preference-weighted comparison** — useful even without performance estimation
+
+**Regression scoring** (the ML estimation):
+- Training data: Berlin schools where we have both catchment profiles AND actual Abitur/MSA scores
+- Features: All catchment dimensions above
+- Target: `abitur_average_grade`, `abitur_success_rate`, or `msa_score`
+- GSF's greedy feature selection approach (add features that improve R² by ≥ 0.01) is directly applicable
+- Hamburg schools serve as out-of-sample validation (GSF equivalent: holding out some stores)
+
+#### 3. Cannibalization Filter → Enrollment Competition Filter (GSF Step 8)
+
+GSF's `step8_filter.py` prevents recommending clustered locations. We adapt this concept:
+- Instead of filtering candidates, we use it to **detect enrollment competition zones**
+- Schools within overlapping catchment areas compete for the same students
+- This affects demand metrics and helps parents understand which schools are realistic options based on their address
+
+#### 4. Rate-Limited API Client (GSF `google_places.py`)
+
+GreenspaceFinder's async httpx client with semaphore-based rate limiting, retry logic, and caching is directly reusable for:
+- Google Nearby Search (POI dimensions)
+- Zensus API calls (if using the API instead of bulk downloads)
+- State school directory APIs
+
+#### 5. Local Data Services Pattern (GSF `crime.py`, `traffic.py`, `population.py`)
+
+GSF bundles Berlin-specific JSON files with lookup services. SchoolNossa already has a similar pattern planned. We extend it:
+
+| GSF Service | SchoolNossa Equivalent | Data Source |
+|-------------|----------------------|-------------|
+| `crime.py` (Berlin Bezirke) | `crime.py` (expand to all cities) | BKA Polizeiliche Kriminalstatistik + city open data |
+| `population.py` (Berlin PLZ) | `demographics.py` (Zensus 2022 grid nationwide) | Zensus 2022 100m grid |
+| `traffic.py` (Berlin sensors) | Drop or replace with `accessibility.py` | GTFS transit data / OSM |
+
+### What We Build Differently
+
+#### 1. No H3 Grid Generation Needed
+
+GSF generates candidate locations on a hex grid because it's finding *new* locations. SchoolNossa already knows where every school is — we just need to profile each school's catchment area. This eliminates GSF Steps 1, 3, 6 (grid generation, candidate filtering).
+
+#### 2. Nationwide School Directory as Input (replaces GSF Step 2-3)
+
+Instead of discovering entities via Google Places, SchoolNossa ingests school locations from official state directories:
+
+| State | School Directory Source |
+|-------|----------------------|
+| Berlin | WFS endpoint (already implemented) |
+| Hamburg | [geoportal-hamburg.de](https://geoportal-hamburg.de) school data |
+| Bayern | [km.bayern.de Schulsuche](https://www.km.bayern.de/ministerium/schule-und-ausbildung/schulsuche.html) |
+| NRW | [schulministerium.nrw](https://www.schulministerium.nrw/BiPo/SVS/schulsuche) |
+| All states | KMK Schulverzeichnis or individual state portals |
+
+Each state directory provides: school name, type, address, coordinates (or geocodable addresses), and often additional metadata (profiles, programs, student counts).
+
+#### 3. Two-Phase User Experience
+
+**Phase 1 — Rules-based comparison** (no ML, works for any city):
+- Parent enters a city or PLZ
+- System shows all secondary schools in the area
+- Each school has a catchment profile (transit, safety, demographics, POIs)
+- Parent adjusts dimension weights → schools re-rank in real time
+- This is valuable even without performance estimation
+
+**Phase 2 — Performance estimation** (ML, Berlin-trained):
+- Same schools now also show an "estimated Abitur average" with confidence interval
+- Clearly labeled as "estimated based on catchment area analysis"
+- Feature importance shown (what drives the estimate)
+- Berlin/Hamburg schools show actual data instead of estimates
+
+### Proposed SchoolNossa Dimensions (Full List)
+
+| Key | Label | Direction | Data Source | GSF Equivalent |
+|-----|-------|-----------|-------------|----------------|
+| `school_type` | School type | Categorical | State directory | — |
+| `public_private` | Public/Private | Categorical | State directory | — |
+| `student_count` | Student count | Informational | State directory | — |
+| `transit_count` | Transit stops nearby | Higher is better | Google / GTFS | `transit_count` |
+| `transit_nearest_m` | Nearest transit stop | Lower is better | Google / GTFS | `transit_nearest_m` |
+| `crime_index` | Area crime rate | Lower is better | BKA / city data | `crime_index` |
+| `catchment_population` | Catchment population | Informational | Zensus 2022 | `catchment_population` |
+| `population_density` | Population density | Informational | Zensus 2022 | `population_density` |
+| `youth_pct` | Youth population % | Higher is better | Zensus 2022 grid | — (new) |
+| `migration_pct` | Migration background % | Informational | Zensus 2022 grid | — (new) |
+| `adult_abitur_pct` | Adults with Abitur % | Higher is better | Zensus 2022 | — (new) |
+| `avg_rent` | Average rent level | Informational | Zensus 2022 grid | — (new) |
+| `other_schools_count` | Competing schools | Informational | State directory | `competitor_count` |
+| `nearest_school_m` | Nearest same-type school | Informational | State directory | `competitor_nearest_m` |
+| `library_count` | Libraries nearby | Higher is better | OSM / Google | — (new) |
+| `park_count` | Parks/playgrounds nearby | Higher is better | OSM / Google | — (new) |
+| `university_nearest_m` | Nearest university | Informational | OSM / Google | — (new) |
+| `green_space_m2` | Green space area | Higher is better | OSM | — (new) |
+
+### Implementation Phases
+
+**Phase 0 (current):** Berlin school directory + basic metrics via REST API ✅
+
+**Phase 1: Catchment Profiling Engine**
+- Port GSF's profiling pattern to SchoolNossa
+- Implement demographic dimensions using Zensus 2022 bulk data
+- Implement POI dimensions using Google Nearby Search (reuse GSF client)
+- Build catchment profiles for all Berlin schools
+- Store profiles in `school_catchment_profile` table
+
+**Phase 2: Rules-Based Scoring + Dashboard**
+- Port GSF's normalization and weighted scoring
+- Build parent-facing dashboard with dimension weights
+- Add map view with school locations + catchment overlays
+- Enable real-time re-ranking as parents adjust weights
+
+**Phase 3: ML Performance Estimation**
+- Collect Berlin Abitur/MSA data (sekundarschulen-berlin.de scraper)
+- Train regression model: catchment features → Abitur average
+- Validate on Hamburg data
+- Add "estimated performance" to school profiles with confidence intervals
+
+**Phase 4: Germany-Wide Expansion**
+- Ingest school directories from additional states (start with Hamburg, Bayern, NRW)
+- Compute catchment profiles for all ingested schools
+- Apply trained model to estimate performance
+- Scale Zensus data processing (100m grid → PostGIS spatial joins)
+
+---
+
 ## Data Portal Quick Reference
 
 | Portal | URL | Key Data |
