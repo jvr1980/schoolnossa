@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="School Nossa API",
-    description="Berlin school selection dashboard API",
-    version="0.1.0",
+    description="School selection dashboard API — Berlin, London, and more",
+    version="0.2.0",
 )
 
 # CORS middleware
@@ -55,6 +55,8 @@ async def health_check():
 async def get_schools(
     district: Optional[str] = None,
     school_type: Optional[str] = None,
+    country: Optional[str] = None,
+    city: Optional[str] = None,
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
@@ -62,18 +64,20 @@ async def get_schools(
     """
     Get list of schools with optional filtering
 
-    - **district**: Filter by district (e.g., "Mitte", "Charlottenburg-Wilmersdorf")
-    - **school_type**: Filter by school type (e.g., "Gymnasium", "Sekundarschule")
+    - **district**: Filter by district/Local Authority (e.g., "Mitte", "Camden")
+    - **school_type**: Filter by school type (e.g., "Gymnasium", "Grammar School")
+    - **country**: Filter by country code (e.g., "DE", "UK")
+    - **city**: Filter by city (e.g., "Berlin", "London", "Manchester")
     - **limit**: Number of results to return (max 500)
     - **offset**: Number of results to skip (for pagination)
     """
     service = SchoolService(db)
 
     if district:
-        schools = service.get_schools_by_district(district)
+        schools = service.get_schools_by_district(district, country=country, city=city)
         schools = schools[offset:offset+limit]
     else:
-        schools = service.get_all_schools(limit=limit, offset=offset)
+        schools = service.get_all_schools(limit=limit, offset=offset, country=country, city=city)
 
     # Filter by school type if specified
     if school_type:
@@ -132,19 +136,30 @@ async def get_school_metrics(
 
 
 @app.get("/districts", response_model=DistrictsResponse)
-async def get_districts(db: Session = Depends(get_db)):
+async def get_districts(
+    country: Optional[str] = None,
+    city: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
     """
-    Get list of all Berlin districts with schools
+    Get filter options for schools
 
-    Returns a list of district names for filtering
+    - **country**: Filter by country code (e.g., "DE", "UK")
+    - **city**: Filter by city (e.g., "Berlin", "London")
+
+    Returns district names, school types, available countries, and cities
     """
     service = SchoolService(db)
-    districts = service.get_districts()
-    school_types = service.get_school_types()
+    districts = service.get_districts(country=country, city=city)
+    school_types = service.get_school_types(country=country, city=city)
+    countries = service.get_countries()
+    cities = service.get_cities(country=country)
 
     return {
         "districts": districts,
         "school_types": school_types,
+        "countries": countries,
+        "cities": cities,
     }
 
 
@@ -165,6 +180,35 @@ async def import_schools(db: Session = Depends(get_db)):
         return result
     except Exception as e:
         logger.error(f"Import failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Import failed: {str(e)}"
+        )
+
+
+@app.post("/admin/import/uk")
+async def import_uk_schools(
+    city: str = Query(..., description="UK city to import (e.g., 'London', 'Manchester')"),
+    academic_year: str = Query("2023-24", description="Academic year (e.g., '2023-24')"),
+    db: Session = Depends(get_db),
+):
+    """
+    Import/update schools from UK Department for Education
+
+    Fetches school data from GIAS and performance data from DfE
+    for the specified city.
+
+    **Note**: This is an admin endpoint and should be protected in production.
+    """
+    service = SchoolService(db)
+
+    try:
+        result = service.import_schools_from_uk_dfe(city, academic_year)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"UK import failed for {city}: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Import failed: {str(e)}"

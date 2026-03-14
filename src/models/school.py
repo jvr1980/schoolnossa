@@ -13,11 +13,13 @@ class School(Base):
     __tablename__ = "schools"
 
     id = Column(Integer, primary_key=True, index=True)
-    school_id = Column(String(255), unique=True, nullable=False, index=True)  # Official ID from Berlin
+    school_id = Column(String(255), unique=True, nullable=False, index=True)  # Official ID (Berlin schulnummer or UK URN)
     name = Column(String(500), nullable=False)
-    school_type = Column(String(100))  # Gymnasium, Sekundarschule, etc.
+    school_type = Column(String(100))  # Gymnasium, Sekundarschule, Grammar School, Academy, etc.
     address = Column(Text)
-    district = Column(String(100), index=True)
+    district = Column(String(100), index=True)  # Berlin Bezirk or UK Local Authority
+    country = Column(String(10), default="DE", index=True)  # 'DE', 'UK'
+    city = Column(String(100), default="Berlin", index=True)  # 'Berlin', 'London', 'Manchester', etc.
     latitude = Column(DECIMAL(10, 8))
     longitude = Column(DECIMAL(11, 8))
     public_private = Column(String(20))

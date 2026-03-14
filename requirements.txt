@@ -17,9 +17,10 @@ numpy==1.26.3
 httpx==0.26.0
 requests==2.31.0
 
-# Geospatial (optional for now)
+# Geospatial
 # geopandas==0.14.1
 # shapely==2.0.2
+# pyproj is used for UK OSGB36→WGS84 coordinate conversion (built-in math used instead)
 
 # Web scraping (for future use)
 playwright==1.40.0

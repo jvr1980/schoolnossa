@@ -13,6 +13,8 @@ class SchoolResponse(BaseModel):
     school_type: Optional[str] = None
     address: Optional[str] = None
     district: Optional[str] = None
+    country: Optional[str] = "DE"
+    city: Optional[str] = "Berlin"
     latitude: Optional[Decimal] = None
     longitude: Optional[Decimal] = None
     public_private: Optional[str] = None
@@ -28,6 +30,8 @@ class SchoolDetailResponse(BaseModel):
     school_type: Optional[str] = None
     address: Optional[str] = None
     district: Optional[str] = None
+    country: Optional[str] = "DE"
+    city: Optional[str] = "Berlin"
     latitude: Optional[Decimal] = None
     longitude: Optional[Decimal] = None
     public_private: Optional[str] = None
@@ -75,3 +79,5 @@ class DistrictsResponse(BaseModel):
     """Districts and school types response"""
     districts: List[str]
     school_types: List[str]
+    countries: Optional[List[str]] = None
+    cities: Optional[List[str]] = None
