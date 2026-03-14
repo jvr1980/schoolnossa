@@ -59,8 +59,8 @@ class SchoolMetricsAnnual(Base):
     # Performance metrics (from sekundarschulen-berlin.de)
     abitur_success_rate = Column(DECIMAL(5, 2))  # % who pass Abitur
     abitur_success_change_percent = Column(DECIMAL(5, 2))
-    abitur_average_grade = Column(DECIMAL(3, 2))  # e.g., 2.5
-    abitur_grade_change = Column(DECIMAL(3, 2))  # absolute change
+    abitur_average_grade = Column(DECIMAL(5, 2))  # DE: e.g., 2.5; UK: A-Level APS e.g., 35.2
+    abitur_grade_change = Column(DECIMAL(5, 2))  # absolute change
 
     # Demand metrics
     demand_score = Column(Integer)  # Number of applications
