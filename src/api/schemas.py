@@ -75,6 +75,29 @@ class ImportResultResponse(BaseModel):
     total_processed: int
 
 
+class CrimeStatsResponse(BaseModel):
+    """Crime statistics for a school's area"""
+    year: int
+    month: Optional[int] = None
+    total_crimes: Optional[int] = None
+    violent_crimes: Optional[int] = None
+    theft: Optional[int] = None
+    burglary: Optional[int] = None
+    robbery: Optional[int] = None
+    vehicle_crime: Optional[int] = None
+    drugs: Optional[int] = None
+    antisocial_behaviour: Optional[int] = None
+    criminal_damage: Optional[int] = None
+    crime_rate_per_1000: Optional[Decimal] = None
+    radius_meters: Optional[int] = None
+    area_name: Optional[str] = None
+    data_source: Optional[str] = None
+    collected_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class DistrictsResponse(BaseModel):
     """Districts and school types response"""
     districts: List[str]

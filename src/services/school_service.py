@@ -6,9 +6,11 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import logging
 
-from ..models.school import School, SchoolMetricsAnnual, CollectionLog
+from ..models.school import School, SchoolMetricsAnnual, CrimeStats, CollectionLog
 from ..collectors.germany.berlin_open_data import BerlinOpenDataCollectorSync
+from ..collectors.germany.crime_collector import BerlinCrimeCollectorSync
 from ..collectors.united_kingdom.dfe_collector import UKDfECollectorSync
+from ..collectors.united_kingdom.crime_collector import UKCrimeCollectorSync
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,8 @@ class SchoolService:
         self.db = db
         self.collector = BerlinOpenDataCollectorSync()
         self.uk_collector = UKDfECollectorSync()
+        self.uk_crime_collector = UKCrimeCollectorSync()
+        self.berlin_crime_collector = BerlinCrimeCollectorSync()
 
     def import_schools_from_berlin_open_data(self) -> Dict[str, Any]:
         """
@@ -368,3 +372,229 @@ class SchoolService:
         if country:
             query = query.filter(School.country == country)
         return sorted([r[0] for r in query.all()])
+
+    # ------------------------------------------------------------------
+    # Crime data methods
+    # ------------------------------------------------------------------
+
+    def import_crime_data_uk(self, city: str, date: str) -> Dict[str, Any]:
+        """Import crime data from data.police.uk for all schools in a UK city.
+
+        Args:
+            city: UK city name (e.g., 'London', 'Manchester')
+            date: Month in YYYY-MM format
+
+        Returns:
+            Dictionary with import statistics
+        """
+        log_entry = CollectionLog(
+            source="data_police_uk",
+            collection_date=datetime.utcnow(),
+            status="in_progress",
+        )
+        self.db.add(log_entry)
+        self.db.commit()
+
+        try:
+            # Get all schools in this city that have coordinates
+            schools = (
+                self.db.query(School)
+                .filter(
+                    School.country == "UK",
+                    School.city == city,
+                    School.latitude.isnot(None),
+                    School.longitude.isnot(None),
+                )
+                .all()
+            )
+
+            if not schools:
+                raise ValueError(f"No UK schools with coordinates found for {city}")
+
+            school_dicts = [
+                {
+                    "school_id": s.school_id,
+                    "latitude": s.latitude,
+                    "longitude": s.longitude,
+                }
+                for s in schools
+            ]
+
+            logger.info(f"Collecting crime data for {len(school_dicts)} schools in {city}")
+            crime_results = self.uk_crime_collector.collect_crimes_for_schools(
+                school_dicts, date
+            )
+
+            return self._save_crime_results(crime_results, log_entry)
+
+        except Exception as e:
+            logger.error(f"Crime data import failed for {city}: {e}")
+            log_entry.status = "failed"
+            log_entry.error_log = str(e)
+            self.db.commit()
+            raise
+
+    def import_crime_data_berlin(self, year: Optional[int] = None) -> Dict[str, Any]:
+        """Import crime data from Kriminalitätsatlas for all Berlin schools.
+
+        Args:
+            year: Target year (default: latest available)
+
+        Returns:
+            Dictionary with import statistics
+        """
+        log_entry = CollectionLog(
+            source="berlin_kriminalitaetsatlas",
+            collection_date=datetime.utcnow(),
+            status="in_progress",
+        )
+        self.db.add(log_entry)
+        self.db.commit()
+
+        try:
+            schools = (
+                self.db.query(School)
+                .filter(
+                    School.country == "DE",
+                    School.city == "Berlin",
+                )
+                .all()
+            )
+
+            if not schools:
+                raise ValueError("No Berlin schools found in database")
+
+            school_dicts = [
+                {
+                    "school_id": s.school_id,
+                    "district": s.district,
+                    "latitude": s.latitude,
+                    "longitude": s.longitude,
+                }
+                for s in schools
+            ]
+
+            logger.info(f"Collecting Berlin crime data for {len(school_dicts)} schools")
+            crime_results = self.berlin_crime_collector.collect_crime_for_schools(
+                school_dicts, year
+            )
+
+            return self._save_crime_results(crime_results, log_entry)
+
+        except Exception as e:
+            logger.error(f"Berlin crime data import failed: {e}")
+            log_entry.status = "failed"
+            log_entry.error_log = str(e)
+            self.db.commit()
+            raise
+
+    def _save_crime_results(
+        self, crime_results: List[Dict[str, Any]], log_entry: CollectionLog
+    ) -> Dict[str, Any]:
+        """Save crime collection results to database.
+
+        Args:
+            crime_results: List of crime stats dicts from collectors
+            log_entry: CollectionLog entry to update
+
+        Returns:
+            Import statistics dict
+        """
+        created_count = 0
+        updated_count = 0
+        error_count = 0
+
+        for crime_data in crime_results:
+            try:
+                school_id = crime_data["school_id"]
+                year = crime_data["year"]
+                month = crime_data.get("month")
+
+                # Check for existing record
+                query = self.db.query(CrimeStats).filter(
+                    CrimeStats.school_id == school_id,
+                    CrimeStats.year == year,
+                )
+                if month is not None:
+                    query = query.filter(CrimeStats.month == month)
+                else:
+                    query = query.filter(CrimeStats.month.is_(None))
+
+                existing = query.first()
+
+                if existing:
+                    for field in (
+                        "total_crimes", "violent_crimes", "theft", "burglary",
+                        "robbery", "vehicle_crime", "drugs",
+                        "antisocial_behaviour", "criminal_damage",
+                        "crime_rate_per_1000", "radius_meters", "area_name",
+                        "raw_data", "data_source",
+                    ):
+                        value = crime_data.get(field)
+                        if value is not None:
+                            setattr(existing, field, value)
+                    existing.collected_at = datetime.utcnow()
+                    updated_count += 1
+                else:
+                    new_crime = CrimeStats(
+                        school_id=school_id,
+                        year=year,
+                        month=month,
+                        total_crimes=crime_data.get("total_crimes"),
+                        violent_crimes=crime_data.get("violent_crimes"),
+                        theft=crime_data.get("theft"),
+                        burglary=crime_data.get("burglary"),
+                        robbery=crime_data.get("robbery"),
+                        vehicle_crime=crime_data.get("vehicle_crime"),
+                        drugs=crime_data.get("drugs"),
+                        antisocial_behaviour=crime_data.get("antisocial_behaviour"),
+                        criminal_damage=crime_data.get("criminal_damage"),
+                        crime_rate_per_1000=crime_data.get("crime_rate_per_1000"),
+                        radius_meters=crime_data.get("radius_meters"),
+                        area_name=crime_data.get("area_name"),
+                        raw_data=crime_data.get("raw_data"),
+                        data_source=crime_data.get("data_source"),
+                    )
+                    self.db.add(new_crime)
+                    created_count += 1
+
+            except Exception as e:
+                logger.error(f"Error saving crime data for {crime_data.get('school_id')}: {e}")
+                error_count += 1
+
+        self.db.commit()
+
+        log_entry.status = "success" if error_count == 0 else "partial"
+        log_entry.schools_updated = created_count + updated_count
+        log_entry.error_log = f"Created: {created_count}, Updated: {updated_count}, Errors: {error_count}"
+        self.db.commit()
+
+        result = {
+            "status": "success",
+            "created": created_count,
+            "updated": updated_count,
+            "errors": error_count,
+            "total_processed": len(crime_results),
+        }
+        logger.info(f"Crime data import completed: {result}")
+        return result
+
+    def get_school_crime_stats(
+        self, school_id: str, years: int = 3
+    ) -> List[CrimeStats]:
+        """Get crime statistics history for a school.
+
+        Args:
+            school_id: School identifier
+            years: Number of years to retrieve
+
+        Returns:
+            List of CrimeStats ordered by year/month descending
+        """
+        return (
+            self.db.query(CrimeStats)
+            .filter(CrimeStats.school_id == school_id)
+            .order_by(CrimeStats.year.desc(), CrimeStats.month.desc())
+            .limit(years * 12)  # Up to 12 months per year
+            .all()
+        )

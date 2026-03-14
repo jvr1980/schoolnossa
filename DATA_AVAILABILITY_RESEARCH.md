@@ -148,9 +148,58 @@ MSA per-school data is substantially less available than Abitur data across all 
 
 ---
 
+## D) Crime Data Near Schools
+
+### Berlin — Kriminalitätsatlas *[IMPLEMENTED]*
+
+| Aspect | Details |
+|--------|---------|
+| **Source** | [Kriminalitätsatlas Berlin](https://daten.berlin.de/datensaetze/kriminalitatsatlas-berlin) |
+| **Format** | CSV, JSON, XML, GeoJSON, XLSX via CKAN API |
+| **Granularity** | Bezirksregion (143 areas, ~25k residents) or Planungsraum (542 areas, ~7.5k residents) |
+| **Categories** | 17 types: theft, violent crime, drugs, burglary, robbery, vehicle theft, criminal damage, etc. |
+| **Metrics** | Absolute counts + frequency rates per 100,000 residents |
+| **History** | 2013–2024 (10+ years) |
+| **School mapping** | Schools matched to Bezirksregion via district (Bezirk) |
+| **Licence** | CC BY 3.0 DE |
+
+### UK — data.police.uk *[IMPLEMENTED]*
+
+| Aspect | Details |
+|--------|---------|
+| **Source** | [data.police.uk API](https://data.police.uk/docs/) |
+| **Format** | JSON REST API (no API key required) |
+| **Key endpoint** | `GET /api/crimes-street/all-crime?lat={lat}&lng={lng}&date=YYYY-MM` |
+| **Granularity** | Street-level, 1-mile radius around any lat/lon point |
+| **Categories** | ~14 types: violence, theft, burglary, robbery, vehicle crime, drugs, anti-social behaviour, etc. |
+| **Rate limits** | 15 req/sec sustained, 30 burst |
+| **History** | December 2013 to present, updated monthly |
+| **School mapping** | Direct query using school coordinates — no spatial join needed |
+| **Bulk download** | `https://data.police.uk/data/archive/latest.zip` (monthly CSV) |
+| **Licence** | Open Government Licence v3.0 |
+
+### Comparison
+
+| Feature | Berlin | UK |
+|---------|--------|-----|
+| Query method | Download CSV + spatial match to LOR | Direct lat/lon API call per school |
+| Geographic precision | ~25,000 people areas | ~1 mile radius (street-level) |
+| Update frequency | Annual | Monthly |
+| API key required | No | No |
+| Ease of integration | Medium | Easy |
+
+### LSOA Reference Data (UK)
+For more sophisticated analysis, UK crime can also be aggregated at LSOA (Lower Layer Super Output Area) level:
+- LSOA boundaries: [ONS Open Geography Portal](https://geoportal.statistics.gov.uk/)
+- Postcode-to-LSOA lookup: [data.gov.uk](https://www.data.gov.uk/dataset/1676bb60-bef1-43dc-8c23-641554b066bd/postcode-to-oa-2021-to-lsoa-to-msoa-to-lad-february-2025-best-fit-lookup-in-the-uk)
+
+---
+
 ## Data Attribution
 
 - **Berlin Open Data**: CC BY 3.0 DE — Senatsverwaltung für Bildung, Jugend und Familie
 - **UK DfE**: Open Government Licence v3.0 — Department for Education
 - **GIAS**: Open Government Licence v3.0 — Department for Education
+- **data.police.uk**: Open Government Licence v3.0 — Home Office
+- **Berlin Kriminalitätsatlas**: CC BY 3.0 DE — Polizei Berlin
 - **OpenStreetMap/Geofabrik**: Open Database License (ODbL)

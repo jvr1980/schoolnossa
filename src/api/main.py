@@ -12,6 +12,7 @@ from .schemas import (
     SchoolResponse,
     SchoolDetailResponse,
     SchoolMetricsResponse,
+    CrimeStatsResponse,
     ImportResultResponse,
     DistrictsResponse,
 )
@@ -186,6 +187,37 @@ async def import_schools(db: Session = Depends(get_db)):
         )
 
 
+@app.get("/schools/{school_id}/crime", response_model=List[CrimeStatsResponse])
+async def get_school_crime(
+    school_id: str,
+    years: int = Query(3, ge=1, le=10),
+    db: Session = Depends(get_db),
+):
+    """
+    Get crime statistics near a school
+
+    - **school_id**: School identifier (Berlin schulnummer or UK URN)
+    - **years**: Number of years of history to retrieve (default: 3)
+
+    Returns monthly (UK) or annual (Berlin) crime data for the school's area.
+    """
+    service = SchoolService(db)
+
+    school = service.get_school_by_id(school_id)
+    if not school:
+        raise HTTPException(status_code=404, detail="School not found")
+
+    crime_stats = service.get_school_crime_stats(school_id, years=years)
+
+    if not crime_stats:
+        raise HTTPException(
+            status_code=404,
+            detail="No crime data found for this school"
+        )
+
+    return crime_stats
+
+
 @app.post("/admin/import/uk")
 async def import_uk_schools(
     city: str = Query(..., description="UK city to import (e.g., 'London', 'Manchester')"),
@@ -212,6 +244,63 @@ async def import_uk_schools(
         raise HTTPException(
             status_code=500,
             detail=f"Import failed: {str(e)}"
+        )
+
+
+@app.post("/admin/import/crime/uk")
+async def import_uk_crime(
+    city: str = Query(..., description="UK city (e.g., 'London', 'Manchester')"),
+    date: str = Query(..., description="Month in YYYY-MM format (e.g., '2024-06')"),
+    db: Session = Depends(get_db),
+):
+    """
+    Import crime data from data.police.uk for schools in a UK city.
+
+    Queries street-level crime within 1 mile of each school.
+    Rate-limited to respect data.police.uk API limits.
+
+    **Note**: This is an admin endpoint and should be protected in production.
+    """
+    service = SchoolService(db)
+
+    try:
+        result = service.import_crime_data_uk(city, date)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"UK crime import failed for {city}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Crime import failed: {str(e)}"
+        )
+
+
+@app.post("/admin/import/crime/berlin")
+async def import_berlin_crime(
+    year: Optional[int] = Query(None, description="Year (default: latest available)"),
+    db: Session = Depends(get_db),
+):
+    """
+    Import crime data from Berlin Kriminalitätsatlas for all Berlin schools.
+
+    Downloads the Kriminalitätsatlas CSV and maps crime statistics
+    to schools based on their Bezirksregion.
+
+    **Note**: This is an admin endpoint and should be protected in production.
+    """
+    service = SchoolService(db)
+
+    try:
+        result = service.import_crime_data_berlin(year)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Berlin crime import failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Crime import failed: {str(e)}"
         )
 
 
