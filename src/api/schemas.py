@@ -77,7 +77,7 @@ class DistrictsResponse(BaseModel):
     school_types: List[str]
 
 
-# --- Catchment profiling & scoring schemas ---
+# --- Catchment profiling & regression scoring schemas ---
 
 
 class DimensionInfo(BaseModel):
@@ -107,29 +107,80 @@ class SchoolProfileResponse(BaseModel):
     latitude: float
     longitude: float
     dimensions: Dict[str, float]
-    rules_score: float = 0.0
-    model_score: Optional[float] = None
-    model_confidence: Optional[float] = None
-    rank: int = 0
 
 
-class ScoreRequest(BaseModel):
-    """Request to score profiled schools with custom weights."""
-    weights: Dict[str, float] = Field(
-        default_factory=dict,
-        description="Dimension key → weight (0-100). Missing dimensions get 0.",
+class FeatureDiagnosticResponse(BaseModel):
+    """Diagnostic info for a single regression feature."""
+    key: str
+    label: str
+    coefficient: float
+    standardized_coef: float
+    direction: str
+    p_value: Optional[float] = None
+    partial_r_squared: float
+
+
+class SchoolPredictionResponse(BaseModel):
+    """Regression prediction for a single school."""
+    school_id: str
+    name: str
+    district: Optional[str] = None
+    predicted: float
+    actual: Optional[float] = None
+    residual: Optional[float] = None
+    confidence: float
+    feature_contributions: Dict[str, float]
+
+
+class RegressionRequest(BaseModel):
+    """Request to train regression model and score schools."""
+    labeled: Dict[str, float] = Field(
+        ...,
+        description="school_id → target value (e.g. Abitur average grade). Minimum 5 entries.",
+        min_length=5,
     )
-    labeled: Optional[Dict[str, float]] = Field(
+    features: Optional[List[str]] = Field(
         None,
-        description="Optional school_id → performance value for regression scoring.",
+        description="Feature keys to force. If omitted, uses greedy forward selection.",
     )
+    district: Optional[str] = None
+    school_type: Optional[str] = None
+    radius_m: float = Field(1000.0, ge=200, le=5000)
+    cv_folds: int = Field(5, ge=2, le=20)
 
 
-class ScoringResultResponse(BaseModel):
-    """Complete scoring result."""
-    mode: str
-    weights: Dict[str, float]
-    r_squared: Optional[float] = None
-    feature_importance: Optional[Dict[str, float]] = None
-    selected_features: Optional[List[str]] = None
-    schools: List[SchoolProfileResponse]
+class CVFoldResponse(BaseModel):
+    """Single cross-validation fold result."""
+    fold: int
+    train_size: int
+    test_size: int
+    r_squared: float
+    rmse: float
+    mae: float
+
+
+class RegressionResultResponse(BaseModel):
+    """Complete regression model result with diagnostics."""
+    # Overall model fit
+    r_squared: float
+    adjusted_r_squared: float
+    rmse: float
+    mae: float
+    n_samples: int
+    n_features: int
+    intercept: float
+    is_reliable: bool
+
+    # Feature diagnostics
+    features: List[FeatureDiagnosticResponse]
+    feature_selection_path: List[Dict[str, Any]]
+    coefficients: Dict[str, float]
+
+    # Cross-validation
+    cv_folds: List[CVFoldResponse]
+    cv_r_squared_mean: float
+    cv_r_squared_std: float
+    cv_rmse_mean: float
+
+    # Per-school predictions
+    predictions: List[SchoolPredictionResponse]

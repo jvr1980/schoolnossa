@@ -17,8 +17,11 @@ from .schemas import (
     DimensionInfo,
     ProfileRequest,
     SchoolProfileResponse,
-    ScoreRequest,
-    ScoringResultResponse,
+    FeatureDiagnosticResponse,
+    SchoolPredictionResponse,
+    RegressionRequest,
+    CVFoldResponse,
+    RegressionResultResponse,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -176,7 +179,7 @@ async def import_schools(db: Session = Depends(get_db)):
         )
 
 
-# --- Catchment Profiling & Scoring Endpoints ---
+# --- Catchment Profiling & Regression Endpoints ---
 
 
 @app.get("/dimensions", response_model=List[DimensionInfo])
@@ -184,8 +187,7 @@ async def get_dimensions():
     """
     Get metadata for all available catchment dimensions.
 
-    Returns dimension keys, labels, directions, and data sources
-    so the frontend can build weight sliders and display labels.
+    Returns dimension keys, labels, directions, and data sources.
     """
     from ..pipeline.dimensions import DIMENSIONS
 
@@ -202,192 +204,141 @@ async def get_dimensions():
     ]
 
 
-@app.post("/schools/profile", response_model=ScoringResultResponse)
-async def profile_and_score_schools(
+@app.post("/schools/profile", response_model=List[SchoolProfileResponse])
+async def profile_schools(
     request: ProfileRequest,
     db: Session = Depends(get_db),
 ):
     """
-    Profile and score schools using catchment area analysis.
+    Profile schools using catchment area analysis.
 
     Builds a catchment profile for each matching school by analyzing
     demographics, POIs, transit, crime, and competition within the
-    specified radius. Returns rules-based scores with equal weights.
-
-    - **district**: Optional filter by district
-    - **school_type**: Optional filter by school type
-    - **radius_m**: Catchment radius in meters (default: 1000)
+    specified radius. Returns raw dimension values per school.
     """
     from ..pipeline.profiler import SchoolProfiler
-    from ..pipeline.scorer import score_schools
-    from ..pipeline.dimensions import default_weights
 
     service = SchoolService(db)
+    schools_data = _get_schools_data(service, request.district, request.school_type)
 
-    # Get schools to profile
-    if request.district:
-        schools_orm = service.get_schools_by_district(request.district)
-    else:
-        schools_orm = service.get_all_schools(limit=500)
-
-    if request.school_type:
-        schools_orm = [s for s in schools_orm if s.school_type == request.school_type]
-
-    if not schools_orm:
-        raise HTTPException(status_code=404, detail="No schools found matching criteria")
-
-    # Convert ORM objects to dicts for the profiler
-    schools_data = [
-        {
-            "school_id": s.school_id,
-            "name": s.name,
-            "latitude": float(s.latitude) if s.latitude else 0.0,
-            "longitude": float(s.longitude) if s.longitude else 0.0,
-            "address": s.address or "",
-            "school_type": s.school_type or "",
-            "district": s.district or "",
-        }
-        for s in schools_orm
-        if s.latitude and s.longitude
-    ]
-
-    if not schools_data:
-        raise HTTPException(status_code=404, detail="No schools with coordinates found")
-
-    # Profile all schools
     profiler = SchoolProfiler(radius_m=request.radius_m)
     profiles = await profiler.profile_schools(schools_data)
 
-    # Score with equal weights
-    result = score_schools(profiles)
-
-    # Build response
     school_lookup = {s["school_id"]: s for s in schools_data}
-    ranked = result.ranked()
-
-    school_responses = []
-    for rank, p in enumerate(ranked, start=1):
-        s = school_lookup.get(p.school_id, {})
-        school_responses.append(
-            SchoolProfileResponse(
-                school_id=p.school_id,
-                name=s.get("name", ""),
-                school_type=s.get("school_type"),
-                address=s.get("address"),
-                district=s.get("district"),
-                latitude=s.get("latitude", 0.0),
-                longitude=s.get("longitude", 0.0),
-                dimensions=p.normalized,
-                rules_score=round(p.rules_score, 2),
-                model_score=round(p.model_score, 2) if p.model_score is not None else None,
-                model_confidence=round(p.model_confidence, 3) if p.model_confidence is not None else None,
-                rank=rank,
-            )
+    return [
+        SchoolProfileResponse(
+            school_id=p.school_id,
+            name=school_lookup[p.school_id].get("name", ""),
+            school_type=school_lookup[p.school_id].get("school_type"),
+            address=school_lookup[p.school_id].get("address"),
+            district=school_lookup[p.school_id].get("district"),
+            latitude=p.latitude,
+            longitude=p.longitude,
+            dimensions=p.values,
         )
-
-    return ScoringResultResponse(
-        mode=result.mode.value,
-        weights=result.weights,
-        r_squared=result.r_squared,
-        feature_importance=result.feature_importance,
-        selected_features=result.selected_features,
-        schools=school_responses,
-    )
+        for p in profiles
+        if p.school_id in school_lookup
+    ]
 
 
-@app.post("/schools/score", response_model=ScoringResultResponse)
-async def rescore_schools(
-    request: ScoreRequest,
-    district: Optional[str] = None,
-    school_type: Optional[str] = None,
-    radius_m: float = Query(1000.0, ge=200, le=5000),
+@app.post("/schools/regression", response_model=RegressionResultResponse)
+async def train_regression_model(
+    request: RegressionRequest,
     db: Session = Depends(get_db),
 ):
     """
-    Re-score schools with custom weights (and optional regression).
+    Train a regression model to estimate school performance.
 
-    Use this after the initial profile to adjust dimension weights
-    or to provide labeled performance data for ML-based estimation.
+    Profiles all matching schools, trains a linear regression on the
+    labeled subset, and returns full diagnostics: model fit, feature
+    importance, cross-validation, per-school predictions with
+    feature contribution breakdowns.
 
-    - **weights**: Custom dimension weights (e.g. {"crime_index": 80, "transit_count": 60})
-    - **labeled**: Optional map of school_id → Abitur average for regression
-    - **district**: Optional district filter
-    - **school_type**: Optional school type filter
-    - **radius_m**: Catchment radius
+    - **labeled**: school_id → target value (e.g. Abitur average). Min 5 entries.
+    - **features**: Optional feature keys to force. Omit for auto-selection.
+    - **district/school_type**: Optional filters.
+    - **radius_m**: Catchment radius in meters.
+    - **cv_folds**: Number of cross-validation folds.
     """
     from ..pipeline.profiler import SchoolProfiler
-    from ..pipeline.scorer import score_schools
+    from ..pipeline.scorer import train_and_diagnose
 
     service = SchoolService(db)
+    schools_data = _get_schools_data(service, request.district, request.school_type)
 
-    if district:
-        schools_orm = service.get_schools_by_district(district)
-    else:
-        schools_orm = service.get_all_schools(limit=500)
-
-    if school_type:
-        schools_orm = [s for s in schools_orm if s.school_type == school_type]
-
-    if not schools_orm:
-        raise HTTPException(status_code=404, detail="No schools found")
-
-    schools_data = [
-        {
-            "school_id": s.school_id,
-            "name": s.name,
-            "latitude": float(s.latitude) if s.latitude else 0.0,
-            "longitude": float(s.longitude) if s.longitude else 0.0,
-            "address": s.address or "",
-            "school_type": s.school_type or "",
-            "district": s.district or "",
-        }
-        for s in schools_orm
-        if s.latitude and s.longitude
-    ]
-
-    if not schools_data:
-        raise HTTPException(status_code=404, detail="No schools with coordinates found")
-
-    profiler = SchoolProfiler(radius_m=radius_m)
+    # Profile
+    profiler = SchoolProfiler(radius_m=request.radius_m)
     profiles = await profiler.profile_schools(schools_data)
 
-    # Score with custom weights and optional labeled data
-    result = score_schools(
-        profiles,
-        weights=request.weights if request.weights else None,
+    if not profiles:
+        raise HTTPException(status_code=400, detail="No schools could be profiled")
+
+    # Train and diagnose
+    diag = train_and_diagnose(
+        profiles=profiles,
         labeled=request.labeled,
+        feature_keys=request.features,
+        cv_folds=request.cv_folds,
     )
 
-    school_lookup = {s["school_id"]: s for s in schools_data}
-    ranked = result.ranked()
-
-    school_responses = []
-    for rank, p in enumerate(ranked, start=1):
-        s = school_lookup.get(p.school_id, {})
-        school_responses.append(
-            SchoolProfileResponse(
-                school_id=p.school_id,
-                name=s.get("name", ""),
-                school_type=s.get("school_type"),
-                address=s.get("address"),
-                district=s.get("district"),
-                latitude=s.get("latitude", 0.0),
-                longitude=s.get("longitude", 0.0),
-                dimensions=p.normalized,
-                rules_score=round(p.rules_score, 2),
-                model_score=round(p.model_score, 2) if p.model_score is not None else None,
-                model_confidence=round(p.model_confidence, 3) if p.model_confidence is not None else None,
-                rank=rank,
-            )
+    if diag is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Model training failed. Need ≥5 labeled schools with matching IDs and feature variance.",
         )
 
-    return ScoringResultResponse(
-        mode=result.mode.value,
-        weights=result.weights,
-        r_squared=result.r_squared,
-        feature_importance=result.feature_importance,
-        selected_features=result.selected_features,
-        schools=school_responses,
+    school_lookup = {s["school_id"]: s for s in schools_data}
+
+    return RegressionResultResponse(
+        r_squared=diag.r_squared,
+        adjusted_r_squared=diag.adjusted_r_squared,
+        rmse=diag.rmse,
+        mae=diag.mae,
+        n_samples=diag.n_samples,
+        n_features=diag.n_features,
+        intercept=diag.intercept,
+        is_reliable=diag.is_reliable,
+        features=[
+            FeatureDiagnosticResponse(
+                key=f.key,
+                label=f.label,
+                coefficient=f.coefficient,
+                standardized_coef=f.standardized_coef,
+                direction=f.direction,
+                p_value=f.p_value,
+                partial_r_squared=f.partial_r_squared,
+            )
+            for f in diag.features
+        ],
+        feature_selection_path=diag.feature_selection_path,
+        coefficients=diag.coefficients,
+        cv_folds=[
+            CVFoldResponse(
+                fold=f.fold,
+                train_size=f.train_size,
+                test_size=f.test_size,
+                r_squared=f.r_squared,
+                rmse=f.rmse,
+                mae=f.mae,
+            )
+            for f in diag.cv_folds
+        ],
+        cv_r_squared_mean=diag.cv_r_squared_mean,
+        cv_r_squared_std=diag.cv_r_squared_std,
+        cv_rmse_mean=diag.cv_rmse_mean,
+        predictions=[
+            SchoolPredictionResponse(
+                school_id=p.school_id,
+                name=school_lookup.get(p.school_id, {}).get("name", ""),
+                district=school_lookup.get(p.school_id, {}).get("district"),
+                predicted=p.predicted,
+                actual=p.actual,
+                residual=p.residual,
+                confidence=p.confidence,
+                feature_contributions=p.feature_contributions,
+            )
+            for p in diag.predictions
+        ],
     )
 
 
@@ -399,8 +350,6 @@ async def get_school_profile(
 ):
     """
     Get catchment profile for a single school.
-
-    Returns all dimension values for the school's catchment area.
     """
     from ..pipeline.profiler import SchoolProfiler
 
@@ -413,7 +362,6 @@ async def get_school_profile(
     if not school.latitude or not school.longitude:
         raise HTTPException(status_code=400, detail="School has no coordinates")
 
-    # Get all schools for competition calculation
     all_schools = service.get_all_schools(limit=500)
     all_data = [
         {
@@ -445,8 +393,44 @@ async def get_school_profile(
         latitude=float(school.latitude),
         longitude=float(school.longitude),
         dimensions=profile.values,
-        rank=0,
     )
+
+
+def _get_schools_data(
+    service: SchoolService,
+    district: Optional[str] = None,
+    school_type: Optional[str] = None,
+) -> List[dict]:
+    """Helper: load schools from DB and convert to dicts for the profiler."""
+    if district:
+        schools_orm = service.get_schools_by_district(district)
+    else:
+        schools_orm = service.get_all_schools(limit=500)
+
+    if school_type:
+        schools_orm = [s for s in schools_orm if s.school_type == school_type]
+
+    if not schools_orm:
+        raise HTTPException(status_code=404, detail="No schools found matching criteria")
+
+    schools_data = [
+        {
+            "school_id": s.school_id,
+            "name": s.name,
+            "latitude": float(s.latitude) if s.latitude else 0.0,
+            "longitude": float(s.longitude) if s.longitude else 0.0,
+            "address": s.address or "",
+            "school_type": s.school_type or "",
+            "district": s.district or "",
+        }
+        for s in schools_orm
+        if s.latitude and s.longitude
+    ]
+
+    if not schools_data:
+        raise HTTPException(status_code=404, detail="No schools with coordinates found")
+
+    return schools_data
 
 
 if __name__ == "__main__":

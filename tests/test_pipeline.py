@@ -1,7 +1,7 @@
-"""Tests for the catchment profiling and scoring pipeline."""
+"""Tests for the catchment profiling and regression scoring pipeline."""
 
 import pytest
-import math
+import numpy as np
 
 from src.utils.geo import haversine, bounding_box
 from src.services.crime import CrimeService
@@ -13,13 +13,8 @@ from src.pipeline.dimensions import (
     get_numeric_dimensions,
     default_weights,
 )
-from src.pipeline.types import CatchmentProfile, NormalizedProfile, ScoreMode
-from src.pipeline.scorer import (
-    normalize_profiles,
-    rules_score,
-    regression_score,
-    score_schools,
-)
+from src.pipeline.types import CatchmentProfile, ModelDiagnostics
+from src.pipeline.scorer import normalize_profiles, train_and_diagnose
 
 
 # --- Geo utils ---
@@ -43,7 +38,6 @@ class TestHaversine:
         s, w, n, e = bounding_box(52.52, 13.40, 1000)
         assert s < 52.52 < n
         assert w < 13.40 < e
-        # 1km radius should give ~0.009 degrees latitude
         assert abs((n - s) / 2 - 0.009) < 0.002
 
 
@@ -56,14 +50,13 @@ class TestCrimeService:
 
     def test_lookup_by_address_with_district(self):
         idx = self.svc.get_crime_index(52.52, 13.40, "Some school in Mitte, Berlin")
-        assert idx == 186  # Mitte crime index
+        assert idx == 186
 
     def test_lookup_by_postcode(self):
         idx = self.svc.get_crime_index(52.52, 13.40, "Teststr. 1, 12043 Berlin")
         assert idx == 148  # 12043 → Neukölln
 
     def test_fallback_to_nearest_centroid(self):
-        # Coordinates near Steglitz-Zehlendorf centroid, no address
         idx = self.svc.get_crime_index(52.434, 13.241, "")
         assert idx == 62  # Steglitz-Zehlendorf
 
@@ -81,11 +74,11 @@ class TestPopulationService:
 
     def test_density_with_known_postcode(self):
         density = self.svc.get_density("Teststr. 1, 10115 Berlin")
-        assert density > 10000  # 10115 is dense inner city
+        assert density > 10000
 
     def test_density_fallback(self):
         density = self.svc.get_density("Unknown address, 99999 Nowhere")
-        assert density > 0  # Should return city average
+        assert density > 0
 
     def test_catchment_population(self):
         pop, density = self.svc.estimate_catchment_population(
@@ -122,155 +115,203 @@ class TestDimensions:
         assert abs(sum(weights.values()) - 1.0) < 0.01
 
 
-# --- Scoring ---
+# --- Helpers ---
 
 
-def _make_profiles() -> list:
-    """Create test profiles for scoring."""
+def _make_profiles(n: int = 6) -> list:
+    """Create test profiles with a clear linear pattern."""
+    np.random.seed(42)
     profiles = []
-    for i, (crime, transit, pop) in enumerate([
-        (50, 10, 20000),   # School A: high crime, some transit
-        (180, 2, 30000),   # School B: very high crime, poor transit
-        (30, 15, 15000),   # School C: low crime, good transit
-    ]):
+    for i in range(n):
         p = CatchmentProfile(
-            school_id=f"school_{i}",
+            school_id=f"s{i}",
             latitude=52.52 + i * 0.01,
-            longitude=13.40 + i * 0.01,
+            longitude=13.40,
             radius_m=1000,
         )
-        p.set("crime_index", crime)
-        p.set("transit_count", transit)
-        p.set("catchment_population", pop)
-        p.set("population_density", pop / 3.14)
+        p.set("crime_index", 50.0 + i * 25.0 + np.random.normal(0, 3))
+        p.set("transit_count", 15.0 - i * 2.0 + np.random.normal(0, 1))
+        p.set("adult_abitur_pct", 55.0 - i * 5.0 + np.random.normal(0, 2))
+        p.set("avg_rent", 12.0 - i * 0.8 + np.random.normal(0, 0.3))
+        p.set("population_density", 18000.0 - i * 1000 + np.random.normal(0, 500))
         profiles.append(p)
     return profiles
+
+
+def _make_labeled(n: int = 6) -> dict:
+    """Abitur grades that correlate with catchment features."""
+    np.random.seed(42)
+    return {f"s{i}": round(2.0 + i * 0.2 + np.random.normal(0, 0.05), 2) for i in range(n)}
+
+
+# --- Normalization ---
 
 
 class TestNormalization:
     def test_normalizes_to_0_100(self):
         profiles = _make_profiles()
-        normalized, ranges = normalize_profiles(profiles)
-        assert len(normalized) == 3
+        X_dict, ranges, school_ids = normalize_profiles(profiles)
+        assert len(school_ids) == 6
 
-        for p in normalized:
-            for key, val in p.normalized.items():
-                assert 0 <= val <= 100, f"{key}={val} out of range"
+        for key, arr in X_dict.items():
+            assert arr.min() >= 0
+            assert arr.max() <= 100
 
     def test_lower_better_inverted(self):
         profiles = _make_profiles()
-        normalized, _ = normalize_profiles(profiles)
+        X_dict, _, school_ids = normalize_profiles(profiles)
 
-        # School C has lowest crime (30) → should get highest normalized crime_index
-        # because crime is lower_better (inverted)
-        school_c = [p for p in normalized if p.school_id == "school_2"][0]
-        school_b = [p for p in normalized if p.school_id == "school_1"][0]
-        assert school_c.normalized["crime_index"] > school_b.normalized["crime_index"]
+        # s0 has lowest crime → should have highest normalized value (inverted)
+        assert X_dict["crime_index"][0] > X_dict["crime_index"][-1]
 
     def test_empty_input(self):
-        normalized, ranges = normalize_profiles([])
-        assert normalized == []
-        assert ranges == {}
+        X_dict, ranges, ids = normalize_profiles([])
+        assert X_dict == {}
+        assert ids == []
 
 
-class TestRulesScore:
-    def test_scores_assigned(self):
+# --- Regression ---
+
+
+class TestTrainAndDiagnose:
+    def test_returns_none_with_few_labels(self):
         profiles = _make_profiles()
-        normalized, _ = normalize_profiles(profiles)
-        rules_score(normalized)
+        labeled = {"s0": 2.0, "s1": 2.2}
+        result = train_and_diagnose(profiles, labeled)
+        assert result is None
 
-        for p in normalized:
-            assert p.rules_score >= 0
-
-    def test_custom_weights_affect_ranking(self):
+    def test_produces_diagnostics(self):
         profiles = _make_profiles()
-        normalized, _ = normalize_profiles(profiles)
+        labeled = _make_labeled()
+        diag = train_and_diagnose(profiles, labeled)
 
-        # Weight only crime: school C (lowest crime) should rank first
-        rules_score(normalized, weights={"crime_index": 1.0})
-        ranked = sorted(normalized, key=lambda p: p.rules_score, reverse=True)
-        assert ranked[0].school_id == "school_2"  # School C
+        assert diag is not None
+        assert isinstance(diag, ModelDiagnostics)
 
-    def test_equal_weights(self):
+        # Model fit
+        assert 0 < diag.r_squared <= 1.0
+        assert diag.adjusted_r_squared <= diag.r_squared
+        assert diag.rmse > 0
+        assert diag.mae > 0
+        assert diag.n_samples == 6
+        assert diag.n_features >= 1
+
+    def test_feature_diagnostics(self):
         profiles = _make_profiles()
-        normalized, _ = normalize_profiles(profiles)
-        rules_score(normalized)
+        labeled = _make_labeled()
+        diag = train_and_diagnose(profiles, labeled)
 
-        # With equal weights, scores should differ
-        scores = [p.rules_score for p in normalized]
-        assert len(set(scores)) > 1
+        assert diag is not None
+        assert len(diag.features) >= 1
 
+        for f in diag.features:
+            assert f.key in DIMENSIONS or f.key in [p.school_id for p in profiles]
+            assert f.direction in ("positive", "negative")
+            assert isinstance(f.standardized_coef, float)
+            assert isinstance(f.partial_r_squared, float)
 
-class TestRegressionScore:
-    def test_needs_min_5_labels(self):
+    def test_feature_selection_path(self):
         profiles = _make_profiles()
-        normalized, _ = normalize_profiles(profiles)
-        labeled = {"school_0": 2.3, "school_1": 3.1}
+        labeled = _make_labeled()
+        diag = train_and_diagnose(profiles, labeled)
 
-        r2, imp, sel = regression_score(normalized, labeled)
-        assert r2 is None
+        assert diag is not None
+        assert len(diag.feature_selection_path) >= 1
+        assert diag.feature_selection_path[0]["action"] in ("ADD", "FORCED", "STOP")
 
-    def test_works_with_enough_labels(self):
-        # Create 6 profiles with clear pattern
-        profiles = []
-        for i in range(6):
-            p = CatchmentProfile(
-                school_id=f"s{i}",
-                latitude=52.52 + i * 0.01,
-                longitude=13.40,
-                radius_m=1000,
-            )
-            p.set("crime_index", 50.0 + i * 20.0)
-            p.set("transit_count", 15.0 - i * 2.0)
-            profiles.append(p)
-
-        normalized, _ = normalize_profiles(profiles)
-
-        # Label: higher crime → worse Abitur grade (higher number = worse)
-        labeled = {f"s{i}": 2.0 + i * 0.3 for i in range(6)}
-
-        r2, imp, sel = regression_score(normalized, labeled)
-        assert r2 is not None
-        assert r2 > 0.5  # Should fit well given linear relationship
-        assert sel is not None
-        assert len(sel) >= 1
-
-        # All profiles should now have model_score
-        for p in normalized:
-            assert p.model_score is not None
-
-
-class TestScoreSchools:
-    def test_full_pipeline(self):
+    def test_cross_validation(self):
         profiles = _make_profiles()
-        result = score_schools(profiles)
+        labeled = _make_labeled()
+        diag = train_and_diagnose(profiles, labeled, cv_folds=3)
 
-        assert result.mode == ScoreMode.RULES
-        assert len(result.profiles) == 3
-        assert result.r_squared is None
+        assert diag is not None
+        assert len(diag.cv_folds) >= 1
+        assert isinstance(diag.cv_r_squared_mean, float)
+        assert isinstance(diag.cv_rmse_mean, float)
 
-        ranked = result.ranked()
-        assert ranked[0].active_score >= ranked[-1].active_score
+    def test_predictions_for_all_schools(self):
+        profiles = _make_profiles()
+        labeled = _make_labeled()
+        diag = train_and_diagnose(profiles, labeled)
 
-    def test_with_regression(self):
-        profiles = []
-        for i in range(6):
-            p = CatchmentProfile(
-                school_id=f"s{i}",
-                latitude=52.52,
-                longitude=13.40,
-                radius_m=1000,
-            )
-            p.set("crime_index", 50 + i * 25)
-            p.set("transit_count", 15 - i * 2)
-            profiles.append(p)
+        assert diag is not None
+        assert len(diag.predictions) == len(profiles)
 
-        labeled = {f"s{i}": 2.0 + i * 0.3 for i in range(6)}
-        result = score_schools(profiles, labeled=labeled)
+        for pred in diag.predictions:
+            assert isinstance(pred.predicted, float)
+            assert 0 <= pred.confidence <= 1
 
-        assert result.mode == ScoreMode.REGRESSION
-        assert result.r_squared is not None
-        assert result.feature_importance is not None
+    def test_labeled_schools_have_actual_and_residual(self):
+        profiles = _make_profiles()
+        labeled = _make_labeled()
+        diag = train_and_diagnose(profiles, labeled)
+
+        assert diag is not None
+        labeled_preds = [p for p in diag.predictions if p.actual is not None]
+        assert len(labeled_preds) == len(labeled)
+
+        for p in labeled_preds:
+            assert p.residual is not None
+            assert abs(p.residual) < 1.0  # Should be small for a good fit
+
+    def test_feature_contributions_sum_to_prediction_minus_intercept(self):
+        profiles = _make_profiles()
+        labeled = _make_labeled()
+        diag = train_and_diagnose(profiles, labeled)
+
+        assert diag is not None
+        for pred in diag.predictions:
+            contrib_sum = sum(pred.feature_contributions.values())
+            expected = pred.predicted - diag.intercept
+            assert abs(contrib_sum - expected) < 0.01, \
+                f"Contributions {contrib_sum:.4f} != predicted-intercept {expected:.4f}"
+
+    def test_forced_features(self):
+        profiles = _make_profiles()
+        labeled = _make_labeled()
+        diag = train_and_diagnose(
+            profiles, labeled,
+            feature_keys=["crime_index", "transit_count"],
+        )
+
+        assert diag is not None
+        assert diag.n_features == 2
+        feature_keys = [f.key for f in diag.features]
+        assert "crime_index" in feature_keys
+        assert "transit_count" in feature_keys
+
+    def test_unlabeled_schools_predicted(self):
+        """Schools without labels should still get predictions."""
+        profiles = _make_profiles(8)  # 8 profiles
+        labeled = _make_labeled(6)     # Only 6 labeled
+
+        diag = train_and_diagnose(profiles, labeled)
+        assert diag is not None
+        assert len(diag.predictions) == 8
+
+        unlabeled = [p for p in diag.predictions if p.actual is None]
+        assert len(unlabeled) == 2
+        for p in unlabeled:
+            assert p.predicted is not None
+            assert p.residual is None
+
+    def test_coefficients_match_equation(self):
+        profiles = _make_profiles()
+        labeled = _make_labeled()
+        diag = train_and_diagnose(profiles, labeled)
+
+        assert diag is not None
+        assert len(diag.coefficients) == diag.n_features
+        for f in diag.features:
+            assert f.key in diag.coefficients
+
+    def test_model_reliability_flag(self):
+        profiles = _make_profiles()
+        labeled = _make_labeled()
+        diag = train_and_diagnose(profiles, labeled)
+
+        assert diag is not None
+        assert isinstance(diag.is_reliable, bool)
 
 
 if __name__ == "__main__":
