@@ -75,3 +75,61 @@ class DistrictsResponse(BaseModel):
     """Districts and school types response"""
     districts: List[str]
     school_types: List[str]
+
+
+# --- Catchment profiling & scoring schemas ---
+
+
+class DimensionInfo(BaseModel):
+    """Metadata for a single dimension."""
+    key: str
+    label: str
+    direction: str
+    source: str
+    unit: str = ""
+    description: str = ""
+
+
+class ProfileRequest(BaseModel):
+    """Request to profile schools in a catchment area."""
+    district: Optional[str] = None
+    school_type: Optional[str] = None
+    radius_m: float = Field(1000.0, ge=200, le=5000, description="Catchment radius in meters")
+
+
+class SchoolProfileResponse(BaseModel):
+    """Catchment profile for a single school."""
+    school_id: str
+    name: str
+    school_type: Optional[str] = None
+    address: Optional[str] = None
+    district: Optional[str] = None
+    latitude: float
+    longitude: float
+    dimensions: Dict[str, float]
+    rules_score: float = 0.0
+    model_score: Optional[float] = None
+    model_confidence: Optional[float] = None
+    rank: int = 0
+
+
+class ScoreRequest(BaseModel):
+    """Request to score profiled schools with custom weights."""
+    weights: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Dimension key → weight (0-100). Missing dimensions get 0.",
+    )
+    labeled: Optional[Dict[str, float]] = Field(
+        None,
+        description="Optional school_id → performance value for regression scoring.",
+    )
+
+
+class ScoringResultResponse(BaseModel):
+    """Complete scoring result."""
+    mode: str
+    weights: Dict[str, float]
+    r_squared: Optional[float] = None
+    feature_importance: Optional[Dict[str, float]] = None
+    selected_features: Optional[List[str]] = None
+    schools: List[SchoolProfileResponse]
