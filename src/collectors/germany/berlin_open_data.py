@@ -114,6 +114,8 @@ class BerlinOpenDataCollector:
             "school_type": properties.get("schulart") or properties.get("schultyp"),
             "address": self._build_address(properties),
             "district": properties.get("bezirk") or properties.get("ortsteil"),
+            "country": "DE",
+            "city": "Berlin",
             "latitude": latitude,
             "longitude": longitude,
             "public_private": properties.get("schultraeger") or properties.get("traegerschaft"),

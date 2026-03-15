@@ -65,7 +65,7 @@ class SchoolService:
                     if existing_school:
                         # Update existing school
                         for key, value in school_data.items():
-                            if key != "raw_data" and hasattr(existing_school, key):
+                            if key not in ("raw_data",) and hasattr(existing_school, key):
                                 setattr(existing_school, key, value)
                         existing_school.updated_at = datetime.utcnow()
                         updated_count += 1
@@ -77,6 +77,8 @@ class SchoolService:
                             school_type=school_data.get("school_type"),
                             address=school_data.get("address"),
                             district=school_data.get("district"),
+                            country=school_data.get("country", "DE"),
+                            city=school_data.get("city", "Berlin"),
                             latitude=school_data.get("latitude"),
                             longitude=school_data.get("longitude"),
                             public_private=school_data.get("public_private"),
