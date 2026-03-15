@@ -199,17 +199,42 @@ def print_diagnostics(diag: ModelDiagnostics, school_info: dict):
         print(f"  {f.fold:4d}  {f.train_size:5d}  {f.test_size:4d}  {f.r_squared:8.4f}  {f.rmse:8.4f}  {f.mae:8.4f}")
 
     # 3. Feature selection path
-    print_section("3. Feature Selection Path")
+    print_section("3. Forward Stepwise Feature Selection")
+    print()
+    print("  Additive procedure: at each step, every remaining candidate is tested.")
+    print("  The one producing the largest R² improvement is added to the model.")
+    print()
     for step in diag.feature_selection_path:
+        tested = step.get("candidates_tested", [])
+
         if step["action"] == "STOP":
-            print(f"  Step {step['step']}: STOP — {step['reason']}")
+            print(f"  Step {step['step']}: STOP")
+            print(f"    {step['reason']}")
+            print(f"    Model R² at stop: {step['r_squared']:.4f}")
+            if tested:
+                print(f"    Candidates evaluated ({len(tested)}):")
+                for c in tested[:5]:
+                    print(f"      {c['feature_label']:<25} R²={c['r_squared']:.4f}  "
+                          f"delta={c['delta_r_squared']:+.4f}")
+                if len(tested) > 5:
+                    print(f"      ... and {len(tested) - 5} more")
+
         elif step["action"] == "FORCED":
-            print(f"  Step {step['step']}: FORCED '{step['feature']}'")
+            print(f"  Step {step['step']}: FORCED  '{step['feature']}'")
+
         else:
-            print(f"  Step {step['step']}: ADD '{step['feature']}' "
-                  f"({step.get('feature_label', '')})  "
-                  f"R² = {step['r_squared']:.4f}  "
-                  f"(+{step['improvement']:.4f})")
+            n_tested = len(tested)
+            print(f"  Step {step['step']}: ADD  '{step['feature']}' "
+                  f"({step.get('feature_label', '')})")
+            print(f"    Model R² = {step['r_squared']:.4f}  "
+                  f"(+{step['delta_r_squared']:.4f})")
+            if n_tested > 1:
+                print(f"    All {n_tested} candidates evaluated at this step:")
+                for c in tested:
+                    marker = " <-- selected" if c["feature"] == step["feature"] else ""
+                    print(f"      {c['feature_label']:<25} R²={c['r_squared']:.4f}  "
+                          f"delta={c['delta_r_squared']:+.4f}{marker}")
+            print()
 
     # 4. Feature importance
     print_section("4. Feature Importance (Key Predictors)")

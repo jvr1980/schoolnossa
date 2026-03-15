@@ -111,7 +111,7 @@ def _predict(X: np.ndarray, beta: np.ndarray) -> np.ndarray:
 
 
 # ---------------------------------------------------------------------------
-# Greedy feature selection with logged path
+# Forward stepwise feature selection
 # ---------------------------------------------------------------------------
 
 def _greedy_feature_selection(
@@ -121,18 +121,35 @@ def _greedy_feature_selection(
     candidates: List[str],
     min_improvement: float = 0.01,
 ) -> Tuple[List[str], List[Dict]]:
-    """Forward stepwise selection. Returns (selected_keys, selection_path)."""
+    """Additive forward stepwise selection.
+
+    Step 1: Run univariate regressions for every candidate feature.
+            Pick the one with the highest R².
+    Step 2: For every remaining candidate, fit a 2-predictor model
+            (step-1 winner + candidate). Pick the one that gives the
+            largest R² improvement over step 1.
+    Step N: Keep adding one feature at a time, always choosing the
+            candidate that maximises R² gain, until no candidate
+            improves R² by at least `min_improvement`.
+
+    The path log records every candidate tested at each step so you
+    can see the full evaluation, not just the winner.
+
+    Returns:
+        (selected_keys, selection_path)
+    """
     selected: List[str] = []
     path: List[Dict] = []
-    best_r2 = -1.0
+    best_r2 = 0.0  # Baseline = intercept-only model (predicts mean, R² = 0)
     remaining = list(candidates)
 
     y_train = y[labeled_mask]
 
     while remaining:
-        step_best_key = None
-        step_best_r2 = best_r2
+        step_num = len(selected) + 1
+        step_results: List[Dict] = []
 
+        # Evaluate every remaining candidate added to the current model
         for key in remaining:
             trial = selected + [key]
             X_trial = np.column_stack([X_dict[k][labeled_mask] for k in trial])
@@ -140,32 +157,53 @@ def _greedy_feature_selection(
             if beta is None:
                 continue
             r2 = _r_squared(y_train, _predict(X_trial, beta))
-            if r2 > step_best_r2:
-                step_best_r2 = r2
-                step_best_key = key
+            delta = r2 - best_r2
 
-        improvement = step_best_r2 - best_r2
-        if step_best_key is None or improvement < min_improvement:
+            dim_meta = DIMENSIONS.get(key)
+            step_results.append({
+                "feature": key,
+                "feature_label": dim_meta.label if dim_meta else key,
+                "r_squared": round(r2, 4),
+                "delta_r_squared": round(delta, 4),
+            })
+
+        if not step_results:
             path.append({
-                "step": len(selected) + 1,
+                "step": step_num,
                 "action": "STOP",
-                "reason": f"Best improvement {improvement:.4f} < threshold {min_improvement}",
-                "r_squared": best_r2,
+                "reason": "No valid candidates remaining",
+                "r_squared": round(best_r2, 4),
+                "candidates_tested": [],
             })
             break
 
-        selected.append(step_best_key)
-        remaining.remove(step_best_key)
-        best_r2 = step_best_r2
+        # Sort by R² descending — winner is first
+        step_results.sort(key=lambda r: r["r_squared"], reverse=True)
+        winner = step_results[0]
 
-        label = DIMENSIONS[step_best_key].label if step_best_key in DIMENSIONS else step_best_key
+        if winner["delta_r_squared"] < min_improvement:
+            path.append({
+                "step": step_num,
+                "action": "STOP",
+                "reason": (f"Best candidate '{winner['feature']}' improves R² by only "
+                           f"{winner['delta_r_squared']:.4f} (threshold: {min_improvement})"),
+                "r_squared": round(best_r2, 4),
+                "candidates_tested": step_results,
+            })
+            break
+
+        selected.append(winner["feature"])
+        remaining.remove(winner["feature"])
+        best_r2 = winner["r_squared"]
+
         path.append({
-            "step": len(selected),
+            "step": step_num,
             "action": "ADD",
-            "feature": step_best_key,
-            "feature_label": label,
-            "r_squared": round(best_r2, 4),
-            "improvement": round(improvement, 4),
+            "feature": winner["feature"],
+            "feature_label": winner["feature_label"],
+            "r_squared": winner["r_squared"],
+            "delta_r_squared": winner["delta_r_squared"],
+            "candidates_tested": step_results,
         })
 
     return selected, path
