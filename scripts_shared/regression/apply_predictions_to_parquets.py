@@ -47,6 +47,15 @@ CITY_SPECIFIC_DIMS = {
     "traffic_bikes_per_hour", "traffic_speed_v85",
 }
 
+# Features excluded from cross-city prediction due to incomparable scales
+# or near-zero variance in the training set:
+#   gisd_score       — all Berlin schools = 0.5, Hamburg = 0.3 (no within-city variance;
+#                      std≈0 causes division-by-~0 in standardization)
+#   crime_safety_rank — Berlin uses 1–12 district ranks, Hamburg 1–198 area ranks
+#                      (different geographic unit → not comparable)
+#   transit_stop_count — Berlin mean=16, NRW mean=70 (different counting methodology)
+NON_PORTABLE_DIMS = {"gisd_score", "crime_safety_rank", "transit_stop_count"}
+
 # Files to update
 CITY_FILES = [
     {
@@ -78,14 +87,20 @@ NEW_COLUMNS = [
 ]
 
 
-def _train_ridge_model(profiles, labeled, alpha=DEFAULT_RIDGE_ALPHA):
+def _train_ridge_model(profiles, labeled, alpha=DEFAULT_RIDGE_ALPHA, fit_on_all=False):
     """Train a Ridge model and return everything needed for predictions.
+
+    Args:
+        fit_on_all: If True, compute z-score mean/std from ALL profiles (not just labeled).
+                    Use this when labeled schools cover only one city (e.g. erfolgsquote
+                    labels are Berlin-only) so that Hamburg/NRW schools don't get extreme
+                    z-scores relative to a Berlin-only standardization distribution.
 
     Returns dict with: beta, feature_keys, X_train, y_train, X_all, school_ids,
                        stats (standardization params), mse
     """
     labeled_ids = set(labeled.keys())
-    X_dict, stats, school_ids = standardize_profiles(profiles, labeled_ids)
+    X_dict, stats, school_ids = standardize_profiles(profiles, labeled_ids, fit_on_all=fit_on_all)
     if not X_dict:
         return None
 
@@ -162,9 +177,9 @@ def main():
     print("Step 1: Loading all city data...")
     profiles, labeled_grade, info = load_all_data("all")
 
-    # Remove city-specific dims
+    # Remove city-specific and non-portable dims from all profiles
     for p in profiles:
-        for key in CITY_SPECIFIC_DIMS:
+        for key in CITY_SPECIFIC_DIMS | NON_PORTABLE_DIMS:
             p.values.pop(key, None)
 
     # Build erfolgsquote labels from school_info
@@ -178,8 +193,9 @@ def main():
     print(f"  Erfolgsquote labels: {len(labeled_erfolgsquote)} schools")
 
     # --- Step 2: Train Model A (Abitur grade) ---
+    # Labeled schools span Berlin + Hamburg → labeled-only standardization is fine
     print("\nStep 2: Training Model A (Abitur grade)...")
-    model_a = _train_ridge_model(profiles, labeled_grade)
+    model_a = _train_ridge_model(profiles, labeled_grade, fit_on_all=False)
     if model_a is None:
         print("  ERROR: Failed to train grade model")
         return
@@ -194,8 +210,12 @@ def main():
     )
 
     # --- Step 3: Train Model B (completion rate) ---
+    # Labeled schools are Berlin-only → use fit_on_all=True so that Hamburg/NRW
+    # schools are standardized against the full cross-city distribution, not just
+    # the 88 Berlin Gymnasien.  Without this, gisd_quintile alone causes z ≈ -15
+    # for Hamburg (Berlin Gymnasien cluster at quintile 4, std=0.2; Hamburg=1).
     print("\nStep 3: Training Model B (Abitur completion rate)...")
-    model_b = _train_ridge_model(profiles, labeled_erfolgsquote)
+    model_b = _train_ridge_model(profiles, labeled_erfolgsquote, fit_on_all=True)
     if model_b is None:
         print("  WARNING: Failed to train completion rate model — skipping")
     else:
@@ -219,18 +239,13 @@ def main():
             "abitur_prediction_confidence": round(model_a["confidences"][i], 3),
             "abitur_prediction_drivers": _build_drivers_json(model_a["contributions"][i]),
         }
-        # Erfolgsquote model was trained only on Berlin schools — only write
-        # predictions for Berlin to avoid meaningless out-of-distribution
-        # extrapolation (NRW/Hamburg predictions all collapse to 100% after clipping).
-        if model_b is not None and sid.startswith("berlin_"):
+        if model_b is not None:
             idx_b = model_b["school_ids"].index(sid) if sid in model_b["school_ids"] else None
             if idx_b is not None:
                 pred_eq = float(model_b["y_pred_all"][idx_b])
-                # Only write if prediction is within plausible range (don't clip silently)
-                if pred_eq <= 100.0:
-                    entry["abitur_erfolgsquote_estimated"] = round(pred_eq, 1)
-                    entry["abitur_erfolgsquote_estimated_lower"] = round(max(0.0, float(lower_b[idx_b])), 1)
-                    entry["abitur_erfolgsquote_estimated_upper"] = round(min(100.0, float(upper_b[idx_b])), 1)
+                entry["abitur_erfolgsquote_estimated"] = round(np.clip(pred_eq, 0, 100), 1)
+                entry["abitur_erfolgsquote_estimated_lower"] = round(np.clip(float(lower_b[idx_b]), 0, 100), 1)
+                entry["abitur_erfolgsquote_estimated_upper"] = round(np.clip(float(upper_b[idx_b]), 0, 100), 1)
         pred_lookup[sid] = entry
 
     print(f"  {len(pred_lookup)} school predictions ready")

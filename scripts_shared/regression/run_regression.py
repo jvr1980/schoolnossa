@@ -80,11 +80,30 @@ def _load_gisd() -> dict:
 
 
 def _load_zensus(city: str) -> "pd.DataFrame | None":
-    """Load Zensus 100m grid parquet for a city."""
+    """Load Zensus 100m grid parquet for a city.
+
+    For "nrw", loads and concatenates both Köln and Düsseldorf grids.
+    """
     if city in _zensus_cache:
         return _zensus_cache[city]
 
     city_map = {"berlin": "berlin", "hamburg": "hamburg", "nrw_koeln": "koeln", "nrw_duesseldorf": "duesseldorf"}
+
+    # NRW covers two cities — load and merge both
+    if city == "nrw":
+        frames = []
+        for fname in ("koeln", "duesseldorf"):
+            path = ZENSUS_DIR / f"{fname}_zensus_100m.parquet"
+            if path.exists():
+                frames.append(pd.read_parquet(path))
+                print(f"  Zensus: loaded {len(frames[-1])} grid cells for {fname}")
+        if frames:
+            merged = pd.concat(frames, ignore_index=True)
+            _zensus_cache[city] = merged
+            return merged
+        _zensus_cache[city] = None
+        return None
+
     fname = city_map.get(city)
     if not fname:
         _zensus_cache[city] = None
@@ -460,7 +479,83 @@ def load_all_data(
     # Post-process: compute school competition density
     _compute_competition_density(all_profiles, all_info)
 
+    # Regression-based imputation for features missing in some cities.
+    # Uses population density (and GISD quintile) as auxiliary predictors,
+    # trained on schools that have both the feature AND the auxiliary, then
+    # applied to schools missing the feature.  This produces city-agnostic
+    # imputations instead of injecting a single Berlin median.
+    _regress_impute(all_profiles)
+
     return all_profiles, all_labeled, all_info
+
+
+def _regress_impute(profiles: list):
+    """Fill in missing feature values using regression on available auxiliary predictors.
+
+    For each feature with <100% coverage, fits a multivariate OLS:
+        feature ~ intercept + β1*population_density + β2*gisd_quintile + β3*transit_accessibility
+    on all schools that have the feature AND all predictors populated.  The fitted
+    model is then applied to schools missing the feature.
+
+    This avoids injecting a city-specific median into schools from other cities.
+    Features with <10 complete cases are skipped (imputation not reliable).
+    """
+    AUX_KEYS = ["catchment_population_density", "gisd_quintile", "transit_accessibility"]
+
+    # Features to attempt regression imputation (those that have partial coverage)
+    IMPUTE_TARGETS = [
+        "crime_index", "crime_violent", "crime_drug_offenses",
+        "poi_school_count", "population_per_school",
+    ]
+
+    # Build auxiliary matrix (schools × aux features, raw values)
+    n = len(profiles)
+    aux_raw = {}
+    for key in AUX_KEYS:
+        aux_raw[key] = np.array([p.get(key, np.nan) for p in profiles])
+
+    imputed_counts = {}
+    for target in IMPUTE_TARGETS:
+        target_vals = np.array([p.get(target, np.nan) for p in profiles])
+
+        # Find schools with complete data (target + all aux)
+        complete_mask = ~np.isnan(target_vals)
+        for akey in AUX_KEYS:
+            complete_mask &= ~np.isnan(aux_raw[akey])
+
+        missing_mask = np.isnan(target_vals)
+        # Only impute if aux is available for the school
+        for akey in AUX_KEYS:
+            missing_mask &= ~np.isnan(aux_raw[akey])
+
+        n_complete = complete_mask.sum()
+        n_missing = missing_mask.sum()
+
+        if n_complete < 10 or n_missing == 0:
+            continue
+
+        # Fit OLS on complete cases
+        X_complete = np.column_stack([np.ones(n_complete)] + [aux_raw[k][complete_mask] for k in AUX_KEYS])
+        y_complete = target_vals[complete_mask]
+        try:
+            beta, _, _, _ = np.linalg.lstsq(X_complete, y_complete, rcond=None)
+        except np.linalg.LinAlgError:
+            continue
+
+        # Predict for missing schools
+        X_missing = np.column_stack([np.ones(n_missing)] + [aux_raw[k][missing_mask] for k in AUX_KEYS])
+        y_imputed = X_missing @ beta
+
+        # Write imputed values back into profiles
+        missing_indices = np.where(missing_mask)[0]
+        for i, pred_val in zip(missing_indices, y_imputed):
+            profiles[i].set(target, float(pred_val))
+
+        imputed_counts[target] = int(n_missing)
+
+    if imputed_counts:
+        print(f"  Regression imputation (density+GISD+transit): "
+              + ", ".join(f"{k}={v}" for k, v in imputed_counts.items()))
 
 
 def _compute_competition_density(profiles: list, school_info: dict, radius_m: float = 2000.0):

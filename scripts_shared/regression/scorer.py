@@ -27,28 +27,37 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Standardization (z-score, fit on labeled data only)
+# Standardization (z-score)
 # ---------------------------------------------------------------------------
 
 def standardize_profiles(
     profiles: List[CatchmentProfile],
     labeled_ids: set,
+    fit_on_all: bool = False,
 ) -> Tuple[Dict[str, np.ndarray], Dict[str, Tuple[float, float]], List[str]]:
-    """Z-score standardize dimensions, fitting mean/std on labeled schools only.
+    """Z-score standardize dimensions.
 
-    NaN values are imputed with the labeled-set median before standardizing.
+    Args:
+        profiles: All school profiles (labeled + unlabeled).
+        labeled_ids: Set of school IDs with target labels.
+        fit_on_all: If True, compute mean/std from ALL profiles (labeled + unlabeled).
+                    Use this for cross-city models where labeled schools cover only one
+                    city — fitting on labeled-only would give extreme z-scores for
+                    out-of-distribution cities.
+                    If False (default), fit mean/std on labeled schools only.
+
+    NaN values are imputed with the reference-set median before standardizing.
 
     Returns:
         (feature_matrix_dict, stats, ordered_school_ids)
         feature_matrix_dict maps dim_key → np.array of standardized values.
-        stats maps dim_key → (mean, std) from labeled data.
+        stats maps dim_key → (mean, std) from reference data.
     """
     if not profiles:
         return {}, {}, []
 
     all_keys = sorted(set().union(*(p.values.keys() for p in profiles)))
     school_ids = [p.school_id for p in profiles]
-    n = len(profiles)
     labeled_mask = np.array([sid in labeled_ids for sid in school_ids])
 
     stats: Dict[str, Tuple[float, float]] = {}
@@ -56,22 +65,30 @@ def standardize_profiles(
 
     for key in all_keys:
         raw = np.array([p.get(key, np.nan) for p in profiles])
-        labeled_vals = raw[labeled_mask]
-        valid_labeled = labeled_vals[~np.isnan(labeled_vals)]
-        if len(valid_labeled) < 5:
+
+        # Choose reference population for mean/std
+        if fit_on_all:
+            ref_vals = raw[~np.isnan(raw)]
+        else:
+            labeled_vals = raw[labeled_mask]
+            ref_vals = labeled_vals[~np.isnan(labeled_vals)]
+
+        if len(ref_vals) < 5:
             continue
 
-        # Impute NaN with labeled median
-        median_val = float(np.median(valid_labeled))
+        # Impute NaN with reference median
+        median_val = float(np.median(ref_vals))
         imputed = np.where(np.isnan(raw), median_val, raw)
 
-        mean = float(np.mean(valid_labeled))
-        std = float(np.std(valid_labeled))
+        mean = float(np.mean(ref_vals))
+        std = float(np.std(ref_vals))
         if std < 1e-9:
             continue
 
+        # Guard against extreme z-scores: cap at ±10 sigma to prevent
+        # wildly out-of-distribution values from dominating Ridge predictions.
         stats[key] = (mean, std)
-        standardized[key] = (imputed - mean) / std
+        standardized[key] = np.clip((imputed - mean) / std, -10.0, 10.0)
 
     return standardized, stats, school_ids
 
