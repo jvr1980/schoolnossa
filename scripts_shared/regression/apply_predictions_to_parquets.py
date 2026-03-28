@@ -68,30 +68,32 @@ NON_PORTABLE_DIMS = {"gisd_score", "crime_safety_rank", "transit_stop_count"}
 # so cross-city comparisons are meaningful, even if individual predictions are uncertain.
 OFFICIAL_STATE_AVERAGES = {
     "berlin": {
-        # Berlin Senatsverwaltung für Bildung, Pressemitteilung 17 Jul 2024
-        # 2.30 is the combined average across Gymnasien, ISS, and vocational schools.
-        # Our model covers Gymnasium + ISS only (no vocational), so the shift accounts
-        # for residual model bias relative to the state baseline.
+        # Senatsverwaltung Berlin, Pressemitteilung 17.07.2024
+        # No rebasing: model trained on Berlin labeled schools → already calibrated.
+        # Official average stored for display purposes only.
         "overall": 2.30,
         "year": 2024,
         "source": "Senatsverwaltung Berlin, Pressemitteilung 17.07.2024",
+        "rebase": False,
     },
     "hamburg": {
-        # Behörde für Schule und Berufsbildung, Pressemitteilung 16 Jul 2024.
-        # Type-specific averages available: use them for finer calibration.
+        # BSB Hamburg, Pressemitteilung 16.07.2024
+        # No rebasing: 73 Hamburg labeled schools used in model training.
         "overall": 2.36,
         "Gymnasium": 2.25,
         "Stadtteilschule": 2.52,
-        "Stadtteilschule_Gymnasium": 2.25,  # Gymnasium track within Stadtteilschule
+        "Stadtteilschule_Gymnasium": 2.25,
         "year": 2024,
         "source": "BSB Hamburg, Pressemitteilung 16.07.2024",
+        "rebase": False,
     },
     "nrw": {
-        # NRW Schulministerium Pressemitteilung 2024; covers Gymnasien + Gesamtschulen.
-        # Berufskollegs (2.47) excluded as we don't model them.
+        # Schulministerium NRW, Pressemitteilung 2024; covers Gymnasien + Gesamtschulen.
+        # Rebasing applied: no NRW labeled schools in training set.
         "overall": 2.39,
         "year": 2024,
         "source": "Schulministerium NRW, Pressemitteilung 2024",
+        "rebase": True,
     },
 }
 
@@ -204,6 +206,8 @@ def _train_ridge_model(profiles, labeled, alpha=DEFAULT_RIDGE_ALPHA, fit_on_all=
 def _compute_rebase_shifts(df_csv, pred_lookup, prefix):
     """Compute per-(city, school_type) rebasing shifts to match official state averages.
 
+    Returns {} for cities with rebase=False (trained on labeled data from that city).
+
     Strategy:
     - If OFFICIAL_STATE_AVERAGES has school-type-specific entries for this city,
       compute the shift per type: shift = official_type_avg − mean(predictions_for_that_type)
@@ -213,7 +217,7 @@ def _compute_rebase_shifts(df_csv, pred_lookup, prefix):
         dict mapping school_type → (shift, official_avg_used)
     """
     official = OFFICIAL_STATE_AVERAGES.get(prefix)
-    if official is None:
+    if official is None or not official.get("rebase", True):
         return {}
 
     # Group predictions by school_type
@@ -377,14 +381,17 @@ def main():
 
         # Compute rebasing shifts before writing (needs first pass over CSV)
         rebase_shifts = _compute_rebase_shifts(df_csv, pred_lookup, prefix)
+        official_cfg = OFFICIAL_STATE_AVERAGES.get(prefix, {})
         if rebase_shifts:
-            official_cfg = OFFICIAL_STATE_AVERAGES.get(prefix, {})
             print(f"\n  [{prefix}] State rebasing ({official_cfg.get('year', '?')}, "
                   f"{official_cfg.get('source', '?')}):")
             for stype, (shift, official_avg) in sorted(rebase_shifts.items()):
                 direction = "↓ (better than raw)" if shift < 0 else "↑ (worse than raw)"
                 print(f"    {stype}: pred_mean → official {official_avg:.2f}, "
                       f"shift={shift:+.3f} {direction}")
+        elif official_cfg:
+            print(f"\n  [{prefix}] No rebasing (trained on {prefix} labeled schools); "
+                  f"official avg {official_cfg.get('overall', '?')} stored for reference.")
 
         matched = 0
         eligible = 0
@@ -411,24 +418,35 @@ def main():
                 if df_parquet is not None and idx < len(df_parquet):
                     df_parquet.at[idx, col] = val
 
-            # Write rebased columns if shift is available for this school type
-            if school_type in rebase_shifts:
-                shift, official_avg = rebase_shifts[school_type]
-                raw = preds.get("abitur_durchschnitt_estimated", np.nan)
-                raw_lo = preds.get("abitur_durchschnitt_estimated_lower", np.nan)
-                raw_hi = preds.get("abitur_durchschnitt_estimated_upper", np.nan)
-                if not np.isnan(raw):
-                    df_csv.at[idx, "abitur_durchschnitt_estimated_rebased"] = round(raw + shift, 3)
-                    df_csv.at[idx, "abitur_durchschnitt_estimated_rebased_lower"] = round(raw_lo + shift, 3)
-                    df_csv.at[idx, "abitur_durchschnitt_estimated_rebased_upper"] = round(raw_hi + shift, 3)
-                    df_csv.at[idx, "abitur_rebase_shift"] = shift
-                    df_csv.at[idx, "abitur_state_avg_official"] = official_avg
-                    if df_parquet is not None and idx < len(df_parquet):
-                        df_parquet.at[idx, "abitur_durchschnitt_estimated_rebased"] = round(raw + shift, 3)
-                        df_parquet.at[idx, "abitur_durchschnitt_estimated_rebased_lower"] = round(raw_lo + shift, 3)
-                        df_parquet.at[idx, "abitur_durchschnitt_estimated_rebased_upper"] = round(raw_hi + shift, 3)
-                        df_parquet.at[idx, "abitur_rebase_shift"] = shift
-                        df_parquet.at[idx, "abitur_state_avg_official"] = official_avg
+            # Write rebased columns
+            raw = preds.get("abitur_durchschnitt_estimated", np.nan)
+            raw_lo = preds.get("abitur_durchschnitt_estimated_lower", np.nan)
+            raw_hi = preds.get("abitur_durchschnitt_estimated_upper", np.nan)
+            if not np.isnan(raw):
+                if school_type in rebase_shifts:
+                    # Apply shift for cities without training data
+                    shift, official_avg = rebase_shifts[school_type]
+                    rebased = round(raw + shift, 3)
+                    rebased_lo = round(raw_lo + shift, 3)
+                    rebased_hi = round(raw_hi + shift, 3)
+                else:
+                    # No rebasing for trained cities — raw IS the best estimate;
+                    # still populate column so frontend has a consistent field.
+                    shift = 0.0
+                    official_avg = official_cfg.get(school_type) or official_cfg.get("overall", np.nan)
+                    rebased, rebased_lo, rebased_hi = raw, raw_lo, raw_hi
+
+                df_csv.at[idx, "abitur_durchschnitt_estimated_rebased"] = rebased
+                df_csv.at[idx, "abitur_durchschnitt_estimated_rebased_lower"] = rebased_lo
+                df_csv.at[idx, "abitur_durchschnitt_estimated_rebased_upper"] = rebased_hi
+                df_csv.at[idx, "abitur_rebase_shift"] = shift
+                df_csv.at[idx, "abitur_state_avg_official"] = official_avg
+                if df_parquet is not None and idx < len(df_parquet):
+                    df_parquet.at[idx, "abitur_durchschnitt_estimated_rebased"] = rebased
+                    df_parquet.at[idx, "abitur_durchschnitt_estimated_rebased_lower"] = rebased_lo
+                    df_parquet.at[idx, "abitur_durchschnitt_estimated_rebased_upper"] = rebased_hi
+                    df_parquet.at[idx, "abitur_rebase_shift"] = shift
+                    df_parquet.at[idx, "abitur_state_avg_official"] = official_avg
 
         # Save
         df_csv.to_csv(csv_path, index=False)
