@@ -219,13 +219,18 @@ def main():
             "abitur_prediction_confidence": round(model_a["confidences"][i], 3),
             "abitur_prediction_drivers": _build_drivers_json(model_a["contributions"][i]),
         }
-        if model_b is not None:
+        # Erfolgsquote model was trained only on Berlin schools — only write
+        # predictions for Berlin to avoid meaningless out-of-distribution
+        # extrapolation (NRW/Hamburg predictions all collapse to 100% after clipping).
+        if model_b is not None and sid.startswith("berlin_"):
             idx_b = model_b["school_ids"].index(sid) if sid in model_b["school_ids"] else None
             if idx_b is not None:
                 pred_eq = float(model_b["y_pred_all"][idx_b])
-                entry["abitur_erfolgsquote_estimated"] = round(np.clip(pred_eq, 0, 100), 1)
-                entry["abitur_erfolgsquote_estimated_lower"] = round(np.clip(float(lower_b[idx_b]), 0, 100), 1)
-                entry["abitur_erfolgsquote_estimated_upper"] = round(np.clip(float(upper_b[idx_b]), 0, 100), 1)
+                # Only write if prediction is within plausible range (don't clip silently)
+                if pred_eq <= 100.0:
+                    entry["abitur_erfolgsquote_estimated"] = round(pred_eq, 1)
+                    entry["abitur_erfolgsquote_estimated_lower"] = round(max(0.0, float(lower_b[idx_b])), 1)
+                    entry["abitur_erfolgsquote_estimated_upper"] = round(min(100.0, float(upper_b[idx_b])), 1)
         pred_lookup[sid] = entry
 
     print(f"  {len(pred_lookup)} school predictions ready")
