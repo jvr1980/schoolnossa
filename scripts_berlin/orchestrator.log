@@ -1,0 +1,4 @@
+2026-01-25 11:40:39,518 - INFO - [Initial Data Scraping] Running: python3 /Users/josevonroth/Documents/schoolnossa/scripts_berlin/scrapers/ISS_data_scraper.py
+2026-01-25 11:40:39,519 - INFO - [Initial Data Scraping] Running: python3 /Users/josevonroth/Documents/schoolnossa/scripts_berlin/scrapers/bildung_berlin_gymnasien_scraper.py
+2026-01-25 11:40:39,519 - INFO - [Initial Data Scraping] Running: python3 /Users/josevonroth/Documents/schoolnossa/scripts_berlin/scrapers/bildung_berlin_iss_scraper.py
+2026-01-25 11:40:39,521 - INFO - [Data Combination & Deduplication] Running: python3 /Users/josevonroth/Documents/schoolnossa/scripts_berlin/processing/combine_gymnasium_iss_bildung_berlin_and_metadata.py
