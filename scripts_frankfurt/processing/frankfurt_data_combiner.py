@@ -67,6 +67,14 @@ def standardize_columns(df):
 def clean_data(df):
     """Clean and validate."""
     df = df.copy()
+
+    # Normalize Hessen-specific column names to Berlin convention
+    col_renames = {
+        'Schul-nummer': 'schulnummer',
+        'Telefon-nummer': 'telefonnummer',
+    }
+    df = df.rename(columns={k: v for k, v in col_renames.items() if k in df.columns})
+
     if 'schulnummer' in df.columns:
         orig = len(df)
         df = df.drop_duplicates(subset=['schulnummer'], keep='first')
