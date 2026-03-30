@@ -279,9 +279,11 @@ def _classify_school_type(df: pd.DataFrame) -> pd.DataFrame:
         cl = col.lower()
         if 'grundschule' in cl or 'eingangsstufe' in cl:
             grundschule_cols.append(col)
-        elif any(t in cl for t in ['gymnasium', 'realschule', 'hauptschule',
-                                     'gesamtschule', 'mittelstufenschule', 'förderstufe']):
-            secondary_cols.append(col)
+        elif any(t in cl for t in ['gymnasium', 'gymnasien', 'realschule', 'hauptschule',
+                                     'gesamtschule', 'mittelstufenschule', 'förderstufe',
+                                     'mittelstufe', 'oberstufe']):
+            if 'förderschule' not in cl:
+                secondary_cols.append(col)
         elif 'förderschule' in cl or 'foerderschule' in cl:
             foerderschule_cols.append(col)
 
@@ -305,17 +307,20 @@ def _classify_school_type(df: pd.DataFrame) -> pd.DataFrame:
         gs = row['_grundschule_students']
         sec = row['_secondary_students']
         fs = row['_foerderschule_students']
+        name = str(row.get('schulname', '')).lower()
+        gst = row.get('gesamtschultyp', '')
 
         if gs > 0 and sec == 0:
             return 'Grundschule'
         elif sec > 0 and gs == 0:
-            return _classify_secondary_type(row)
+            return _classify_secondary_type_from_name(name, gst)
         elif gs > 0 and sec > 0:
             return 'Gesamtschule'  # Combined primary+secondary
         elif fs > 0:
             return 'Förderschule'
         else:
-            return 'Sonstige'
+            # Fallback: classify from school name
+            return _classify_secondary_type_from_name(name, gst)
 
     df['school_type'] = df.apply(classify, axis=1)
 
@@ -329,11 +334,49 @@ def _classify_school_type(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _classify_secondary_type_from_name(name: str, gesamtschultyp) -> str:
+    """Classify school type from name and gesamtschul indicator."""
+    name = name.lower()
+
+    # Check Gesamtschule type indicator (1=KGS, 2=IGS)
+    gst_str = str(gesamtschultyp).strip()
+    if gst_str in ('1', '1.0'):
+        return 'Gesamtschule'  # KGS
+    elif gst_str in ('2', '2.0'):
+        return 'Gesamtschule'  # IGS
+
+    # Check name
+    if 'gymnasium' in name:
+        return 'Gymnasium'
+    elif 'igs' in name or 'gesamtschule' in name:
+        return 'Gesamtschule'
+    elif 'realschule' in name:
+        return 'Realschule'
+    elif 'hauptschule' in name:
+        return 'Hauptschule'
+    elif 'mittelstufenschule' in name:
+        return 'Mittelstufenschule'
+    elif 'oberstufe' in name or 'kolleg' in name:
+        return 'Gymnasium'  # Oberstufe / Abendgymnasium
+    elif 'schule' in name:
+        # Many Frankfurt secondary schools just have "Schule" in the name
+        # (e.g., Wöhlerschule, Elisabethenschule — these are Gymnasien)
+        return 'Weiterführende Schule'
+    return 'Sonstige'
+
+
 def _classify_secondary_type(row: pd.Series) -> str:
     """Determine the specific secondary school type."""
     for col in row.index:
         cl = col.lower()
-        val = pd.to_numeric(row.get(col, 0), errors='coerce')
+        raw = row.get(col, 0)
+        # Handle Series/array values by taking first element
+        if hasattr(raw, '__len__') and not isinstance(raw, str):
+            try:
+                raw = raw.iloc[0] if hasattr(raw, 'iloc') else raw[0]
+            except (IndexError, KeyError):
+                continue
+        val = pd.to_numeric(raw, errors='coerce')
         if pd.isna(val) or val == 0:
             continue
         if 'gymnasium' in cl and 'oberstufe' not in cl:
@@ -513,10 +556,11 @@ def split_by_school_type(df: pd.DataFrame):
     logger.info("Splitting by school type...")
 
     primary_df = df[df['school_type'] == 'Grundschule'].copy()
-    secondary_mask = df['school_type'].isin([
+    secondary_types = [
         'Gymnasium', 'Realschule', 'Hauptschule', 'Gesamtschule',
         'Mittelstufenschule', 'Weiterführende Schule'
-    ])
+    ]
+    secondary_mask = df['school_type'].isin(secondary_types)
     secondary_df = df[secondary_mask].copy()
 
     # Schools that are both (e.g., IGS with Grundstufe) — include in both
