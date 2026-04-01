@@ -2,8 +2,8 @@
 """
 Phase 7: Munich Data Combiner
 
-Merges all enrichment outputs into a single master table.
-Auto-detects the most-enriched intermediate file and merges additional columns.
+Finds the most-enriched intermediate file and outputs it as the master table.
+All enrichment phases chain their outputs, so the last file contains all columns.
 
 Input: data_munich/intermediate/munich_secondary_schools_with_*.csv
 Output: data_munich/final/munich_secondary_school_master_table.csv
@@ -13,6 +13,7 @@ Author: Munich School Data Pipeline
 Created: 2026-04-01
 """
 
+import pandas as pd
 import logging
 from pathlib import Path
 
@@ -26,13 +27,52 @@ INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 FINAL_DIR = DATA_DIR / "final"
 
 
+def find_most_enriched_file():
+    """Find the most enriched intermediate file (last in the chain)."""
+    candidates = [
+        INTERMEDIATE_DIR / "munich_secondary_schools_with_metadata.csv",
+        INTERMEDIATE_DIR / "munich_secondary_schools_with_pois.csv",
+        INTERMEDIATE_DIR / "munich_secondary_schools_with_crime.csv",
+        INTERMEDIATE_DIR / "munich_secondary_schools_with_transit.csv",
+        INTERMEDIATE_DIR / "munich_secondary_schools_with_traffic.csv",
+        INTERMEDIATE_DIR / "munich_secondary_schools.csv",
+    ]
+    for fp in candidates:
+        if fp.exists():
+            df = pd.read_csv(fp)
+            logger.info(f"Loaded {len(df)} schools from {fp.name} ({len(df.columns)} columns)")
+            return df
+    raise FileNotFoundError("No school data found in intermediate/")
+
+
 def main():
-    raise NotImplementedError(
-        "Phase 7: Munich data combiner not yet implemented.\n"
-        "TODO: Adapt from scripts_frankfurt/processing/frankfurt_data_combiner.py\n"
-        "  - Merge all enrichment CSVs by schulnummer\n"
-        "  - Output master table CSV and parquet"
-    )
+    logger.info("=" * 60)
+    logger.info("Phase 7: Munich Data Combiner")
+    logger.info("=" * 60)
+
+    FINAL_DIR.mkdir(parents=True, exist_ok=True)
+
+    df = find_most_enriched_file()
+
+    # Save CSV
+    csv_path = FINAL_DIR / "munich_secondary_school_master_table.csv"
+    df.to_csv(csv_path, index=False, encoding='utf-8-sig')
+    logger.info(f"Saved CSV: {csv_path}")
+
+    # Save parquet
+    parquet_path = FINAL_DIR / "munich_secondary_school_master_table.parquet"
+    df.to_parquet(parquet_path, index=False)
+    logger.info(f"Saved parquet: {parquet_path}")
+
+    print(f"\n{'='*70}")
+    print("MUNICH DATA COMBINER - COMPLETE")
+    print(f"{'='*70}")
+    print(f"Schools: {len(df)}")
+    print(f"Columns: {len(df.columns)}")
+    print(f"Output: {csv_path.name}")
+    print(f"{'='*70}")
+
+    return df
 
 
 if __name__ == "__main__":

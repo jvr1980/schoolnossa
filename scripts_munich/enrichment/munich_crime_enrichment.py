@@ -2,20 +2,19 @@
 """
 Phase 4: Munich Crime Data Enrichment
 
-Enriches school data with crime statistics from PP München Sicherheitsreport.
+Enriches school data with crime statistics using city-level aggregate data
+from the BKA PKS Stadt-Falltabellen and PP München Sicherheitsreport.
 
-Data Source: https://www.polizei.bayern.de/kriminalitaet/statistik/006991/index.html
-Format: PDF (Sicherheitsreport — needs table extraction)
-Granularity: Per-Stadtbezirk (25 districts in Munich) or city-wide fallback
-Also: https://stadt.muenchen.de/infos/statistik-sicherheit.html
+Munich publishes district-level crime data in PDF format only (Sicherheitsreport).
+For consistency and reliability, this script uses city-level aggregates from the BKA
+PKS, same approach as the Frankfurt pipeline. If district-level data becomes available
+in machine-readable format, this script should be upgraded.
 
-This script:
-1. Downloads Sicherheitsreport PDF (or uses pre-extracted data)
-2. Extracts crime statistics by Stadtbezirk from PDF tables
-3. Maps each school to its Stadtbezirk using coordinates
-4. Assigns district-level crime metrics to each school
-5. Fallback: uses city-wide München crime rate if PDF parsing fails
-6. Adds crime columns to school data
+Data Sources:
+- PKS 2023 / BKA Stadt-Falltabellen (city aggregate)
+- PP München Sicherheitsreport 2024 (for context / validation)
+
+Note: München is Germany's safest major city (50th consecutive year, 2024).
 
 Input: data_munich/intermediate/munich_secondary_schools_with_transit.csv
        (fallback chain: with_traffic, base schools)
@@ -25,6 +24,7 @@ Author: Munich School Data Pipeline
 Created: 2026-04-01
 """
 
+import pandas as pd
 import logging
 from pathlib import Path
 
@@ -35,23 +35,105 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 DATA_DIR = PROJECT_ROOT / "data_munich"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
-CACHE_DIR = DATA_DIR / "cache"
 
-SICHERHEITSREPORT_URL = "https://www.polizei.bayern.de/mam/kriminalitaet/sicherheitsreport_2024.pdf"
+# Munich crime data (PKS 2023, BKA Stadt-Falltabellen)
+# Source: https://www.bka.de/DE/AktuelleInformationen/StatistikenLagebilder/PolizeilicheKriminalstatistik/PKS2024/PKSTabellen/StadtFalltabellen/
+# Munich is Germany's safest major city (>200k inhabitants) for the 50th time
+MUNICH_CRIME_DATA = {
+    'population': 1_512_491,  # Einwohner 2023
+    'straftaten_2023': 116_195,
+    'haeufigkeitszahl_2023': 7_684,  # per 100k — much lower than Frankfurt (14,840)
+    'aufklaerungsquote_2023': 62.9,
+    'strassenraub_2023': 574,
+    'wohnungseinbruch_2023': 952,
+    'koerperverletzung_2023': 10_127,
+    'diebstahl_fahrrad_2023': 7_456,
+}
 
-# Munich has 25 Stadtbezirke
-MUNICH_STADTBEZIRKE_COUNT = 25
+
+def enrich_with_crime(schools_df: pd.DataFrame) -> pd.DataFrame:
+    """Assign city-level crime data to all Munich schools."""
+    logger.info("Enriching with city-level crime data (München PKS 2023)...")
+
+    df = schools_df.copy()
+    pop = MUNICH_CRIME_DATA['population']
+
+    # City-level columns (Berlin schema compatible)
+    df['crime_stadt'] = 'München'
+    df['crime_bezirk'] = None  # No district-level data in machine-readable format
+    df['crime_bezirk_population'] = pop
+    df['crime_bezirk_index'] = 1.0  # City average
+    df['crime_haeufigkeitszahl_2023'] = MUNICH_CRIME_DATA['haeufigkeitszahl_2023']
+    df['crime_aufklaerungsquote_2023'] = MUNICH_CRIME_DATA['aufklaerungsquote_2023']
+
+    # Crime categories (absolute city numbers)
+    df['crime_straftaten_2023'] = MUNICH_CRIME_DATA['straftaten_2023']
+    df['crime_strassenraub_2023'] = MUNICH_CRIME_DATA['strassenraub_2023']
+    df['crime_koerperverletzung_2023'] = MUNICH_CRIME_DATA['koerperverletzung_2023']
+    df['crime_diebstahl_fahrrad_2023'] = MUNICH_CRIME_DATA['diebstahl_fahrrad_2023']
+    df['crime_wohnungseinbruch_2023'] = MUNICH_CRIME_DATA['wohnungseinbruch_2023']
+
+    # Per-100k rates
+    for key in ['straftaten', 'strassenraub', 'koerperverletzung', 'diebstahl_fahrrad', 'wohnungseinbruch']:
+        total = MUNICH_CRIME_DATA.get(f'{key}_2023')
+        if total:
+            df[f'crime_{key}_2023_rate_per_100k'] = round(total / pop * 100_000, 1)
+
+    # Safety category based on Häufigkeitszahl (HZ)
+    hz = MUNICH_CRIME_DATA['haeufigkeitszahl_2023']
+    if hz < 8000:
+        safety_cat = 'Sehr sicher'
+    elif hz < 10000:
+        safety_cat = 'Sicher'
+    elif hz < 12000:
+        safety_cat = 'Durchschnittlich'
+    else:
+        safety_cat = 'Überdurchschnittlich'
+
+    df['crime_safety_category'] = safety_cat
+    df['crime_data_source'] = 'city_aggregate'
+    df['crime_data_note'] = 'München: sicherste Großstadt Deutschlands (>200k Einwohner) seit 50 Jahren'
+
+    logger.info(f"  All {len(df)} schools assigned city-level crime data")
+    logger.info(f"  Häufigkeitszahl: {hz}/100k ('{safety_cat}')")
+    logger.info(f"  Note: District-level data available in PDF only (Sicherheitsreport)")
+
+    return df
+
+
+def find_input_file():
+    candidates = [
+        INTERMEDIATE_DIR / "munich_secondary_schools_with_transit.csv",
+        INTERMEDIATE_DIR / "munich_secondary_schools_with_traffic.csv",
+        INTERMEDIATE_DIR / "munich_secondary_schools.csv",
+    ]
+    for f in candidates:
+        if f.exists():
+            return f
+    raise FileNotFoundError("No school data found. Run earlier phases first.")
 
 
 def main():
-    raise NotImplementedError(
-        "Phase 4: Munich crime enrichment not yet implemented.\n"
-        "TODO:\n"
-        "  - Download Sicherheitsreport PDF and extract district crime tables\n"
-        "  - Or use hardcoded city-wide crime rate as fallback (simpler)\n"
-        "  - Map schools to Stadtbezirke using reverse geocoding\n"
-        "  - Similar approach to NRW (city-wide estimation) or Hamburg (district-level)"
-    )
+    logger.info("=" * 60)
+    logger.info("Phase 4: Munich Crime Enrichment (City-Level PKS)")
+    logger.info("=" * 60)
+
+    input_file = find_input_file()
+    logger.info(f"Input: {input_file}")
+    schools = pd.read_csv(input_file, dtype=str)
+    logger.info(f"Loaded {len(schools)} schools")
+
+    schools = enrich_with_crime(schools)
+
+    output_path = INTERMEDIATE_DIR / "munich_secondary_schools_with_crime.csv"
+    schools.to_csv(output_path, index=False, encoding='utf-8-sig')
+    logger.info(f"Saved: {output_path}")
+
+    print(f"\nCrime enrichment: {len(schools)} schools (city-level data)")
+    print(f"Häufigkeitszahl: {MUNICH_CRIME_DATA['haeufigkeitszahl_2023']}/100k")
+    print(f"Aufklärungsquote: {MUNICH_CRIME_DATA['aufklaerungsquote_2023']}%")
+
+    return schools
 
 
 if __name__ == "__main__":
