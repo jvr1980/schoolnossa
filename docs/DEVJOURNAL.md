@@ -1,5 +1,23 @@
 # SchoolNossa Development Journal
 
+## 2026-04-01 — Munich Secondary School Pipeline Scaffolded and Implemented
+
+**What:** Built the complete Munich (Bayern) secondary school data pipeline — all 9 phases from research through Berlin schema enforcement. This is the 5th city in the SchoolNossa platform.
+
+**Why:** Expanding SchoolNossa coverage to Munich, Germany's third-largest city.
+
+**Key results:**
+- Research document: `docs/munich_data_availability_research.md` (8 data categories assessed)
+- Orchestrator + 9 phase scripts in `scripts_munich/`
+- Data sources: Schulsuche CSV (ISO-8859-15), Unfallatlas (ULAND=09), Overpass API transit, city-level PKS crime, Google Places POI
+- Munich-specific: no coordinates in school CSV (needs geocoding via jedeschule.codefor.de + Nominatim)
+- Notable limitation: Bavaria does NOT publish per-school academic performance data (VERA password-protected)
+- Crime: Munich is Germany's safest major city for 50 consecutive years (HZ 7,684/100k vs Frankfurt 14,840)
+- Template city: NRW pipeline pattern (CSV-based schools, Unfallatlas traffic, district-level crime estimation)
+- Pipeline ready to run but requires: geocoding step execution, Google Places API key, Gemini/OpenAI API keys for descriptions and embeddings
+
+**Branch:** `feature/munich-pipeline`
+
 <!-- NEW ENTRIES GO ABOVE THIS LINE -->
 
 ## 2026-03-30 — Frankfurt Pipeline Built End-to-End

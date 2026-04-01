@@ -11,15 +11,15 @@
 - [x] Website metadata: School websites via Schulsuche links
 
 ## Phase Implementation Status
-- [ ] Phase 1: School Master Data — STUB (scraper + geocoding)
-- [ ] Phase 2: Traffic Enrichment — STUB (Unfallatlas)
-- [ ] Phase 3: Transit Enrichment — STUB (MVV GTFS)
-- [ ] Phase 4: Crime Enrichment — STUB (Sicherheitsreport PDF)
-- [ ] Phase 5: POI Enrichment — STUB (Google Places)
-- [ ] Phase 6: Website Metadata & Descriptions — STUB
-- [ ] Phase 7: Data Combination — STUB
-- [ ] Phase 8: Embeddings — STUB
-- [ ] Phase 9: Schema Transformer — STUB
+- [x] Phase 1: School Master Data — IMPLEMENTED (Schulsuche CSV + jedeschule coords + Nominatim geocoding)
+- [x] Phase 2: Traffic Enrichment — IMPLEMENTED (Unfallatlas, ULAND=09, Munich bbox)
+- [x] Phase 3: Transit Enrichment — IMPLEMENTED (Overpass API: U-Bahn/S-Bahn/Tram/Bus)
+- [x] Phase 4: Crime Enrichment — IMPLEMENTED (city-level PKS, HZ=7684/100k)
+- [x] Phase 5: POI Enrichment — IMPLEMENTED (Google Places API)
+- [x] Phase 6: Website Metadata & Descriptions — IMPLEMENTED (Gemini API)
+- [x] Phase 7: Data Combination — IMPLEMENTED (auto-detect most-enriched)
+- [x] Phase 8: Embeddings — IMPLEMENTED (OpenAI/Gemini)
+- [x] Phase 9: Schema Transformer — IMPLEMENTED (Berlin schema enforcement)
 
 ## Expected School Counts
 - Secondary (Gymnasium + Realschule + Mittelschule + other): ~120-150 schools
