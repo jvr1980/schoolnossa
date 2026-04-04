@@ -40,7 +40,7 @@ INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 CACHE_DIR = DATA_DIR / "cache"
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_AI_API_KEY')
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 HEADERS = {
@@ -102,7 +102,7 @@ Focus on: academic profile, special programs, languages offered, notable feature
         resp = requests.post(
             f"{GEMINI_URL}?key={GEMINI_API_KEY}",
             json={"contents": [{"parts": [{"text": prompt}]}],
-                  "generationConfig": {"temperature": 0.3, "maxOutputTokens": 500}},
+                  "generationConfig": {"temperature": 0.3, "maxOutputTokens": 2048}},
             timeout=30,
         )
         resp.raise_for_status()
@@ -166,13 +166,18 @@ def main():
 
         website = str(row.get('website', '')).strip()
         website_text = None
-        if website and website != 'nan' and website != 'None':
+        if website and website not in ('nan', 'None', ''):
             website_text = fetch_website_content(website)
             if website_text:
                 df.at[idx, 'website_content_summary'] = website_text[:500]
 
         school_name = str(row.get('schulname', '')).strip()
         school_type = str(row.get('school_type', row.get('schulart', ''))).strip()
+
+        # Generate descriptions even without website content
+        # (Gemini can use Google Search grounding for context)
+        if not school_name or school_name == 'nan':
+            continue
 
         desc_de, desc_en = generate_description(school_name, school_type, website_text)
         if desc_de:
