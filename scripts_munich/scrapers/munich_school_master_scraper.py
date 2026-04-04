@@ -2,35 +2,38 @@
 """
 Phase 1: Munich School Master Data Scraper
 
-Downloads and processes school data from Bayern Schulsuche CSV export
-and jedeschule.codefor.de for pre-geocoded coordinates.
+Downloads and processes school data from jedeschule.codefor.de (primary source)
+with coordinates already included (WKB format).
 
-Data Sources:
-  1. km.bayern.de Schulsuche — CSV (semicolon, ISO-8859-15), ~6100 records statewide
-  2. jedeschule.codefor.de — CSV with pre-geocoded coordinates (lat/lon)
-  3. Nominatim — fallback geocoding for remaining schools
+Data Source: https://jedeschule.codefor.de/csv-data/jedeschule-data-2025-01-04.csv
+Format: CSV (comma-separated, UTF-8)
+Coordinates: WKB hex format (EPSG:4326 Point with SRID)
+License: CC0 (public domain)
 
 This script:
-1. Downloads the Bayern Schulsuche CSV (all schools)
-2. Filters for München (PLZ 80xxx/81xxx or Ort contains "München")
-3. Filters for secondary school types (Gymnasium, Realschule, Mittelschule, etc.)
-4. Downloads jedeschule.codefor.de CSV for coordinates (matched by name+PLZ)
-5. Geocodes remaining unmatched schools via Nominatim
-6. Scrapes school detail pages on km.bayern.de for website URLs
-7. Outputs to data_munich/intermediate/munich_secondary_schools.csv
+1. Downloads jedeschule.codefor.de CSV (31k+ German schools with coords)
+2. Filters for München (city field)
+3. Filters for secondary school types (Gymnasien, Realschulen, Mittelschulen, etc.)
+4. Decodes WKB hex coordinates to lat/lon
+5. Geocodes remaining schools without coordinates via Nominatim
+6. Normalizes columns and outputs to intermediate/
+
+Input: jedeschule.codefor.de CSV (web download)
+Output: data_munich/intermediate/munich_secondary_schools.csv
 
 Author: Munich School Data Pipeline
 Created: 2026-04-01
+Updated: 2026-04-04 — Switched to jedeschule.codefor.de as primary source
 """
 
 import requests
 import pandas as pd
+import numpy as np
 import logging
 import sys
-import io
+import struct
 import time
 import json
-import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -45,32 +48,25 @@ RAW_DIR = DATA_DIR / "raw"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 CACHE_DIR = DATA_DIR / "cache"
 
-# Data source URLs
-# The Schulsuche CSV can be obtained by searching with parameters that return all schools
-# URL pattern: km.bayern.de exports CSV with semicolons
-SCHULSUCHE_CSV_URL = "https://www.km.bayern.de/ministerium/schule-und-ausbildung/schulsuche.html"
-JEDESCHULE_CSV_URL = "https://jedeschule.codefor.de/csv-data/jedeschule-data-2026-03-28.csv"
+# jedeschule.codefor.de — weekly scraped school data with coordinates
+JEDESCHULE_CSV_URL = "https://jedeschule.codefor.de/csv-data/jedeschule-data-2025-01-04.csv"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 HEADERS = {
     'User-Agent': 'SchoolNossa/1.0 (Munich school data pipeline, educational project)',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 }
 
-# Munich PLZ prefixes
-MUNICH_PLZ_PREFIXES = ('80', '81')
-
-# Secondary school types in Bayern Schulsuche
-SECONDARY_SCHULARTEN = [
-    'Gymnasium',
-    'Realschule',
-    'Mittelschule',
-    'Wirtschaftsschule',
-    'Freie Waldorfschule',
-    'Förderzentrum',
-    'Kolleg',
-    'Abendrealschule',
-    'Abendgymnasium',
+# Secondary school types in Bavaria (as they appear in jedeschule data)
+SECONDARY_TYPE_PATTERNS = [
+    'Gymnasium', 'Gymnasien',
+    'Realschule', 'Realschulen',
+    'Mittelschule', 'Mittelschulen',
+    'Wirtschaftsschule', 'Wirtschaftsschulen',
+    'Förderzentrum', 'Förderzentren', 'Förderschule',
+    'Waldorfschule', 'Freie Waldorfschule',
+    'Gesamtschule',
+    'Fachoberschule', 'Fachoberschulen',
+    'Berufsoberschule', 'Berufsoberschulen',
 ]
 
 
@@ -79,240 +75,81 @@ def ensure_directories():
         d.mkdir(parents=True, exist_ok=True)
 
 
-def download_file(url: str, description: str, encoding: str = 'utf-8') -> bytes:
-    """Download a file from URL with caching."""
-    logger.info(f"Downloading {description} from {url}")
-    try:
-        response = requests.get(url, headers=HEADERS, timeout=120)
-        response.raise_for_status()
-        logger.info(f"Downloaded {description} ({len(response.content):,} bytes)")
-        return response.content
-    except requests.RequestException as e:
-        logger.error(f"Failed to download {description}: {e}")
-        raise
-
-
-def scrape_schulsuche_csv() -> pd.DataFrame:
-    """
-    Download and parse the Bayern Schulsuche CSV.
-
-    The Schulsuche at km.bayern.de provides a CSV export with these columns:
-    Schulnummer; Schulart; Name; Straße; PLZ; Ort; Link
-
-    Encoding: ISO-8859-15, Separator: semicolon
-    """
-    cache_file = CACHE_DIR / "bayern_schulsuche_raw.csv"
-
-    # Check cache (7-day validity)
-    if cache_file.exists():
-        age = datetime.now().timestamp() - cache_file.stat().st_mtime
-        if age < 7 * 86400:
-            logger.info("Loading Schulsuche CSV from cache...")
-            return pd.read_csv(
-                cache_file, sep=';', encoding='iso-8859-15',
-                quotechar='"', dtype=str
-            )
-
-    # Try to download CSV export from Schulsuche
-    # The export URL typically uses query parameters for filtering
-    # We try the direct download pattern first
-    csv_urls = [
-        # Direct CSV export (all Bayern schools)
-        "https://www.km.bayern.de/ministerium/schule-und-ausbildung/schulsuche.csv",
-        # Filtered search with maximum results
-        "https://www.km.bayern.de/ministerium/schule-und-ausbildung/schulsuche.html?s=&t=9999&r=&o=&u=1&m=&seite=1&format=csv",
-    ]
-
-    content = None
-    for url in csv_urls:
-        try:
-            content = download_file(url, "Bayern Schulsuche CSV")
-            # Save raw cache
-            with open(cache_file, 'wb') as f:
-                f.write(content)
-            break
-        except requests.RequestException:
-            logger.warning(f"URL not available: {url}")
-            continue
-
-    if content is None:
-        # Fallback: check if we have a manually placed CSV in raw/
-        manual_csv = RAW_DIR / "bayern_schulsuche.csv"
-        if manual_csv.exists():
-            logger.info("Using manually placed CSV from raw/")
-            return pd.read_csv(
-                manual_csv, sep=';', encoding='iso-8859-15',
-                quotechar='"', dtype=str
-            )
-        raise FileNotFoundError(
-            "Could not download Schulsuche CSV. Please download manually from\n"
-            "https://www.km.bayern.de/schulsuche and save as\n"
-            f"{manual_csv}"
-        )
-
-    # Parse CSV (ISO-8859-15, semicolon-separated)
-    text = content.decode('iso-8859-15')
-    df = pd.read_csv(io.StringIO(text), sep=';', quotechar='"', dtype=str)
-
-    logger.info(f"Parsed {len(df)} schools with columns: {list(df.columns)}")
-    return df
-
-
-def download_jedeschule_coordinates() -> pd.DataFrame:
-    """Download jedeschule.codefor.de CSV for pre-geocoded coordinates."""
+def download_jedeschule_csv() -> pd.DataFrame:
+    """Download and parse jedeschule.codefor.de CSV."""
     cache_file = CACHE_DIR / "jedeschule_data.csv"
 
     if cache_file.exists():
         age = datetime.now().timestamp() - cache_file.stat().st_mtime
         if age < 30 * 86400:  # 30-day cache
             logger.info("Loading jedeschule.codefor.de data from cache...")
-            try:
-                return pd.read_csv(cache_file, dtype=str)
-            except Exception:
-                pass
+            return pd.read_csv(cache_file, dtype=str)
 
+    logger.info(f"Downloading jedeschule.codefor.de CSV from {JEDESCHULE_CSV_URL}")
     try:
-        content = download_file(JEDESCHULE_CSV_URL, "jedeschule.codefor.de data")
-        with open(cache_file, 'wb') as f:
-            f.write(content)
-        return pd.read_csv(io.BytesIO(content), dtype=str)
-    except Exception as e:
-        logger.warning(f"Could not download jedeschule data: {e}")
-        return pd.DataFrame()
-
-
-def geocode_nominatim(address: str, plz: str, ort: str = 'München') -> Optional[dict]:
-    """Geocode a single address using Nominatim."""
-    query = f"{address}, {plz} {ort}, Germany"
-    try:
-        response = requests.get(
-            NOMINATIM_URL,
-            params={'q': query, 'format': 'json', 'limit': 1, 'countrycodes': 'de'},
-            headers={'User-Agent': 'SchoolNossa/1.0 (educational research project)'},
-            timeout=10
-        )
+        response = requests.get(JEDESCHULE_CSV_URL, headers=HEADERS, timeout=120)
         response.raise_for_status()
-        results = response.json()
-        if results:
-            return {
-                'latitude': float(results[0]['lat']),
-                'longitude': float(results[0]['lon']),
-            }
-    except Exception as e:
-        logger.debug(f"Geocoding failed for {query}: {e}")
+        logger.info(f"Downloaded {len(response.content) / 1024 / 1024:.1f} MB")
+
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        with open(cache_file, 'wb') as f:
+            f.write(response.content)
+
+        return pd.read_csv(cache_file, dtype=str)
+    except requests.RequestException as e:
+        logger.error(f"Failed to download: {e}")
+        raise
+
+
+def decode_wkb_point(wkb_hex: str) -> Optional[tuple]:
+    """Decode WKB hex Point to (latitude, longitude).
+
+    WKB format for Point with SRID:
+    - 1 byte: byte order (01 = little-endian)
+    - 4 bytes: geometry type (01000020 = Point with SRID)
+    - 4 bytes: SRID (E6100000 = 4326)
+    - 8 bytes: X (latitude in this dataset's convention)
+    - 8 bytes: Y (longitude)
+    """
+    if not wkb_hex or wkb_hex == 'nan' or len(wkb_hex) < 50:
+        return None
+    try:
+        wkb = bytes.fromhex(wkb_hex)
+        # X and Y are at offset 9 and 17 (after byte_order + type + SRID)
+        x = struct.unpack('<d', wkb[9:17])[0]
+        y = struct.unpack('<d', wkb[17:25])[0]
+        # In this dataset: X=lat, Y=lon (verified empirically)
+        lat, lon = x, y
+        # Sanity check: should be in Germany
+        if 47.0 <= lat <= 55.0 and 5.0 <= lon <= 16.0:
+            return (round(lat, 6), round(lon, 6))
+    except (ValueError, struct.error):
+        pass
     return None
 
 
-def geocode_schools(df: pd.DataFrame) -> pd.DataFrame:
-    """Geocode schools that don't have coordinates yet."""
-    df = df.copy()
-
-    if 'latitude' not in df.columns:
-        df['latitude'] = None
-        df['longitude'] = None
-
-    missing = df['latitude'].isna()
-    missing_count = missing.sum()
-
-    if missing_count == 0:
-        logger.info("All schools already geocoded")
-        return df
-
-    logger.info(f"Geocoding {missing_count} schools via Nominatim...")
-
-    # Load geocode cache
-    geocode_cache_file = CACHE_DIR / "geocode_cache.json"
-    geocode_cache = {}
-    if geocode_cache_file.exists():
-        with open(geocode_cache_file) as f:
-            geocode_cache = json.load(f)
-
-    geocoded = 0
-    failed = 0
-
-    for idx in df[missing].index:
-        row = df.loc[idx]
-        strasse = str(row.get('strasse', '')).strip()
-        plz = str(row.get('plz', '')).strip()
-        ort = str(row.get('ort', 'München')).strip()
-
-        cache_key = f"{strasse}|{plz}|{ort}"
-        if cache_key in geocode_cache:
-            coords = geocode_cache[cache_key]
-            if coords:
-                df.at[idx, 'latitude'] = coords['latitude']
-                df.at[idx, 'longitude'] = coords['longitude']
-                geocoded += 1
-            else:
-                failed += 1
-            continue
-
-        coords = geocode_nominatim(strasse, plz, ort)
-        geocode_cache[cache_key] = coords
-
-        if coords:
-            df.at[idx, 'latitude'] = coords['latitude']
-            df.at[idx, 'longitude'] = coords['longitude']
-            geocoded += 1
-        else:
-            failed += 1
-
-        # Rate limit: max 1 req/sec for Nominatim
-        time.sleep(1.1)
-
-        if (geocoded + failed) % 20 == 0:
-            logger.info(f"  Geocoded {geocoded}/{missing_count} (failed: {failed})")
-            # Save cache periodically
-            with open(geocode_cache_file, 'w') as f:
-                json.dump(geocode_cache, f)
-
-    # Save geocode cache
-    with open(geocode_cache_file, 'w') as f:
-        json.dump(geocode_cache, f)
-
-    logger.info(f"Geocoding complete: {geocoded} succeeded, {failed} failed out of {missing_count}")
-    return df
-
-
 def filter_munich_schools(df: pd.DataFrame) -> pd.DataFrame:
-    """Filter for München schools by PLZ or Ort."""
+    """Filter for München schools using city name AND PLZ prefix.
+
+    The jedeschule 'city' field includes suburban schools under München's
+    Regierungsbezirk. We tighten to PLZ 80xxx/81xxx (actual Munich city postal codes)
+    combined with city name to avoid including distant suburbs.
+    """
     logger.info("Filtering for München schools...")
 
-    # Normalize column names (Schulsuche columns are in German)
-    col_map = {}
-    for col in df.columns:
-        lower = col.lower().strip()
-        if lower in ('plz', 'postleitzahl'):
-            col_map[col] = 'plz'
-        elif lower in ('ort', 'schulort', 'location'):
-            col_map[col] = 'ort'
-        elif lower in ('straße', 'strasse', 'str.', 'street'):
-            col_map[col] = 'strasse'
-        elif lower in ('name', 'schulname', 'name der schule'):
-            col_map[col] = 'schulname'
-        elif lower in ('schulnummer', 'schulnr', 'school number'):
-            col_map[col] = 'schulnummer'
-        elif lower in ('schulart', 'schultyp', 'school type'):
-            col_map[col] = 'schulart'
-        elif lower in ('link', 'url'):
-            col_map[col] = 'link'
+    city_mask = df['city'].str.contains('München', case=False, na=False)
+    plz_mask = df['zip'].astype(str).str.strip().str.startswith(('80', '81'))
 
-    df = df.rename(columns=col_map)
+    # Require BOTH city name match AND Munich PLZ prefix
+    mask = city_mask & plz_mask
+    filtered = df[mask].copy()
 
-    # Filter by PLZ or Ort
-    plz_mask = pd.Series(False, index=df.index)
-    ort_mask = pd.Series(False, index=df.index)
-
-    if 'plz' in df.columns:
-        df['plz'] = df['plz'].astype(str).str.strip()
-        plz_mask = df['plz'].str.startswith(MUNICH_PLZ_PREFIXES)
-
-    if 'ort' in df.columns:
-        df['ort'] = df['ort'].astype(str).str.strip()
-        ort_mask = df['ort'].str.contains('München', case=False, na=False)
-
-    munich_mask = plz_mask | ort_mask
-    filtered = df[munich_mask].copy()
+    # Also include schools explicitly named "München" even if PLZ is different
+    name_mask = df['name'].str.contains('München', case=False, na=False) & ~mask
+    if name_mask.any():
+        extra = df[name_mask]
+        logger.info(f"  Adding {len(extra)} schools with 'München' in name but non-80/81 PLZ")
+        filtered = pd.concat([filtered, extra], ignore_index=True)
 
     logger.info(f"Filtered from {len(df)} to {len(filtered)} München schools")
     return filtered
@@ -322,232 +159,174 @@ def filter_secondary_schools(df: pd.DataFrame) -> pd.DataFrame:
     """Filter for secondary school types."""
     logger.info("Filtering for secondary school types...")
 
-    if 'schulart' not in df.columns:
-        logger.warning("No 'schulart' column found, returning all schools")
-        return df
-
-    # Match secondary types (partial match for flexibility)
     mask = pd.Series(False, index=df.index)
-    for schulart in SECONDARY_SCHULARTEN:
-        mask |= df['schulart'].str.contains(schulart, case=False, na=False)
+    for pattern in SECONDARY_TYPE_PATTERNS:
+        mask |= df['school_type'].str.contains(pattern, case=False, na=False)
 
     filtered = df[mask].copy()
     logger.info(f"Filtered from {len(df)} to {len(filtered)} secondary schools")
 
-    if 'schulart' in filtered.columns:
-        for st, count in filtered['schulart'].value_counts().items():
+    if not filtered.empty:
+        for st, count in filtered['school_type'].value_counts().items():
             logger.info(f"  - {st}: {count}")
 
     return filtered
 
 
-def merge_jedeschule_coordinates(df: pd.DataFrame, jede_df: pd.DataFrame) -> pd.DataFrame:
-    """Merge pre-geocoded coordinates from jedeschule.codefor.de."""
-    if jede_df.empty:
-        return df
-
-    logger.info("Matching schools with jedeschule.codefor.de coordinates...")
-
-    # Filter jedeschule for Bayern
-    if 'state' in jede_df.columns:
-        jede_by = jede_df[jede_df['state'].str.contains('Bayern', case=False, na=False)].copy()
-    elif 'bundesland' in jede_df.columns:
-        jede_by = jede_df[jede_df['bundesland'].str.contains('Bayern', case=False, na=False)].copy()
-    else:
-        jede_by = jede_df.copy()
-
-    logger.info(f"jedeschule data: {len(jede_by)} Bayern schools")
+def decode_coordinates(df: pd.DataFrame) -> pd.DataFrame:
+    """Decode WKB hex coordinates to lat/lon."""
+    logger.info("Decoding WKB coordinates...")
 
     df = df.copy()
     df['latitude'] = None
     df['longitude'] = None
 
-    # Try matching by Schulnummer first
-    if 'schulnummer' in df.columns and 'id' in jede_by.columns:
-        df['schulnummer_str'] = df['schulnummer'].astype(str).str.strip()
-        jede_by['id_str'] = jede_by['id'].astype(str).str.strip()
+    decoded = 0
+    for idx, row in df.iterrows():
+        wkb_hex = row.get('location', '')
+        if pd.isna(wkb_hex):
+            continue
+        coords = decode_wkb_point(str(wkb_hex))
+        if coords:
+            df.at[idx, 'latitude'] = coords[0]
+            df.at[idx, 'longitude'] = coords[1]
+            decoded += 1
 
-        for idx, row in df.iterrows():
-            match = jede_by[jede_by['id_str'] == row['schulnummer_str']]
-            if not match.empty:
-                lat_col = next((c for c in match.columns if 'lat' in c.lower()), None)
-                lon_col = next((c for c in match.columns if 'lon' in c.lower() or 'lng' in c.lower()), None)
-                if lat_col and lon_col:
-                    try:
-                        df.at[idx, 'latitude'] = float(match.iloc[0][lat_col])
-                        df.at[idx, 'longitude'] = float(match.iloc[0][lon_col])
-                    except (ValueError, TypeError):
-                        pass
-
-    # Try matching by name + PLZ for remaining
-    unmatched = df['latitude'].isna()
-    if unmatched.any() and 'schulname' in df.columns:
-        name_col = next((c for c in jede_by.columns if 'name' in c.lower()), None)
-        plz_col = next((c for c in jede_by.columns if 'plz' in c.lower() or 'zip' in c.lower()), None)
-
-        if name_col and plz_col:
-            for idx in df[unmatched].index:
-                row = df.loc[idx]
-                school_name = str(row.get('schulname', '')).lower().strip()
-                school_plz = str(row.get('plz', '')).strip()
-
-                candidates = jede_by[jede_by[plz_col].astype(str).str.strip() == school_plz]
-                for _, cand in candidates.iterrows():
-                    cand_name = str(cand[name_col]).lower().strip()
-                    # Fuzzy name match: check if significant words overlap
-                    if _name_similarity(school_name, cand_name) > 0.5:
-                        lat_col_j = next((c for c in jede_by.columns if 'lat' in c.lower()), None)
-                        lon_col_j = next((c for c in jede_by.columns if 'lon' in c.lower() or 'lng' in c.lower()), None)
-                        if lat_col_j and lon_col_j:
-                            try:
-                                df.at[idx, 'latitude'] = float(cand[lat_col_j])
-                                df.at[idx, 'longitude'] = float(cand[lon_col_j])
-                                break
-                            except (ValueError, TypeError):
-                                pass
-
-    matched = df['latitude'].notna().sum()
-    logger.info(f"Matched coordinates from jedeschule: {matched}/{len(df)} schools")
+    logger.info(f"Decoded coordinates for {decoded}/{len(df)} schools")
     return df
 
 
-def _name_similarity(name1: str, name2: str) -> float:
-    """Simple word-overlap similarity between two school names."""
-    words1 = set(re.findall(r'\w+', name1))
-    words2 = set(re.findall(r'\w+', name2))
-    # Remove common stopwords
-    stopwords = {'der', 'die', 'das', 'und', 'in', 'am', 'an', 'zu', 'für', 'von', 'e', 'v'}
-    words1 -= stopwords
-    words2 -= stopwords
-    if not words1 or not words2:
-        return 0.0
-    return len(words1 & words2) / max(len(words1), len(words2))
+def geocode_remaining(df: pd.DataFrame) -> pd.DataFrame:
+    """Geocode schools without coordinates via Nominatim."""
+    missing = df['latitude'].isna()
+    missing_count = missing.sum()
 
-
-def scrape_school_websites(df: pd.DataFrame) -> pd.DataFrame:
-    """Scrape school detail pages from km.bayern.de for website URLs."""
-    df = df.copy()
-
-    if 'link' not in df.columns:
-        logger.info("No link column found, skipping website scraping")
-        df['website'] = None
+    if missing_count == 0:
+        logger.info("All schools have coordinates")
         return df
 
-    if 'website' not in df.columns:
-        df['website'] = None
+    logger.info(f"Geocoding {missing_count} schools via Nominatim...")
 
-    website_cache_file = CACHE_DIR / "school_websites_cache.json"
-    website_cache = {}
-    if website_cache_file.exists():
-        with open(website_cache_file) as f:
-            website_cache = json.load(f)
+    geocode_cache_file = CACHE_DIR / "geocode_cache.json"
+    geocode_cache = {}
+    if geocode_cache_file.exists():
+        with open(geocode_cache_file) as f:
+            geocode_cache = json.load(f)
 
-    base_url = "https://www.km.bayern.de"
-    scraped = 0
+    geocoded = 0
+    for idx in df[missing].index:
+        row = df.loc[idx]
+        address = str(row.get('address', '')).strip()
+        zip_code = str(row.get('zip', '')).strip()
+        city = str(row.get('city', 'München')).strip()
 
-    for idx, row in df.iterrows():
-        link = str(row.get('link', '')).strip()
-        if not link or link == 'nan':
+        cache_key = f"{address}|{zip_code}|{city}"
+        if cache_key in geocode_cache:
+            coords = geocode_cache[cache_key]
+            if coords:
+                df.at[idx, 'latitude'] = coords['lat']
+                df.at[idx, 'longitude'] = coords['lon']
+                geocoded += 1
             continue
 
-        if link in website_cache:
-            df.at[idx, 'website'] = website_cache[link]
-            if website_cache[link]:
-                scraped += 1
-            continue
-
-        detail_url = base_url + link if not link.startswith('http') else link
+        query = f"{address}, {zip_code} {city}, Germany"
         try:
-            response = requests.get(detail_url, headers=HEADERS, timeout=15)
+            response = requests.get(
+                NOMINATIM_URL,
+                params={'q': query, 'format': 'json', 'limit': 1, 'countrycodes': 'de'},
+                headers={'User-Agent': 'SchoolNossa/1.0 (educational research)'},
+                timeout=10
+            )
             response.raise_for_status()
-
-            # Look for school website URL in the detail page
-            # Common patterns: "Homepage:", "Web:", href with school domain
-            text = response.text
-            website = None
-
-            # Try to find homepage link
-            import re
-            patterns = [
-                r'Homepage[:\s]*<a[^>]*href="(https?://[^"]+)"',
-                r'Web[:\s]*<a[^>]*href="(https?://[^"]+)"',
-                r'href="(https?://(?:www\.)?[a-z0-9.-]+\.(?:de|com|org|net)/[^"]*)"',
-            ]
-            for pattern in patterns:
-                match = re.search(pattern, text, re.IGNORECASE)
-                if match:
-                    url = match.group(1)
-                    # Skip km.bayern.de links
-                    if 'km.bayern.de' not in url:
-                        website = url
-                        break
-
-            website_cache[link] = website
-            df.at[idx, 'website'] = website
-            if website:
-                scraped += 1
-
-            time.sleep(0.5)  # Rate limit
-
+            results = response.json()
+            if results:
+                coords = {'lat': float(results[0]['lat']), 'lon': float(results[0]['lon'])}
+                geocode_cache[cache_key] = coords
+                df.at[idx, 'latitude'] = coords['lat']
+                df.at[idx, 'longitude'] = coords['lon']
+                geocoded += 1
+            else:
+                geocode_cache[cache_key] = None
         except Exception as e:
-            logger.debug(f"Failed to scrape {detail_url}: {e}")
-            website_cache[link] = None
-            time.sleep(1)
+            logger.debug(f"Geocoding failed for {query}: {e}")
+            geocode_cache[cache_key] = None
 
-    # Save cache
-    with open(website_cache_file, 'w') as f:
-        json.dump(website_cache, f)
+        time.sleep(1.1)  # Nominatim rate limit
 
-    logger.info(f"Scraped websites for {scraped}/{len(df)} schools")
+    with open(geocode_cache_file, 'w') as f:
+        json.dump(geocode_cache, f)
+
+    logger.info(f"Geocoded {geocoded} additional schools ({missing_count - geocoded} still missing)")
     return df
 
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize and enrich with standard columns."""
+    """Normalize jedeschule columns to pipeline standard."""
     df = df.copy()
+
+    # Rename jedeschule columns to pipeline standard
+    rename_map = {
+        'id': 'schulnummer',
+        'name': 'schulname',
+        'address': 'strasse',
+        'zip': 'plz',
+        'city': 'ort',
+        'school_type': 'school_type',
+        'legal_status': 'traegerschaft',
+        'provider': 'traeger',
+    }
+    df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
+
+    # Clean website URLs
+    if 'website' in df.columns:
+        def clean_url(url):
+            if pd.isna(url) or str(url).strip() in ['', 'nan']:
+                return None
+            url = str(url).strip()
+            if not url.startswith('http'):
+                url = 'https://' + url
+            return url
+        df['website'] = df['website'].apply(clean_url)
 
     # Build full address
     if 'strasse' in df.columns and 'plz' in df.columns:
         df['adresse'] = df['strasse'].fillna('') + ', ' + df['plz'].fillna('') + ' ' + df['ort'].fillna('München')
-        df['adresse'] = df['adresse'].str.strip(', ')
 
-    # Map school type
-    if 'schulart' in df.columns:
-        df['school_type'] = df['schulart'].str.strip()
-
-    # Standardize metadata
-    df['data_source'] = 'Bayern Kultusministerium Schulsuche'
+    # Metadata
+    df['data_source'] = 'jedeschule.codefor.de (CC0, scraped from km.bayern.de)'
     df['data_retrieved'] = datetime.now().strftime('%Y-%m-%d')
     df['bundesland'] = 'Bayern'
     df['stadt'] = 'München'
+
+    # Drop the raw JSON column and WKB location to save space
+    drop_cols = ['raw', 'location', 'update_timestamp', 'address2']
+    df = df.drop(columns=[c for c in drop_cols if c in df.columns], errors='ignore')
 
     return df
 
 
 def save_outputs(df: pd.DataFrame):
     """Save processed data."""
-    # Save to intermediate
+    INTERMEDIATE_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+
     output_path = INTERMEDIATE_DIR / "munich_secondary_schools.csv"
     df.to_csv(output_path, index=False, encoding='utf-8-sig')
     logger.info(f"Saved: {output_path} ({len(df)} schools)")
 
-    # Also save to raw for reference
     raw_path = RAW_DIR / "munich_secondary_schools_raw.csv"
     df.to_csv(raw_path, index=False, encoding='utf-8-sig')
 
 
 def print_summary(df: pd.DataFrame):
-    """Print summary statistics."""
     print(f"\n{'='*70}")
     print("MUNICH SCHOOL MASTER DATA SCRAPER - COMPLETE")
     print(f"{'='*70}")
-
     print(f"\nTotal secondary schools: {len(df)}")
 
-    if 'schulart' in df.columns or 'school_type' in df.columns:
-        type_col = 'school_type' if 'school_type' in df.columns else 'schulart'
+    if 'school_type' in df.columns:
         print("\nBy school type:")
-        for st, count in df[type_col].value_counts().items():
+        for st, count in df['school_type'].value_counts().items():
             print(f"  - {st}: {count}")
 
     if 'latitude' in df.columns:
@@ -560,11 +339,20 @@ def print_summary(df: pd.DataFrame):
         pct = 100 * web_count / len(df) if len(df) > 0 else 0
         print(f"Websites: {web_count}/{len(df)} ({pct:.0f}%)")
 
+    if 'email' in df.columns:
+        email_count = df['email'].notna().sum()
+        pct = 100 * email_count / len(df) if len(df) > 0 else 0
+        print(f"Emails: {email_count}/{len(df)} ({pct:.0f}%)")
+
+    if 'phone' in df.columns:
+        phone_count = df['phone'].notna().sum()
+        pct = 100 * phone_count / len(df) if len(df) > 0 else 0
+        print(f"Phone: {phone_count}/{len(df)} ({pct:.0f}%)")
+
     print(f"\n{'='*70}")
 
 
 def main():
-    """Main function."""
     logger.info("=" * 60)
     logger.info("Starting Munich School Master Data Scraper")
     logger.info("=" * 60)
@@ -572,8 +360,9 @@ def main():
     try:
         ensure_directories()
 
-        # Step 1: Download Schulsuche CSV
-        all_schools = scrape_schulsuche_csv()
+        # Step 1: Download jedeschule data
+        all_schools = download_jedeschule_csv()
+        logger.info(f"Total German schools: {len(all_schools)}")
 
         # Step 2: Filter for München
         munich_schools = filter_munich_schools(all_schools)
@@ -582,23 +371,19 @@ def main():
         secondary = filter_secondary_schools(munich_schools)
 
         if len(secondary) == 0:
-            logger.error("No secondary schools found in München. Check data source and filters.")
+            logger.error("No secondary schools found in München!")
             sys.exit(1)
 
-        # Step 4: Get coordinates from jedeschule.codefor.de
-        jede_df = download_jedeschule_coordinates()
-        secondary = merge_jedeschule_coordinates(secondary, jede_df)
+        # Step 4: Decode WKB coordinates
+        secondary = decode_coordinates(secondary)
 
         # Step 5: Geocode remaining via Nominatim
-        secondary = geocode_schools(secondary)
+        secondary = geocode_remaining(secondary)
 
-        # Step 6: Scrape school detail pages for website URLs
-        secondary = scrape_school_websites(secondary)
-
-        # Step 7: Normalize columns
+        # Step 6: Normalize columns
         secondary = normalize_columns(secondary)
 
-        # Step 8: Save outputs
+        # Step 7: Save
         save_outputs(secondary)
 
         # Print summary
