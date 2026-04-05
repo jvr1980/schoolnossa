@@ -1,8 +1,7 @@
 """Apply Ridge regression predictions to city parquet/CSV files.
 
-Trains two Ridge models:
-  Model A: Predicts average Abitur grade (trained on Berlin+Hamburg labeled schools)
-  Model B: Predicts Abitur completion rate (trained on Berlin schools with erfolgsquote)
+Trains a Ridge model to predict average Abitur grade from catchment area features
+(trained on Berlin+Hamburg labeled schools).
 
 Writes prediction columns back into each city's final parquet and CSV files,
 including 80% prediction intervals and per-school feature contribution drivers.
@@ -38,6 +37,7 @@ ABITUR_ELIGIBLE_TYPES = {
     "Stadtteilschule", "Stadtteilschule_Gymnasium",  # Hamburg
     "Gesamtschule", "Waldorfschule",                 # NRW
     "Internationale Schule",                          # NRW
+    "Weiterführende Schule",                          # Frankfurt (Hessen)
 }
 
 # City-specific dims to exclude (not portable)
@@ -95,6 +95,14 @@ OFFICIAL_STATE_AVERAGES = {
         "source": "Schulministerium NRW, Pressemitteilung 2024",
         "rebase": True,
     },
+    "frankfurt": {
+        # Hessisches Kultusministerium, Abiturstatistik 2024.
+        # Hessen state average; rebasing applied: no Frankfurt labeled schools in training set.
+        "overall": 2.38,
+        "year": 2024,
+        "source": "Hessisches Kultusministerium, Abiturstatistik 2024",
+        "rebase": True,
+    },
 }
 
 # Files to update
@@ -114,15 +122,17 @@ CITY_FILES = [
         "parquet": "data_nrw/final/nrw_secondary_school_master_table_final_with_embeddings.parquet",
         "csv": "data_nrw/final/nrw_secondary_school_master_table_final.csv",
     },
+    {
+        "city_prefix": "frankfurt",
+        "parquet": "data_frankfurt/final/frankfurt_secondary_school_master_table_final_with_embeddings.parquet",
+        "csv": "data_frankfurt/final/frankfurt_secondary_school_master_table_final.csv",
+    },
 ]
 
 NEW_COLUMNS = [
     "abitur_durchschnitt_estimated",
     "abitur_durchschnitt_estimated_lower",
     "abitur_durchschnitt_estimated_upper",
-    "abitur_erfolgsquote_estimated",
-    "abitur_erfolgsquote_estimated_lower",
-    "abitur_erfolgsquote_estimated_upper",
     "abitur_prediction_confidence",
     "abitur_prediction_drivers",
     # State-rebased columns (predictions shifted to match official state averages)
@@ -288,19 +298,11 @@ def main():
         for key in CITY_SPECIFIC_DIMS | NON_PORTABLE_DIMS:
             p.values.pop(key, None)
 
-    # Build erfolgsquote labels from school_info
-    labeled_erfolgsquote = {}
-    for sid, meta in info.items():
-        eq = meta.get("erfolgsquote")
-        if eq is not None:
-            labeled_erfolgsquote[sid] = eq
-
     print(f"\n  Abitur grade labels: {len(labeled_grade)} schools")
-    print(f"  Erfolgsquote labels: {len(labeled_erfolgsquote)} schools")
 
-    # --- Step 2: Train Model A (Abitur grade) ---
+    # --- Step 2: Train model (Abitur grade) ---
     # Labeled schools span Berlin + Hamburg → labeled-only standardization is fine
-    print("\nStep 2: Training Model A (Abitur grade)...")
+    print("\nStep 2: Training grade model...")
     model_a = _train_ridge_model(profiles, labeled_grade, fit_on_all=False)
     if model_a is None:
         print("  ERROR: Failed to train grade model")
@@ -308,56 +310,29 @@ def main():
     print(f"  Grade model: R²={model_a['r2']:.4f}, RMSE={model_a['rmse']:.4f}, "
           f"n={model_a['n_labeled']}, features={len(model_a['feature_keys'])}")
 
-    # Prediction intervals for grade model
+    # Prediction intervals
     lower_a, upper_a = compute_prediction_intervals(
         model_a["X_train"], model_a["y_train"],
         model_a["X_all"], model_a["y_pred_all"],
         model_a["alpha"], ci_level=0.80,
     )
 
-    # --- Step 3: Train Model B (completion rate) ---
-    # Labeled schools are Berlin-only → use fit_on_all=True so that Hamburg/NRW
-    # schools are standardized against the full cross-city distribution, not just
-    # the 88 Berlin Gymnasien.  Without this, gisd_quintile alone causes z ≈ -15
-    # for Hamburg (Berlin Gymnasien cluster at quintile 4, std=0.2; Hamburg=1).
-    print("\nStep 3: Training Model B (Abitur completion rate)...")
-    model_b = _train_ridge_model(profiles, labeled_erfolgsquote, fit_on_all=True)
-    if model_b is None:
-        print("  WARNING: Failed to train completion rate model — skipping")
-    else:
-        print(f"  Completion model: R²={model_b['r2']:.4f}, RMSE={model_b['rmse']:.4f}, "
-              f"n={model_b['n_labeled']}, features={len(model_b['feature_keys'])}")
-        lower_b, upper_b = compute_prediction_intervals(
-            model_b["X_train"], model_b["y_train"],
-            model_b["X_all"], model_b["y_pred_all"],
-            model_b["alpha"], ci_level=0.80,
-        )
-
-    # --- Step 4: Build prediction lookup ---
-    print("\nStep 4: Building prediction lookup...")
-    # Index: school_id → predictions
+    # --- Step 3: Build prediction lookup ---
+    print("\nStep 3: Building prediction lookup...")
     pred_lookup = {}
     for i, sid in enumerate(model_a["school_ids"]):
-        entry = {
+        pred_lookup[sid] = {
             "abitur_durchschnitt_estimated": round(float(model_a["y_pred_all"][i]), 3),
             "abitur_durchschnitt_estimated_lower": round(float(lower_a[i]), 3),
             "abitur_durchschnitt_estimated_upper": round(float(upper_a[i]), 3),
             "abitur_prediction_confidence": round(model_a["confidences"][i], 3),
             "abitur_prediction_drivers": _build_drivers_json(model_a["contributions"][i]),
         }
-        if model_b is not None:
-            idx_b = model_b["school_ids"].index(sid) if sid in model_b["school_ids"] else None
-            if idx_b is not None:
-                pred_eq = float(model_b["y_pred_all"][idx_b])
-                entry["abitur_erfolgsquote_estimated"] = round(np.clip(pred_eq, 0, 100), 1)
-                entry["abitur_erfolgsquote_estimated_lower"] = round(np.clip(float(lower_b[idx_b]), 0, 100), 1)
-                entry["abitur_erfolgsquote_estimated_upper"] = round(np.clip(float(upper_b[idx_b]), 0, 100), 1)
-        pred_lookup[sid] = entry
 
     print(f"  {len(pred_lookup)} school predictions ready")
 
-    # --- Step 5: Write to parquets and CSVs ---
-    print("\nStep 5: Writing predictions to city files...")
+    # --- Step 4: Write to parquets and CSVs ---
+    print("\nStep 4: Writing predictions to city files...")
 
     for city_config in CITY_FILES:
         prefix = city_config["city_prefix"]

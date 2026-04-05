@@ -87,7 +87,7 @@ def _load_zensus(city: str) -> "pd.DataFrame | None":
     if city in _zensus_cache:
         return _zensus_cache[city]
 
-    city_map = {"berlin": "berlin", "hamburg": "hamburg", "nrw_koeln": "koeln", "nrw_duesseldorf": "duesseldorf"}
+    city_map = {"berlin": "berlin", "hamburg": "hamburg", "nrw_koeln": "koeln", "nrw_duesseldorf": "duesseldorf", "frankfurt": "frankfurt"}
 
     # NRW covers two cities — load and merge both
     if city == "nrw":
@@ -237,6 +237,27 @@ NRW_COLUMN_MAP = {
     "poi_kita_count_500m": "poi_kita_count",
     # Demographics
     "sozialindexstufe": "sozialindex",
+}
+
+# Frankfurt uses city-level crime (same value for all schools → excluded from model)
+# and has no Zensus grid. Available: POI, transit, GISD via PLZ, school-internal.
+FRANKFURT_COLUMN_MAP = {
+    # Crime — city-level only; crime_safety_rank is excluded as NON_PORTABLE_DIM anyway
+    "crime_total_crimes_2023": "crime_index",
+    "crime_koerperverletzung_2023": "crime_violent",
+    "crime_safety_rank": "crime_safety_rank",
+    # Transit
+    "transit_stop_count_1000m": "transit_stop_count",
+    "transit_all_lines_1000m": "transit_lines_count",
+    "transit_accessibility_score": "transit_accessibility",
+    "transit_rail_01_distance_m": "transit_nearest_m",
+    # POIs
+    "poi_supermarket_count_500m": "supermarket_count",
+    "poi_restaurant_count_500m": "poi_restaurant_count",
+    "poi_kita_count_500m": "poi_kita_count",
+    "poi_primary_school_count_500m": "poi_school_count",
+    # Demographics
+    "belastungsstufe": "belastungsstufe",
 }
 
 # Abitur column preference (try most recent first)
@@ -465,6 +486,13 @@ def load_all_data(
             str(PROJECT_ROOT / "data_nrw" / "final" / "nrw_secondary_school_master_table_final.csv"),
             NRW_COLUMN_MAP,
             "nrw",
+        ))
+
+    if city in ("frankfurt", "all"):
+        datasets.append((
+            str(PROJECT_ROOT / "data_frankfurt" / "final" / "frankfurt_secondary_school_master_table_final.csv"),
+            FRANKFURT_COLUMN_MAP,
+            "frankfurt",
         ))
 
     for path, col_map, label in datasets:
