@@ -111,7 +111,7 @@ def generate_gemini_embeddings(texts):
     for text in texts:
         try:
             resp = requests.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={GEMINI_API_KEY}",
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={GEMINI_API_KEY}",
                 json={"content": {"parts": [{"text": text}]}},
                 timeout=30,
             )
