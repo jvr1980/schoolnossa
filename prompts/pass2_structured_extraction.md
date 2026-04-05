@@ -40,7 +40,7 @@ Return a JSON object with exactly these fields:
   "sprachen": "<language offerings as a string, e.g. 'Englisch ab Klasse 1, Französisch-AG', or null>",
   "besonderheiten": "<notable special features, pedagogical concepts, awards, programs — comma-separated string, e.g. 'Ganztagsschule, Inklusion, Montessori-Pädagogik, MINT-Schwerpunkt', or null>",
   "ganztagsform": "<one of: 'offen', 'gebunden', 'teilgebunden', or null if not determinable>",
-  "schueler_gesamt_web": <total student count found on website or in research, integer, or null>,
+  "schueler_gesamt_web": <total student count found on the school's website or web research, integer or null — look for phrases like "X Schülerinnen und Schüler", "X Kinder", "ca. X Schüler">,
   "nachfrage_plaetze_2025_26": <number of available enrollment spots for 2025/26, integer, or null>,
   "nachfrage_wuensche_2025_26": <number of enrollment applications or requests for 2025/26, integer, or null>,
   "nachfrage_plaetze_2024_25": <number of available enrollment spots for 2024/25, integer, or null>,
@@ -65,7 +65,7 @@ Return ONLY the JSON object — no explanations, no markdown fences, no extra te
 | `sprachen` | `sprachen` | Only write if currently null |
 | `besonderheiten` | `besonderheiten` | Only write if currently null |
 | `ganztagsform` | `ganztagsform` | Write to column if present in schema |
-| `schueler_gesamt_web` | — | Cross-check only, do not overwrite `schueler_gesamt` |
+| `schueler_gesamt_web` | `schueler_gesamt_web` | Stored as a separate column alongside official `schueler_gesamt` |
 | `nachfrage_plaetze_2025_26` | `nachfrage_plaetze_2025_26` | Write if null |
 | `nachfrage_wuensche_2025_26` | `nachfrage_wuensche_2025_26` | Write if null |
 | `nachfrage_plaetze_2024_25` | `nachfrage_plaetze_2024_25` | Write if null |
