@@ -1,5 +1,22 @@
 # SchoolNossa Development Journal
 
+## 2026-04-05 — Hamburg Primary School Pipeline Built
+
+**What:** Created a complete primary school (Grundschule) pipeline for Hamburg, following the Berlin pattern of separate `scripts_hamburg_primary/` and `data_hamburg_primary/` directories.
+
+**Why:** The existing Hamburg pipeline only covered secondary schools (Stadtteilschulen + Gymnasien). The same WFS data source contains standalone Grundschulen that were filtered out.
+
+**Key results:**
+- **259 Grundschulen** extracted (230 state + 29 private), 100% coordinate coverage
+- Data source: same Transparenzportal WFS (`HH_WFS_Schulen`) — the `schulform` column distinguishes primary from secondary
+- Filter: `schulform` contains "Grundschule" AND does NOT contain "Stadtteilschule"/"Gymnasium"
+- 8-phase pipeline: Scraper → Traffic → Crime → Transit → POI → Combiner → Embeddings → Berlin Schema
+- No Abitur or website scraping phases (not applicable to Grundschulen)
+- Scripts in `scripts_hamburg_primary/` with orchestrator
+- Distribution by Bezirk: Wandsbek (58), Altona (46), Eimsbüttel (39), Hamburg-Nord (38), Hamburg-Mitte (35), Harburg (23), Bergedorf (20)
+
+**Branch:** `feature/munich-pipeline` (continuation of existing branch)
+
 ## 2026-04-01 — Munich Secondary School Pipeline Scaffolded and Implemented
 
 **What:** Built the complete Munich (Bayern) secondary school data pipeline — all 9 phases from research through Berlin schema enforcement. This is the 5th city in the SchoolNossa platform.
