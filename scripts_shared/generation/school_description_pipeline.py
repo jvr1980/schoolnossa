@@ -51,7 +51,9 @@ PASS2_COLUMN_MAP = {
     "sprachen":                  "sprachen",
     "besonderheiten":            "besonderheiten",
     "ganztagsform":              "ganztagsform",
-    "schueler_gesamt_web":       "schueler_gesamt_web",   # website-sourced count (stored alongside official schueler_gesamt)
+    "schueler_2024_25":          "schueler_2024_25",      # student count for 2024/25 from website
+    "schueler_2023_24":          "schueler_2023_24",      # student count for 2023/24 from website
+    "schueler_gesamt_web":       "schueler_gesamt_web",   # year-unknown count from website (fallback when year unclear)
     "nachfrage_plaetze_2025_26": "nachfrage_plaetze_2025_26",
     "nachfrage_wuensche_2025_26":"nachfrage_wuensche_2025_26",
     "nachfrage_plaetze_2024_25": "nachfrage_plaetze_2024_25",
@@ -568,7 +570,7 @@ def print_summary(df, cache, passes, school_type):
         p2 = sum(1 for e in cache.values() if e.get("pass2"))
         print(f"  Pass 2 (structured): {p2}/{len(df)} complete")
         # Show fill rates for key columns
-        for col in ["lehrer_2024_25", "schueler_gesamt_web", "website", "gruendungsjahr", "sprachen", "besonderheiten"]:
+        for col in ["lehrer_2024_25", "schueler_2024_25", "schueler_2023_24", "schueler_gesamt_web", "website", "gruendungsjahr", "sprachen", "besonderheiten"]:
             if col in df.columns:
                 n = df[col].notna().sum()
                 print(f"    {col}: {n}/{len(df)} filled ({100*n/len(df):.0f}%)")
