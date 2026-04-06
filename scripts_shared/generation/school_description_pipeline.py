@@ -727,6 +727,11 @@ def apply_cache_to_dataframe(df, cache, passes):
                 if val is None:
                     # For website: fall through to website_fallback below
                     continue
+                # Normalize website URLs (strip citation markers, ensure https://)
+                if json_key == "website" and isinstance(val, str):
+                    val = clean_url(val)
+                    if not val:
+                        continue
                 # Add column if it doesn't exist in schema
                 if col_name not in df.columns:
                     df[col_name] = None
@@ -737,7 +742,7 @@ def apply_cache_to_dataframe(df, cache, passes):
                     updated_structured += 1
 
             # Website fallback: use citation-derived or targeted-search URL if Pass 2 returned null
-            fallback_url = entry.get("website_fallback")
+            fallback_url = clean_url(entry.get("website_fallback") or "")
             if fallback_url:
                 if "website" not in df.columns:
                     df["website"] = None
