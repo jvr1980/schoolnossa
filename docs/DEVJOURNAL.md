@@ -1,5 +1,28 @@
 # SchoolNossa Development Journal
 
+## 2026-04-06 — Description Pipeline: Website Coverage 53% → 99% + Primary Schools
+
+**What:** Improved the shared description pipeline to find school websites for nearly all schools, and ran description + tuition pipelines on Frankfurt primary schools.
+
+**Why:** The original pipeline found websites for only 53% of Frankfurt secondary schools (39/73). Every school has a website — this was a data quality gap. Also fixed a corrupted primary `_final.csv` that had 2 schools instead of 85.
+
+**Root cause of missing websites:** Perplexity's Sonar API returns source citation URLs alongside its text response, but we were only capturing the text — discarding the citation array that often contains the school's official website URL.
+
+**Fixes:**
+1. **Capture Perplexity citations** in Pass 0 — stored as `pass0_citations` in cache
+2. **Pass citations to Pass 2** — structured extraction prompt now includes source URLs as hints
+3. **Citation domain filter** with scoring: school portals (+5), school keywords in domain (+3), city name in domain (+2), name match (+4); blocks directories, FOIA portals, city portals
+4. **Targeted website fallback**: if Pass 2 + citation analysis fail, fires targeted Perplexity query *"What is the official website of [school] in [city]?"*
+5. **URL normalization**: strips `[1][2]` citation markers, normalizes to base homepage
+6. **In-place parquet update**: `save_results` now updates `_final_with_embeddings.parquet` preserving embeddings — prevents schema transformer from overwriting enriched data
+
+**Results:**
+- Frankfurt secondary: **39/73 (53%) → 72/73 (99%)** websites found
+- Frankfurt primary description pipeline: running (descriptions + structured extraction for 85 schools)
+- All POI coverage confirmed 100% (primary CSV was corrupted with 2 rows; regenerated from parquet)
+
+**Files changed:** `scripts_shared/generation/school_description_pipeline.py`
+
 ## 2026-04-05 — Hamburg Primary School Pipeline Built
 
 **What:** Created a complete primary school (Grundschule) pipeline for Hamburg, following the Berlin pattern of separate `scripts_hamburg_primary/` and `data_hamburg_primary/` directories.
