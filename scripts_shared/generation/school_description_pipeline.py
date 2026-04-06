@@ -186,56 +186,91 @@ def run_pass0_perplexity(prompt, api_key, model="sonar", delay=2.0):
     return content, citations
 
 
+def clean_url(url):
+    """Strip citation markers like [1], [2] and trailing punctuation from URLs."""
+    import re
+    url = url.strip()
+    # Remove citation markers like [1], [2][3], etc.
+    url = re.sub(r"\[\d+\]+$", "", url)
+    url = re.sub(r"(\[\d+\])+", "", url)
+    # Strip trailing punctuation
+    url = url.rstrip(".,;:)")
+    return url
+
+
 def find_school_website_from_citations(citations, school_name, city="Frankfurt"):
     """Identify the school's official website from Perplexity citation URLs.
 
-    Filters out generic sites (Wikipedia, Google, social media, news portals)
+    Filters out generic sites (Wikipedia, directories, social media, etc.)
     and returns the most likely official school domain.
+    Only returns a URL if it looks like the school's OWN website (not a third-party listing).
     """
     if not citations:
         return None
 
-    # Domains we know are NOT official school websites
+    # Domains that are NOT official school websites (third-party listing/info sites)
     GENERIC_DOMAINS = {
-        "wikipedia.org", "google.com", "google.de", "maps.google.com",
+        # General
+        "wikipedia.org", "wikimedia.org", "wikidata.org",
+        "google.com", "google.de", "maps.google.com",
         "facebook.com", "instagram.com", "twitter.com", "youtube.com",
         "linkedin.com", "xing.com",
+        "openstreetmap.org",
+        # German directories / info portals
+        "dasoertliche.de", "gelbeseiten.de", "11880.com", "cylex.de",
+        "meinestadt.de", "stadtbranchenbuch.com", "branchenbuch.de",
+        "schul-info.de", "bildungsserver.de", "bildungsportal.de",
+        "kek-online.de", "jedeschule.de", "schulen.de",
+        # FOIA / transparency platforms
+        "fragdenstaat.de", "informationsfreiheit.de",
+        # State ministry / statistics portals (not school's own site)
         "schulministerium.nrw.de", "kultusministerium.hessen.de",
-        "statistik.hessen.de", "frankfurt.de", "berlin.de",
-        "hamburg.de", "koeln.de", "muenchen.de",
-        "kek-online.de", "schulportal.hessen.de",
-        "jedeschule.de", "schulen.de", "schule-bw.de",
-        "bildung.de", "lernsax.de",
-        "openstreetmap.org", "wikidata.org",
+        "statistik.hessen.de", "schul-bw.de",
+        "bildung.hessen.de",
+        # City portals (generic - the SCHOOL subdomain schulportal.hessen.de is fine)
+        "frankfurt.de", "berlin.de", "hamburg.de", "koeln.de", "muenchen.de",
+        "duesseldorf.de", "stuttgart.de",
+        # News / press
+        "faz.net", "fr.de", "hessenschau.de", "spiegel.de", "zeit.de",
+        "sueddeutsche.de", "welt.de",
     }
 
     import re
     from urllib.parse import urlparse
 
     scored = []
-    for url in citations:
+    for raw_url in citations:
+        url = clean_url(raw_url)
         try:
             parsed = urlparse(url)
-            domain = parsed.netloc.lower().lstrip("www.")
+            domain = parsed.netloc.lower()
+            if domain.startswith("www."):
+                domain = domain[4:]
 
-            # Skip generic domains
+            # Skip if matches any generic domain
             if any(domain == g or domain.endswith("." + g) for g in GENERIC_DOMAINS):
                 continue
 
-            # Prefer .de domains, especially with school-like subdomains
+            # Score: higher = more likely to be official school site
             score = 0
             if domain.endswith(".de"):
                 score += 2
-            if any(k in domain for k in ["schule", "school", "gymnasium", "grundschule", "gesamtschule"]):
+
+            # Frankfurt/Hessen official school portal subdomains (e.g., xyz.frankfurt.schule.hessen.de)
+            if "schule.hessen.de" in domain or "schulportal.hessen.de" in domain:
+                score += 5
+
+            # School-type keywords in domain
+            if any(k in domain for k in ["schule", "gymnasium", "grundschule", "gesamtschule",
+                                          "realschule", "hauptschule", "waldorf", "montessori"]):
                 score += 3
-            # Frankfurt city school portal subdomains are official
-            if "frankfurt.de" in domain:
-                score += 1
-            # Name match (normalize)
-            name_words = re.sub(r"[^a-z0-9]", "", school_name.lower())
-            dom_clean = re.sub(r"[^a-z0-9]", "", domain.lower())
-            if name_words[:6] in dom_clean or dom_clean[:6] in name_words:
-                score += 2
+
+            # School name words in domain (strong signal)
+            name_normalized = re.sub(r"[^a-z0-9]", "", school_name.lower())
+            dom_normalized = re.sub(r"[^a-z0-9]", "", domain.lower())
+            name_prefix = name_normalized[:8]
+            if name_prefix and (name_prefix in dom_normalized):
+                score += 4
 
             scored.append((score, url))
         except Exception:
@@ -246,8 +281,8 @@ def find_school_website_from_citations(citations, school_name, city="Frankfurt")
 
     scored.sort(key=lambda x: -x[0])
     best_score, best_url = scored[0]
-    # Only return if it looks like a real school site (score > 0)
-    return best_url if best_score > 0 else None
+    # Only return URL if it has a meaningful school-specific score (not just a random .de site)
+    return best_url if best_score >= 3 else None
 
 
 def run_website_search_perplexity(school_name, city, api_key, model="sonar", delay=2.0):
@@ -282,12 +317,17 @@ def run_website_search_perplexity(school_name, city, api_key, model="sonar", del
     content = result["choices"][0]["message"]["content"].strip()
     citations = result.get("citations", [])
 
-    # Check if the model returned a URL directly
+    # Check if the model returned a URL directly (clean up citation markers first)
     import re
     url_match = re.search(r"https?://\S+", content)
     if url_match:
-        url = url_match.group(0).rstrip(".,;)")
-        return url, citations
+        url = clean_url(url_match.group(0))
+        # Validate: should look like a real domain, not a generic one
+        if url and "not found" not in content.lower():
+            # Cross-check: run it through citation filter logic to avoid directories
+            candidate = find_school_website_from_citations([url], school_name, city)
+            if candidate:
+                return candidate, citations
 
     # Fallback: check citations for the official site
     url_from_citations = find_school_website_from_citations(citations, school_name, city)
