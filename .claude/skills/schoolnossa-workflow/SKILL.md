@@ -146,6 +146,9 @@ When in Phase 3 (IMPLEMENT), work through enrichments in this order because each
 9. **Embeddings Generator** — initial pass (uses rule-based descriptions)
 10. **Schema Transformer** — maps to Berlin schema
 11. **Description Pipeline** — web research + LLM descriptions (DE+EN) + structured extraction to fill empty columns (lehrer, website, schueler by year, sprachen, besonderheiten, nachfrage, migration). Script: `scripts_shared/generation/school_description_pipeline.py`. Orchestrator flag: `--with-descriptions`. Requires Perplexity + OpenAI API keys. After this, re-run steps 9+10 so embeddings reflect the richer descriptions.
+12. **Tuition Pass 1** — Gemini + Google Search classifies each **private school** (traegerschaft contains 'privat'/'frei') into a tuition tier (low/medium/high/premium/ultra) and estimates a single monthly fee. Script: `scripts_shared/generation/tuition_pipeline.py --passes 1`. Orchestrator: Phase 10 / `--with-tuition`.
+13. **Tuition Pass 2** — Gemini + Google Search generates a 12-bracket income matrix (€<20k → €>250k) and sibling discount percentages. Script: `--passes 2`. Orchestrator: Phase 11.
+14. **Tuition Pass 3** — GPT-5.2 via OpenAI Responses API verifies schools whose Pass 2 matrix is flat (all brackets identical). Sets `income_based_tuition` flag. Only processes flat-matrix schools; sets `income_based_tuition=False` for confirmed flat-fee schools to exclude from future runs. Script: `--passes 3`. Orchestrator: Phase 12 / `--phases 12`.
 
 ## Quick Commands
 

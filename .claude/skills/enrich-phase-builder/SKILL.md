@@ -259,6 +259,11 @@ Before generating, read the scripts from all three cities for the chosen enrichm
 | NRW | `scripts_nrw/enrichment/nrw_website_metadata_enrichment.py` | Gemini + Google Search grounding (metadata + bilingual descriptions in one pass) |
 | **All cities** | `scripts_shared/generation/school_description_pipeline.py` | **Preferred for new cities.** 3-pass pipeline: Pass 0 = Perplexity web research, Pass 1 = GPT-4o rich descriptions (DE+EN), Pass 2 = structured JSON extraction to fill empty columns (lehrer, website, schueler by year, sprachen, besonderheiten, nachfrage, migration). Resumable via JSON cache. Run via orchestrator `--with-descriptions` flag or directly: `python school_description_pipeline.py --city {city} --school-type {type}`. Prompts stored in `prompts/pass0_web_research.md`, `prompts/pass1_description_generation.md`, `prompts/pass2_structured_extraction.md`. |
 
+### Tuition Fee References
+| City | Script | Approach |
+|------|--------|----------|
+| **All cities** | `scripts_shared/generation/tuition_pipeline.py` | **3-pass tuition pipeline for private schools only** (traegerschaft contains 'privat'/'frei'). Pass 1 (Phase 10): Gemini `gemini-3-pro-preview` + Google Search → `tuition_tier` (low/medium/high/premium/ultra) + `tuition_monthly_eur`. Pass 2 (Phase 11): Gemini + Google Search → `tuition_income_matrix` (12 income brackets €<20k–€>250k as JSON) + `tuition_sibling_discounts`. Pass 3 (Phase 12): GPT-5.2 via OpenAI Responses API (`/v1/responses`) + `web_search` + `report_tuition_fees` function calling → verifies flat matrices, sets `income_based_tuition` bool. Idempotent: each pass skips already-processed schools. Resumable via JSON cache in `data_{city}/cache/tuition_pipeline_{type}.json`. Run via orchestrator `--with-tuition` flag or: `python tuition_pipeline.py --city {city} --school-type {type} --passes 1,2,3`. New columns: `tuition_tier`, `tuition_tier_reasoning`, `tuition_income_matrix`, `tuition_sibling_discounts`, `tuition_granular_reasoning`, `tuition_granular_generated_at`, `income_based_tuition`. |
+
 ### Demographics References
 | City | Script | Approach |
 |------|--------|----------|

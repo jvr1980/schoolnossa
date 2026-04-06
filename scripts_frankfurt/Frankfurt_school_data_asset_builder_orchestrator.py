@@ -23,8 +23,12 @@ Usage:
     python Frankfurt_school_data_asset_builder_orchestrator.py --skip-embeddings
     python Frankfurt_school_data_asset_builder_orchestrator.py --skip-poi
     python Frankfurt_school_data_asset_builder_orchestrator.py --with-descriptions
+    python Frankfurt_school_data_asset_builder_orchestrator.py --with-tuition
+    python Frankfurt_school_data_asset_builder_orchestrator.py --with-descriptions --with-tuition
     python Frankfurt_school_data_asset_builder_orchestrator.py --phases 9
     python Frankfurt_school_data_asset_builder_orchestrator.py --phases 9,7,8  # descriptions → re-embed → schema
+    python Frankfurt_school_data_asset_builder_orchestrator.py --phases 10,11,12  # all tuition passes
+    python Frankfurt_school_data_asset_builder_orchestrator.py --phases 12       # re-run tuition Pass 3 only
 
 Author: Frankfurt School Data Pipeline
 Created: 2026-03-30
@@ -158,8 +162,71 @@ def run_phase_9(passes="0,1,2"):
     return results
 
 
+def run_phase_10(tuition_passes="1,2,3"):
+    """Phase 10: Tuition fee pipeline — tier classification (Pass 1).
+
+    Classifies private schools into tuition tiers (low/medium/high/premium/ultra)
+    and estimates a single monthly fee, using Gemini + Google Search grounding.
+    Only processes schools where traegerschaft contains 'privat' or 'frei'.
+    """
+    logger.info("=" * 60)
+    logger.info("PHASE 10: Tuition Tier Classification (Pass 1)")
+    logger.info("=" * 60)
+    return _run_tuition_pipeline(passes="1")
+
+
+def run_phase_11(tuition_passes="1,2,3"):
+    """Phase 11: Tuition income matrix generation (Pass 2).
+
+    Generates a 12-bracket income matrix and sibling discount percentages
+    for each private school that has a tier from Phase 10.
+    Uses Gemini + Google Search grounding.
+    """
+    logger.info("=" * 60)
+    logger.info("PHASE 11: Tuition Income Matrix (Pass 2)")
+    logger.info("=" * 60)
+    return _run_tuition_pipeline(passes="2")
+
+
+def run_phase_12():
+    """Phase 12: Tuition verification (Pass 3).
+
+    Re-researches private schools whose Pass 2 matrix is flat (all 12 brackets identical)
+    using GPT-5.2 via the OpenAI Responses API with web_search + function calling.
+    Sets income_based_tuition=False for confirmed flat-fee schools so they are
+    excluded from future Pass 3 runs.
+    Requires OpenAI API key.
+    """
+    logger.info("=" * 60)
+    logger.info("PHASE 12: Tuition Verification (Pass 3 — GPT-5.2)")
+    logger.info("=" * 60)
+    return _run_tuition_pipeline(passes="3")
+
+
+def _run_tuition_pipeline(passes="1,2,3"):
+    """Internal helper: runs tuition_pipeline.py for both school types."""
+    pipeline_script = PROJECT_ROOT / "scripts_shared" / "generation" / "tuition_pipeline.py"
+    if not pipeline_script.exists():
+        raise FileNotFoundError(f"Tuition pipeline script not found: {pipeline_script}")
+
+    results = {}
+    for school_type in ["primary", "secondary"]:
+        logger.info(f"\nRunning tuition pipeline (passes={passes}) for {school_type} schools...")
+        cmd = [
+            sys.executable, str(pipeline_script),
+            "--city", "frankfurt",
+            "--school-type", school_type,
+            "--passes", passes,
+        ]
+        result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=False)
+        if result.returncode != 0:
+            raise RuntimeError(f"Tuition pipeline failed for {school_type} (exit code {result.returncode})")
+        results[school_type] = "success"
+    return results
+
+
 def run_pipeline(phases=None, skip_embeddings=False, skip_poi=False, with_descriptions=False,
-                 description_passes="0,1,2"):
+                 description_passes="0,1,2", with_tuition=False):
     start = datetime.now()
     logger.info("=" * 70)
     logger.info("FRANKFURT SCHOOL DATA ASSET BUILDER - STARTING")
@@ -175,7 +242,10 @@ def run_pipeline(phases=None, skip_embeddings=False, skip_poi=False, with_descri
         6: ("Data Combiner",                        run_phase_6),
         7: ("Embeddings",                           lambda: run_phase_7(skip_embeddings)),
         8: ("Berlin Schema",                        run_phase_8),
-        9: ("Description Pipeline (Web + LLM)",     lambda: run_phase_9(description_passes)),
+        9:  ("Description Pipeline (Web + LLM)",     lambda: run_phase_9(description_passes)),
+        10: ("Tuition Tier Classification (Pass 1)", run_phase_10),
+        11: ("Tuition Income Matrix (Pass 2)",       run_phase_11),
+        12: ("Tuition Verification (Pass 3)",        run_phase_12),
     }
 
     if phases is None:
@@ -184,8 +254,11 @@ def run_pipeline(phases=None, skip_embeddings=False, skip_poi=False, with_descri
             phases_to_run.append(5)
         phases_to_run.extend([6, 7, 8])
         if with_descriptions:
-            # Run descriptions after Phase 8, then re-run embeddings + schema
+            # Descriptions → re-embed → re-schema
             phases_to_run.extend([9, 7, 8])
+        if with_tuition:
+            # All 3 tuition passes after Berlin schema
+            phases_to_run.extend([10, 11, 12])
     else:
         phases_to_run = phases
 
@@ -231,9 +304,11 @@ def main():
     parser.add_argument("--skip-embeddings",       action="store_true")
     parser.add_argument("--skip-poi",              action="store_true", help="Skip POI enrichment (requires API key)")
     parser.add_argument("--with-descriptions",     action="store_true",
-                        help="Run Phase 9 (description pipeline) after Phase 8 — web research + LLM descriptions + structured extraction. Re-runs Phase 7+8 afterwards.")
+                        help="Run Phase 9 (description pipeline) after Phase 8. Re-runs Phase 7+8 afterwards.")
     parser.add_argument("--description-passes",    type=str, default="0,1,2",
                         help="Which description pipeline passes to run: 0=research, 1=descriptions, 2=structured (default: 0,1,2)")
+    parser.add_argument("--with-tuition",          action="store_true",
+                        help="Run Phases 10-12 (tuition pipeline) for private schools — tier classification, income matrix, and verification. Requires Gemini + OpenAI API keys.")
     args = parser.parse_args()
 
     phases = [int(p.strip()) for p in args.phases.split(",")] if args.phases else None
@@ -244,6 +319,7 @@ def main():
         skip_poi=args.skip_poi,
         with_descriptions=args.with_descriptions,
         description_passes=args.description_passes,
+        with_tuition=args.with_tuition,
     )
 
     failed = any(r.get("status") == "failed" for r in results.values())
