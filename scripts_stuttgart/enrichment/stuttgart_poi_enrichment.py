@@ -42,6 +42,27 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent
 DATA_DIR = PROJECT_ROOT / "data_stuttgart"
 RAW_DIR = DATA_DIR / "raw"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
+CONFIG_FILE = PROJECT_ROOT / "config.yaml"
+ENV_FILE = PROJECT_ROOT / ".env"
+
+# Load API keys from .env and config.yaml
+try:
+    if ENV_FILE.exists():
+        from dotenv import load_dotenv
+        load_dotenv(ENV_FILE)
+except Exception:
+    pass
+
+try:
+    import yaml
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE) as f:
+            _cfg = yaml.safe_load(f) or {}
+        _keys = _cfg.get("api_keys", {})
+        if _keys.get("google_places") and "GOOGLE_PLACES_API_KEY" not in os.environ:
+            os.environ["GOOGLE_PLACES_API_KEY"] = _keys["google_places"]
+except Exception:
+    pass
 
 GOOGLE_PLACES_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
 SEARCH_RADIUS_M = 500

@@ -94,13 +94,12 @@ def run_phase_6():
 
 
 def run_phase_7():
-    """Phase 7: Embeddings Generator."""
+    """Phase 7: Embeddings Generator (Gemini)."""
     logger.info("=" * 60)
-    logger.info("PHASE 7: Embeddings (skipped — run manually if needed)")
+    logger.info("PHASE 7: Embeddings (Gemini gemini-embedding-001)")
     logger.info("=" * 60)
-    # Embeddings require OpenAI/Gemini API keys
-    # Can be added later using scripts_shared/generate_embeddings.py pattern
-    pass
+    from processing.stuttgart_embeddings_generator import main as embeddings_main
+    embeddings_main()
 
 
 def run_phase_8():
