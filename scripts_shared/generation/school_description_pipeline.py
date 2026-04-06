@@ -727,11 +727,23 @@ def apply_cache_to_dataframe(df, cache, passes):
                 if val is None:
                     # For website: fall through to website_fallback below
                     continue
-                # Normalize website URLs (strip citation markers, ensure https://)
+                # Normalize and validate website URLs
                 if json_key == "website" and isinstance(val, str):
                     val = clean_url(val)
                     if not val:
                         continue
+                    # Reject known non-school website domains
+                    try:
+                        from urllib.parse import urlparse
+                        _domain = urlparse(val).netloc.lower().lstrip("www.")
+                        _REJECT = {"frankfurt.de","berlin.de","hamburg.de","muenchen.de",
+                                   "nibis.de","jedeschule.de","schulen.de","google.de",
+                                   "wikipedia.org","fragdenstaat.de","dasoertliche.de",
+                                   "gelbeseiten.de","onlinestreet.de","meinestadt.de"}
+                        if any(_domain == r or _domain.endswith("." + r) for r in _REJECT):
+                            continue
+                    except Exception:
+                        pass
                 # Add column if it doesn't exist in schema
                 if col_name not in df.columns:
                     df[col_name] = None
