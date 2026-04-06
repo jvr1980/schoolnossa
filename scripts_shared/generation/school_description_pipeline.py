@@ -155,7 +155,11 @@ INSTRUCTIONS:
 
 
 def run_pass0_perplexity(prompt, api_key, model="sonar", delay=2.0):
-    """Call Perplexity API for web-grounded research."""
+    """Call Perplexity API for web-grounded research.
+
+    Returns (content_text, citations_list) where citations_list is a list of
+    source URLs Perplexity used. One of these is often the school's official website.
+    """
     import urllib.request
 
     payload = json.dumps({
@@ -177,7 +181,117 @@ def run_pass0_perplexity(prompt, api_key, model="sonar", delay=2.0):
         result = json.loads(resp.read().decode("utf-8"))
 
     time.sleep(delay)
-    return result["choices"][0]["message"]["content"]
+    content = result["choices"][0]["message"]["content"]
+    citations = result.get("citations", [])
+    return content, citations
+
+
+def find_school_website_from_citations(citations, school_name, city="Frankfurt"):
+    """Identify the school's official website from Perplexity citation URLs.
+
+    Filters out generic sites (Wikipedia, Google, social media, news portals)
+    and returns the most likely official school domain.
+    """
+    if not citations:
+        return None
+
+    # Domains we know are NOT official school websites
+    GENERIC_DOMAINS = {
+        "wikipedia.org", "google.com", "google.de", "maps.google.com",
+        "facebook.com", "instagram.com", "twitter.com", "youtube.com",
+        "linkedin.com", "xing.com",
+        "schulministerium.nrw.de", "kultusministerium.hessen.de",
+        "statistik.hessen.de", "frankfurt.de", "berlin.de",
+        "hamburg.de", "koeln.de", "muenchen.de",
+        "kek-online.de", "schulportal.hessen.de",
+        "jedeschule.de", "schulen.de", "schule-bw.de",
+        "bildung.de", "lernsax.de",
+        "openstreetmap.org", "wikidata.org",
+    }
+
+    import re
+    from urllib.parse import urlparse
+
+    scored = []
+    for url in citations:
+        try:
+            parsed = urlparse(url)
+            domain = parsed.netloc.lower().lstrip("www.")
+
+            # Skip generic domains
+            if any(domain == g or domain.endswith("." + g) for g in GENERIC_DOMAINS):
+                continue
+
+            # Prefer .de domains, especially with school-like subdomains
+            score = 0
+            if domain.endswith(".de"):
+                score += 2
+            if any(k in domain for k in ["schule", "school", "gymnasium", "grundschule", "gesamtschule"]):
+                score += 3
+            # Frankfurt city school portal subdomains are official
+            if "frankfurt.de" in domain:
+                score += 1
+            # Name match (normalize)
+            name_words = re.sub(r"[^a-z0-9]", "", school_name.lower())
+            dom_clean = re.sub(r"[^a-z0-9]", "", domain.lower())
+            if name_words[:6] in dom_clean or dom_clean[:6] in name_words:
+                score += 2
+
+            scored.append((score, url))
+        except Exception:
+            continue
+
+    if not scored:
+        return None
+
+    scored.sort(key=lambda x: -x[0])
+    best_score, best_url = scored[0]
+    # Only return if it looks like a real school site (score > 0)
+    return best_url if best_score > 0 else None
+
+
+def run_website_search_perplexity(school_name, city, api_key, model="sonar", delay=2.0):
+    """Targeted search: find only the official website URL for a school.
+
+    Used as a fallback when Pass 0 + Pass 2 could not determine the website.
+    Returns (website_url_or_None, citations_list).
+    """
+    import urllib.request
+
+    prompt = (
+        f'What is the official website URL of "{school_name}" in {city}, Germany? '
+        f"Return only the URL — nothing else. If you cannot find it, return 'not found'."
+    )
+    payload = json.dumps({
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}]
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.perplexity.ai/chat/completions",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+    )
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+
+    time.sleep(delay)
+    content = result["choices"][0]["message"]["content"].strip()
+    citations = result.get("citations", [])
+
+    # Check if the model returned a URL directly
+    import re
+    url_match = re.search(r"https?://\S+", content)
+    if url_match:
+        url = url_match.group(0).rstrip(".,;)")
+        return url, citations
+
+    # Fallback: check citations for the official site
+    url_from_citations = find_school_website_from_citations(citations, school_name, city)
+    return url_from_citations, citations
 
 
 # ---------------------------------------------------------------------------
@@ -316,7 +430,7 @@ def run_pass1_openai(system, user, api_key, model="gpt-4o-mini", delay=1.0):
 # Pass 2 — Structured Data Extraction (OpenAI)
 # ---------------------------------------------------------------------------
 
-def build_pass2_messages(row, city, raw_research):
+def build_pass2_messages(row, city, raw_research, citations=None):
     system = """You are a precise data extraction assistant. Your task is to extract specific structured data points about a German school from web research text.
 
 Rules:
@@ -326,12 +440,16 @@ Rules:
 - If conflicting values appear, use the most recent or most credible one
 - For website: only return a URL if you are confident it is the correct school's official website"""
 
+    citations_hint = ""
+    if citations:
+        citations_hint = f"\n\nSource URLs used in the research (one may be the school's official website):\n" + "\n".join(f"  - {u}" for u in citations[:10])
+
     user = f"""Based on the following web research about **{row['schulname']}** ({row.get('school_type', '')}) in {city}, Germany, extract the structured data below.
 
 Research text:
 ---
 {raw_research}
----
+---{citations_hint}
 
 Return a JSON object with exactly these fields (use null for any field not found):
 
@@ -416,13 +534,14 @@ def process_school(row, city, passes, cache, api_keys, config, force_rerun):
             else:
                 prompt = build_pass0_prompt(row, city)
                 try:
-                    raw = run_pass0_perplexity(
+                    raw, citations = run_pass0_perplexity(
                         prompt, perplexity_key,
                         model=model_cfg.get("perplexity", "sonar"),
                         delay=delay
                     )
                     entry["pass0_raw"] = raw
-                    logger.info(f"  [{school_id}] Pass 0 complete ({len(raw)} chars)")
+                    entry["pass0_citations"] = citations
+                    logger.info(f"  [{school_id}] Pass 0 complete ({len(raw)} chars, {len(citations)} citations)")
                 except Exception as e:
                     logger.warning(f"  [{school_id}] Pass 0 failed: {e}")
         else:
@@ -465,7 +584,8 @@ def process_school(row, city, passes, cache, api_keys, config, force_rerun):
             elif not raw_research:
                 logger.debug(f"  [{school_id}] No Pass 0 data — skipping Pass 2")
             else:
-                system, user = build_pass2_messages(row, city, raw_research)
+                citations = entry.get("pass0_citations", [])
+                system, user = build_pass2_messages(row, city, raw_research, citations=citations)
                 try:
                     result = run_pass2_openai(
                         system, user, openai_key,
@@ -480,6 +600,42 @@ def process_school(row, city, passes, cache, api_keys, config, force_rerun):
                     logger.warning(f"  [{school_id}] Pass 2 failed: {e}")
         else:
             logger.debug(f"  [{school_id}] Pass 2 cached")
+
+    # --- Website Fallback: targeted search for schools still missing a website ---
+    # Runs automatically when Pass 2 is requested and website is still null.
+    # Uses citations from Pass 0 first, then fires a targeted Perplexity search if needed.
+    if 2 in passes:
+        p2_website = (entry.get("pass2") or {}).get("website")
+        if not p2_website and "website_fallback" not in entry:
+            perplexity_key = api_keys.get("perplexity")
+            if perplexity_key:
+                # First: try to derive website from existing Pass 0 citations
+                citations = entry.get("pass0_citations", [])
+                if citations:
+                    derived = find_school_website_from_citations(
+                        citations, row["schulname"], city
+                    )
+                    if derived:
+                        entry["website_fallback"] = derived
+                        logger.info(f"  [{school_id}] Website from citations: {derived}")
+                # Second: if still nothing, run a targeted website search
+                if "website_fallback" not in entry:
+                    try:
+                        found_url, cit2 = run_website_search_perplexity(
+                            row["schulname"], city, perplexity_key,
+                            model=model_cfg.get("perplexity", "sonar"),
+                            delay=delay
+                        )
+                        entry["website_fallback"] = found_url  # may be None
+                        # Merge any new citations
+                        all_cits = list(set(citations + cit2))
+                        entry["pass0_citations"] = all_cits
+                        if found_url:
+                            logger.info(f"  [{school_id}] Website from targeted search: {found_url}")
+                        else:
+                            logger.debug(f"  [{school_id}] Website not found via targeted search")
+                    except Exception as e:
+                        logger.warning(f"  [{school_id}] Website search failed: {e}")
 
     return entry
 
@@ -513,6 +669,7 @@ def apply_cache_to_dataframe(df, cache, passes):
                     continue
                 val = p2.get(json_key)
                 if val is None:
+                    # For website: fall through to website_fallback below
                     continue
                 # Add column if it doesn't exist in schema
                 if col_name not in df.columns:
@@ -523,29 +680,65 @@ def apply_cache_to_dataframe(df, cache, passes):
                     df.at[idx, col_name] = val
                     updated_structured += 1
 
+            # Website fallback: use citation-derived or targeted-search URL if Pass 2 returned null
+            fallback_url = entry.get("website_fallback")
+            if fallback_url:
+                if "website" not in df.columns:
+                    df["website"] = None
+                current_website = df.at[idx, "website"]
+                if pd.isna(current_website) or current_website == "" or current_website is None:
+                    df.at[idx, "website"] = fallback_url
+                    updated_structured += 1
+
     logger.info(f"Applied: {updated_descriptions} description updates, {updated_structured} structured field fills")
     return df
 
 
 def save_results(df, city, school_type, output_dir):
-    """Save updated DataFrame to CSV (and parquet if no embedding column)."""
+    """Save updated DataFrame to CSV and update the embeddings parquet in-place.
+
+    The description pipeline reads _final.csv (no embeddings).  To keep the
+    _final_with_embeddings.parquet in sync we merge the new column values into
+    the existing parquet — preserving the embedding vectors — rather than
+    overwriting it with null-embedding data.
+    """
     output_dir.mkdir(parents=True, exist_ok=True)
-
     base = f"{city}_{school_type}_school_master_table_final"
-    csv_path = output_dir / f"{base}.csv"
 
-    # Save CSV without embeddings
+    # 1. Always save the CSV (no embeddings)
+    csv_path = output_dir / f"{base}.csv"
     csv_df = df.drop(columns=["embedding"], errors="ignore")
     csv_df.to_csv(csv_path, index=False, encoding="utf-8-sig")
-    logger.info(f"Saved CSV: {csv_path}")
+    logger.info(f"Saved CSV: {csv_path} ({len(csv_df)} rows)")
 
-    # Save parquet only if no embeddings (avoid overwriting embedding parquet with null embeddings)
+    # 2. Merge into the existing embeddings parquet in-place
     parquet_path = output_dir / f"{base}_with_embeddings.parquet"
-    if "embedding" in df.columns and df["embedding"].notna().any():
+    if parquet_path.exists():
+        try:
+            pq_df = pd.read_parquet(parquet_path)
+            # Identify key column for joining
+            key = "schulnummer" if "schulnummer" in df.columns else df.columns[0]
+            # Columns we want to update (all non-key, non-embedding cols from df)
+            update_cols = [c for c in csv_df.columns if c != key]
+            # Set index for fast alignment
+            pq_df = pq_df.set_index(key)
+            csv_indexed = csv_df.set_index(key)
+            for col in update_cols:
+                if col in csv_indexed.columns:
+                    if col not in pq_df.columns:
+                        pq_df[col] = None
+                    # Update only rows present in both
+                    pq_df.loc[csv_indexed.index, col] = csv_indexed[col]
+            pq_df = pq_df.reset_index()
+            pq_df.to_parquet(parquet_path, index=False)
+            logger.info(f"Updated parquet in-place: {parquet_path} ({len(pq_df)} rows, embeddings preserved)")
+        except Exception as e:
+            logger.warning(f"Could not update parquet in-place: {e}. Skipping parquet update.")
+    elif "embedding" in df.columns and df["embedding"].notna().any():
         df.to_parquet(parquet_path, index=False)
-        logger.info(f"Saved parquet: {parquet_path}")
+        logger.info(f"Saved new parquet: {parquet_path}")
     else:
-        logger.info("Skipping parquet save (no embeddings). Re-run the embeddings generator after this.")
+        logger.info("No existing embeddings parquet found. Re-run the embeddings generator after this.")
 
 
 def print_summary(df, cache, passes, school_type):
