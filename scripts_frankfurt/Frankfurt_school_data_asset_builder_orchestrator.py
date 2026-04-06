@@ -12,12 +12,19 @@ Phase 5: Enrich with POI data (Google Places API)
 Phase 6: Combine all data into master table
 Phase 7: Generate embeddings and final output
 Phase 8: Enforce Berlin schema
+Phase 9: Description pipeline — web research + LLM descriptions + structured extraction
+         (fills empty columns: lehrer, website, schueler by year, sprachen, besonderheiten, etc.)
+         Requires Perplexity + OpenAI API keys. Skipped by default; enable with --with-descriptions.
+         After running Phase 9, re-run Phase 7 to regenerate embeddings with new descriptions.
 
 Usage:
     python Frankfurt_school_data_asset_builder_orchestrator.py
     python Frankfurt_school_data_asset_builder_orchestrator.py --phases 1,2,3,4
     python Frankfurt_school_data_asset_builder_orchestrator.py --skip-embeddings
     python Frankfurt_school_data_asset_builder_orchestrator.py --skip-poi
+    python Frankfurt_school_data_asset_builder_orchestrator.py --with-descriptions
+    python Frankfurt_school_data_asset_builder_orchestrator.py --phases 9
+    python Frankfurt_school_data_asset_builder_orchestrator.py --phases 9,7,8  # descriptions → re-embed → schema
 
 Author: Frankfurt School Data Pipeline
 Created: 2026-03-30
@@ -25,6 +32,7 @@ Created: 2026-03-30
 
 import argparse
 import logging
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -114,7 +122,44 @@ def run_phase_8():
     return transform()
 
 
-def run_pipeline(phases=None, skip_embeddings=False, skip_poi=False):
+def run_phase_9(passes="0,1,2"):
+    """Phase 9: Description pipeline (web research + LLM descriptions + structured extraction).
+
+    Runs school_description_pipeline.py for both primary and secondary schools.
+    Fills empty columns: lehrer, website, schueler by year, sprachen, besonderheiten,
+    nachfrage, migration, and generates rich DE/EN descriptions via web research.
+
+    After this phase, re-run Phase 7 to regenerate embeddings with the new descriptions.
+    """
+    logger.info("=" * 60)
+    logger.info("PHASE 9: Description Pipeline (Web Research + Structured Extraction)")
+    logger.info("=" * 60)
+
+    pipeline_script = PROJECT_ROOT / "scripts_shared" / "generation" / "school_description_pipeline.py"
+    if not pipeline_script.exists():
+        raise FileNotFoundError(f"Description pipeline script not found: {pipeline_script}")
+
+    results = {}
+    for school_type in ["primary", "secondary"]:
+        logger.info(f"\nRunning description pipeline for {school_type} schools...")
+        cmd = [
+            sys.executable, str(pipeline_script),
+            "--city", "frankfurt",
+            "--school-type", school_type,
+            "--passes", passes,
+        ]
+        result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=False)
+        if result.returncode != 0:
+            raise RuntimeError(f"Description pipeline failed for {school_type} (exit code {result.returncode})")
+        results[school_type] = "success"
+        logger.info(f"Phase 9 complete for {school_type} schools")
+
+    logger.info("\nNOTE: Re-run Phase 7 (--phases 7) to regenerate embeddings with the new descriptions.")
+    return results
+
+
+def run_pipeline(phases=None, skip_embeddings=False, skip_poi=False, with_descriptions=False,
+                 description_passes="0,1,2"):
     start = datetime.now()
     logger.info("=" * 70)
     logger.info("FRANKFURT SCHOOL DATA ASSET BUILDER - STARTING")
@@ -122,14 +167,15 @@ def run_pipeline(phases=None, skip_embeddings=False, skip_poi=False):
     logger.info("=" * 70)
 
     available = {
-        1: ("School Master Data", run_phase_1),
-        2: ("Traffic (Unfallatlas)", run_phase_2),
-        3: ("Transit (Overpass)", run_phase_3),
-        4: ("Crime (PKS)", run_phase_4),
-        5: ("POI (Google Places)", run_phase_5),
-        6: ("Data Combiner", run_phase_6),
-        7: ("Embeddings", lambda: run_phase_7(skip_embeddings)),
-        8: ("Berlin Schema", run_phase_8),
+        1: ("School Master Data",                   run_phase_1),
+        2: ("Traffic (Unfallatlas)",                run_phase_2),
+        3: ("Transit (Overpass)",                   run_phase_3),
+        4: ("Crime (PKS)",                          run_phase_4),
+        5: ("POI (Google Places)",                  run_phase_5),
+        6: ("Data Combiner",                        run_phase_6),
+        7: ("Embeddings",                           lambda: run_phase_7(skip_embeddings)),
+        8: ("Berlin Schema",                        run_phase_8),
+        9: ("Description Pipeline (Web + LLM)",     lambda: run_phase_9(description_passes)),
     }
 
     if phases is None:
@@ -137,6 +183,9 @@ def run_pipeline(phases=None, skip_embeddings=False, skip_poi=False):
         if not skip_poi:
             phases_to_run.append(5)
         phases_to_run.extend([6, 7, 8])
+        if with_descriptions:
+            # Run descriptions after Phase 8, then re-run embeddings + schema
+            phases_to_run.extend([9, 7, 8])
     else:
         phases_to_run = phases
 
@@ -178,14 +227,24 @@ def run_pipeline(phases=None, skip_embeddings=False, skip_poi=False):
 
 def main():
     parser = argparse.ArgumentParser(description="Frankfurt School Data Pipeline")
-    parser.add_argument("--phases", type=str, help="Comma-separated phases (e.g., '1,2,3')")
-    parser.add_argument("--skip-embeddings", action="store_true")
-    parser.add_argument("--skip-poi", action="store_true", help="Skip POI enrichment (requires API key)")
+    parser.add_argument("--phases",               type=str, help="Comma-separated phases (e.g., '1,2,3,9')")
+    parser.add_argument("--skip-embeddings",       action="store_true")
+    parser.add_argument("--skip-poi",              action="store_true", help="Skip POI enrichment (requires API key)")
+    parser.add_argument("--with-descriptions",     action="store_true",
+                        help="Run Phase 9 (description pipeline) after Phase 8 — web research + LLM descriptions + structured extraction. Re-runs Phase 7+8 afterwards.")
+    parser.add_argument("--description-passes",    type=str, default="0,1,2",
+                        help="Which description pipeline passes to run: 0=research, 1=descriptions, 2=structured (default: 0,1,2)")
     args = parser.parse_args()
 
     phases = [int(p.strip()) for p in args.phases.split(",")] if args.phases else None
 
-    results = run_pipeline(phases=phases, skip_embeddings=args.skip_embeddings, skip_poi=args.skip_poi)
+    results = run_pipeline(
+        phases=phases,
+        skip_embeddings=args.skip_embeddings,
+        skip_poi=args.skip_poi,
+        with_descriptions=args.with_descriptions,
+        description_passes=args.description_passes,
+    )
 
     failed = any(r.get("status") == "failed" for r in results.values())
     sys.exit(1 if failed else 0)
