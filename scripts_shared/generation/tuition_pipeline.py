@@ -627,7 +627,9 @@ def process_school(row, city, school_type, passes, cache, api_keys, config, forc
         if not p2:
             logger.debug(f"  [{school_id}] No Pass 2 data — skipping Pass 3")
         elif not has_flat_matrix(p2.get("income_matrix", {})):
-            logger.debug(f"  [{school_id}] Matrix already varied — skipping Pass 3")
+            # Pass 2 already found income-based variation — no need for Pass 3 verification
+            entry["income_based_tuition"] = True
+            logger.debug(f"  [{school_id}] Matrix already varied — income_based_tuition=True, skipping Pass 3")
         elif entry.get("income_based_tuition") is False:
             logger.debug(f"  [{school_id}] Already confirmed flat (income_based_tuition=False) — skipping Pass 3")
         elif "[Pass3 Timeout]" not in str(p2.get("reasoning", "")) and "pass3" in entry and not force_rerun:
