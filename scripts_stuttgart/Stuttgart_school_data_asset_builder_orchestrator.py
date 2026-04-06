@@ -24,6 +24,7 @@ Created: 2026-04-06
 
 import sys
 import os
+import subprocess
 import logging
 import argparse
 from pathlib import Path
@@ -111,6 +112,75 @@ def run_phase_8():
     schema_main()
 
 
+def run_phase_10(passes="0,1,2"):
+    """Phase 10: Description Pipeline (web research + LLM descriptions + structured extraction)."""
+    logger.info("=" * 60)
+    logger.info("PHASE 10: Description Pipeline (Web Research + Structured Extraction)")
+    logger.info("=" * 60)
+
+    pipeline_script = PROJECT_ROOT / "scripts_shared" / "generation" / "school_description_pipeline.py"
+    if not pipeline_script.exists():
+        raise FileNotFoundError(f"Description pipeline script not found: {pipeline_script}")
+
+    for school_type in ["primary", "secondary"]:
+        logger.info(f"\nRunning description pipeline for {school_type} schools...")
+        cmd = [
+            sys.executable, str(pipeline_script),
+            "--city", "stuttgart",
+            "--school-type", school_type,
+            "--passes", passes,
+        ]
+        result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=False)
+        if result.returncode != 0:
+            raise RuntimeError(f"Description pipeline failed for {school_type} (exit code {result.returncode})")
+        logger.info(f"Phase 10 complete for {school_type} schools")
+
+    logger.info("\nNOTE: Re-run Phase 7 (embeddings) after this to regenerate with new descriptions.")
+
+
+def run_phase_11():
+    """Phase 11: Tuition tier classification (Pass 1 — Gemini + Google Search)."""
+    logger.info("=" * 60)
+    logger.info("PHASE 11: Tuition Tier Classification (Pass 1)")
+    logger.info("=" * 60)
+    return _run_tuition_pipeline(passes="1")
+
+
+def run_phase_12():
+    """Phase 12: Tuition income matrix (Pass 2 — Gemini + Google Search)."""
+    logger.info("=" * 60)
+    logger.info("PHASE 12: Tuition Income Matrix (Pass 2)")
+    logger.info("=" * 60)
+    return _run_tuition_pipeline(passes="2")
+
+
+def run_phase_13():
+    """Phase 13: Tuition verification (Pass 3 — GPT-5.2 Responses API)."""
+    logger.info("=" * 60)
+    logger.info("PHASE 13: Tuition Verification (Pass 3)")
+    logger.info("=" * 60)
+    return _run_tuition_pipeline(passes="3")
+
+
+def _run_tuition_pipeline(passes="1,2,3"):
+    """Internal helper: runs tuition_pipeline.py for both school types."""
+    pipeline_script = PROJECT_ROOT / "scripts_shared" / "generation" / "tuition_pipeline.py"
+    if not pipeline_script.exists():
+        raise FileNotFoundError(f"Tuition pipeline script not found: {pipeline_script}")
+
+    for school_type in ["primary", "secondary"]:
+        logger.info(f"\nRunning tuition pipeline (passes={passes}) for {school_type} schools...")
+        cmd = [
+            sys.executable, str(pipeline_script),
+            "--city", "stuttgart",
+            "--school-type", school_type,
+            "--passes", passes,
+        ]
+        result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=False)
+        if result.returncode != 0:
+            raise RuntimeError(f"Tuition pipeline failed for {school_type} (exit code {result.returncode})")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Stuttgart School Data Pipeline")
     parser.add_argument('--phases', type=str, default=None,
@@ -119,30 +189,44 @@ def main():
                         help='Skip Google Places POI enrichment')
     parser.add_argument('--skip-embeddings', action='store_true',
                         help='Skip embedding generation')
+    parser.add_argument('--with-descriptions', action='store_true',
+                        help='Run Phase 10 (description pipeline)')
+    parser.add_argument('--description-passes', type=str, default="0,1,2",
+                        help='Which description passes to run (default: 0,1,2)')
+    parser.add_argument('--with-tuition', action='store_true',
+                        help='Run Phases 11-13 (tuition pipeline)')
     args = parser.parse_args()
 
     # Ensure we can import from scripts_stuttgart
     sys.path.insert(0, str(SCRIPT_DIR))
 
     available_phases = {
-        1: ("School Master Data", run_phase_1),
-        2: ("Traffic (Unfallatlas)", run_phase_2),
-        3: ("Transit (Overpass)", run_phase_3),
-        4: ("Crime (PKS)", run_phase_4),
-        5: ("POI (Google Places)", run_phase_5),
-        6: ("Data Combiner", run_phase_6),
-        7: ("Embeddings", run_phase_7),
-        8: ("Berlin Schema", run_phase_8),
+        1:  ("School Master Data", run_phase_1),
+        2:  ("Traffic (Unfallatlas)", run_phase_2),
+        3:  ("Transit (Overpass)", run_phase_3),
+        4:  ("Crime (PKS)", run_phase_4),
+        5:  ("POI (Google Places)", run_phase_5),
+        6:  ("Data Combiner", run_phase_6),
+        7:  ("Embeddings (Gemini)", run_phase_7),
+        8:  ("Berlin Schema", run_phase_8),
+        10: ("Descriptions (Web+LLM)", lambda: run_phase_10(args.description_passes)),
+        11: ("Tuition Tier (Pass 1)", run_phase_11),
+        12: ("Tuition Matrix (Pass 2)", run_phase_12),
+        13: ("Tuition Verify (Pass 3)", run_phase_13),
     }
 
     if args.phases:
         phases_to_run = [int(p.strip()) for p in args.phases.split(',')]
     else:
-        phases_to_run = list(available_phases.keys())
+        phases_to_run = [1, 2, 3, 4, 5, 6, 7, 8]
         if args.skip_poi:
             phases_to_run.remove(5)
         if args.skip_embeddings:
             phases_to_run.remove(7)
+        if args.with_descriptions:
+            phases_to_run.extend([10, 7, 8])  # descriptions → re-embed → re-schema
+        if args.with_tuition:
+            phases_to_run.extend([11, 12, 13])
 
     print("\n" + "=" * 70)
     print("STUTTGART SCHOOL DATA PIPELINE")
