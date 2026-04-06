@@ -1,5 +1,38 @@
 # SchoolNossa Development Journal
 
+## 2026-04-06 — Frankfurt Schulwegweiser Scraper (Phase 2 — Official Websites & Profiles)
+
+**What:** Built a Playwright-based scraper for the Frankfurt city school portal (frankfurt.de/schulwegweiser) as a new Phase 2 in the Frankfurt pipeline.
+
+**Why:** The Verzeichnis 6 source (Hessen Statistik) provides no official school website URLs, email addresses, Schulprofile, or Ganztagsform data. The Schulwegweiser portal has all of this, and it's the canonical city-maintained school directory. This gives us deterministic, authoritative data rather than relying entirely on Perplexity-based web research.
+
+**Data extracted per school:**
+- `website` — official school URL (external link on detail page)
+- `sw_email`, `sw_telefon` — contact details
+- `sw_schueler` — student count from portal
+- `sw_schulleitung` — principal name
+- `sw_profile` — Schwerpunkte / school profiles (comma-joined)
+- `sw_sprachen` — Frühe Fremdsprache
+- `sw_ganztagsform` — Einrichtungsart (all-day school type)
+- `sw_besonderheiten` — Besondere Angebote
+
+**Technical details:**
+- Playwright headless Chromium with anti-bot headers to bypass Cloudflare
+- Crawls list pages: Grundschulen (6 pages × 20) + Weiterführende (5 pages × 20)
+- Detail page extraction: 2-child div pattern for label/value pairs + external link detection
+- All scraped data cached to `data_frankfurt/cache/schulwegweiser_cache.json`
+- Fuzzy name matching (SequenceMatcher, threshold ≥ 0.65) to join portal data to Verzeichnis 6 schools
+- Outputs: `data_frankfurt/intermediate/frankfurt_{type}_schools_with_schulwegweiser.csv`
+- Data combiner updated: `merge_schulwegweiser()` overlays portal data even when later enrichments (traffic/transit/crime/POI) are the loaded source
+
+**Phase renumbering:**
+- Phase 2 is now Schulwegweiser (was Traffic). Traffic/Transit/Crime/POI/Combiner/Embeddings/Schema shifted to 3-9. Description pipeline is now Phase 10. Tuition phases are 11-13.
+
+**Files changed:**
+- `scripts_frankfurt/scrapers/frankfurt_schulwegweiser_scraper.py` — new scraper
+- `scripts_frankfurt/processing/frankfurt_data_combiner.py` — `merge_schulwegweiser()` + fallback chain update
+- `scripts_frankfurt/Frankfurt_school_data_asset_builder_orchestrator.py` — new phase 2, renumbered 3-13
+
 ## 2026-04-06 — Description Pipeline: Website Coverage 53% → 99% + Primary Schools
 
 **What:** Improved the shared description pipeline to find school websites for nearly all schools, and ran description + tuition pipelines on Frankfurt primary schools.

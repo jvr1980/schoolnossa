@@ -29,6 +29,7 @@ def find_most_enriched_file(school_type):
         INTERMEDIATE_DIR / f"frankfurt_{school_type}_schools_with_crime.csv",
         INTERMEDIATE_DIR / f"frankfurt_{school_type}_schools_with_transit.csv",
         INTERMEDIATE_DIR / f"frankfurt_{school_type}_schools_with_traffic.csv",
+        INTERMEDIATE_DIR / f"frankfurt_{school_type}_schools_with_schulwegweiser.csv",
         RAW_DIR / f"frankfurt_{school_type}_schools.csv",
     ]
     for fp in candidates:
@@ -37,6 +38,52 @@ def find_most_enriched_file(school_type):
             logger.info(f"Loaded {len(df)} {school_type} schools from {fp.name} ({len(df.columns)} cols)")
             return df
     raise FileNotFoundError(f"No {school_type} school data found")
+
+
+def merge_schulwegweiser(df: pd.DataFrame, school_type: str) -> pd.DataFrame:
+    """
+    Merge Schulwegweiser portal data into the master DataFrame if the enrichment file
+    exists and was NOT already the source file (i.e. further enrichments were applied
+    on top of the raw file, so Schulwegweiser columns may be missing).
+
+    This is a no-op if sw_portal_slug is already in df (data was loaded from
+    _with_schulwegweiser.csv directly).
+    """
+    if "sw_portal_slug" in df.columns:
+        return df  # Already contains Schulwegweiser data
+
+    sw_file = INTERMEDIATE_DIR / f"frankfurt_{school_type}_schools_with_schulwegweiser.csv"
+    if not sw_file.exists():
+        return df  # Scraper hasn't been run yet — skip silently
+
+    sw = pd.read_csv(sw_file)
+    sw_cols = [
+        "schulnummer", "website", "sw_email", "sw_telefon", "sw_schueler",
+        "sw_schulleitung", "sw_profile", "sw_sprachen", "sw_ganztagsform",
+        "sw_besonderheiten", "sw_portal_url", "sw_portal_slug",
+    ]
+    sw = sw[[c for c in sw_cols if c in sw.columns]]
+
+    if "schulnummer" not in df.columns or "schulnummer" not in sw.columns:
+        logger.warning("Cannot merge Schulwegweiser: schulnummer not in both DataFrames")
+        return df
+
+    # Merge on schulnummer — only fill columns that are absent or empty in df
+    df = df.merge(sw, on="schulnummer", how="left", suffixes=("", "_sw"))
+    fill_cols = [c for c in sw_cols if c != "schulnummer"]
+    for col in fill_cols:
+        sw_col = f"{col}_sw"
+        if sw_col in df.columns:
+            if col in df.columns:
+                # Fill where original is null/empty
+                mask = df[col].isna() | (df[col].astype(str).str.strip() == "")
+                df.loc[mask, col] = df.loc[mask, sw_col]
+            else:
+                df[col] = df[sw_col]
+            df.drop(columns=[sw_col], inplace=True)
+
+    logger.info(f"Merged Schulwegweiser data into {school_type} master table")
+    return df
 
 
 def standardize_columns(df):
@@ -57,6 +104,10 @@ def standardize_columns(df):
         'crime_stadt', 'crime_bezirk',
         'crime_straftaten_2023', 'crime_haeufigkeitszahl_2023',
         'crime_aufklaerungsquote_2023', 'crime_bezirk_index',
+        # Schulwegweiser portal enrichment
+        'sw_email', 'sw_telefon', 'sw_schueler', 'sw_schulleitung',
+        'sw_profile', 'sw_sprachen', 'sw_ganztagsform', 'sw_besonderheiten',
+        'sw_portal_url', 'sw_portal_slug',
         'data_source', 'data_retrieved',
     ]
     ordered = [c for c in preferred if c in df.columns]
@@ -95,6 +146,7 @@ def clean_data(df):
 def combine_school_type(school_type):
     df = find_most_enriched_file(school_type)
     df = clean_data(df)
+    df = merge_schulwegweiser(df, school_type)  # Overlay portal data if available
     df = standardize_columns(df)
 
     FINAL_DIR.mkdir(parents=True, exist_ok=True)
