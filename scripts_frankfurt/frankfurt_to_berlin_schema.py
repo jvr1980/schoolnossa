@@ -59,10 +59,12 @@ def transform_to_berlin_schema(school_type):
 
     df = ffm.copy()
 
-    # Step 1: Renames
+    # Step 1: Renames — Schulwegweiser schema → Berlin schema
     renames = {
+        # Old Verzeichnis 6 schema (kept for backward compat if re-run on old data)
         'ort': 'ortsteil',
         'crime_bezirk': 'bezirk',
+        # Similar-schools columns
         'most_similar_school_01': 'most_similar_school_no_01',
         'most_similar_school_02': 'most_similar_school_no_02',
         'most_similar_school_03': 'most_similar_school_no_03',
@@ -74,12 +76,31 @@ def transform_to_berlin_schema(school_type):
             applied += 1
     print(f"  Renames: {applied}")
 
-    # Step 2: Crime mappings
+    # Step 2: Derived / mapped columns from Schulwegweiser data
+
+    # schulart from school_type (Schulwegweiser already has proper Schulform)
+    if 'school_type' in df.columns and 'schulart' not in df.columns:
+        df['schulart'] = df['school_type']
+
+    # sprachen: Schulwegweiser provides this directly; also combine sub-fields if needed
+    if 'sprachen' not in df.columns or df['sprachen'].isna().all():
+        sprachen_parts = []
+        for col in ['fruehe_fremdsprache', 'erste_fremdsprache',
+                    'zweite_fremdsprache', 'dritte_fremdsprache']:
+            if col in df.columns:
+                sprachen_parts.append(df[col])
+        if sprachen_parts:
+            df['sprachen'] = df[sprachen_parts[0].name] if len(sprachen_parts) == 1 else \
+                pd.concat(sprachen_parts, axis=1).apply(
+                    lambda row: ', '.join(v for v in row if pd.notna(v) and str(v).strip()), axis=1
+                ).replace('', None)
+
+    # Crime mappings
     crime_map = {
-        'crime_straftaten_2023': 'crime_total_crimes_2023',
-        'crime_strassenraub_2023': 'crime_street_robbery_2023',
-        'crime_koerperverletzung_2023': 'crime_assault_2023',
-        'crime_diebstahl_fahrrad_2023': 'crime_bike_theft_2023',
+        'crime_straftaten_2023':       'crime_total_crimes_2023',
+        'crime_strassenraub_2023':     'crime_street_robbery_2023',
+        'crime_koerperverletzung_2023':'crime_assault_2023',
+        'crime_diebstahl_fahrrad_2023':'crime_bike_theft_2023',
     }
     for src, dst in crime_map.items():
         if src in df.columns:
@@ -96,26 +117,43 @@ def transform_to_berlin_schema(school_type):
         df['crime_safety_category'] = df['crime_bezirk_index'].apply(idx_to_cat)
         df['crime_safety_rank'] = df['crime_bezirk_index'].rank(method='dense', ascending=True)
 
-    # Step 3: Metadata
-    # ndH as proxy for belastungsstufe
+    # Step 3: Metadata & derived fields
+
+    # belastungsstufe: use ndH ratio if available, else None
     if 'ndh_count' in df.columns and 'schueler_gesamt' in df.columns:
         ndh_pct = pd.to_numeric(df['ndh_count'], errors='coerce') / pd.to_numeric(df['schueler_gesamt'], errors='coerce')
-        # Map percentage to 1-9 scale (higher = more burdened)
-        df['belastungsstufe'] = pd.cut(ndh_pct, bins=[-1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.1],
-                                        labels=[1, 2, 3, 4, 5, 6, 7, 8, 9])
-
-    if 'schulform_name' in df.columns and 'schulart' not in df.columns:
-        df['schulart'] = df.get('school_type', df.get('schulform_name'))
-
-    df['metadata_source'] = 'Hessisches Statistisches Landesamt Verzeichnis 6'
-    df['leistungsdaten_quelle'] = 'ndH-Anteil (Verzeichnis 6)'
-
-    if 'traegerschaft' in df.columns:
-        df['tuition_display'] = df['traegerschaft'].apply(
-            lambda x: 'Kostenfrei (öffentliche Schule)' if pd.notna(x) and 'öffentlich' in str(x).lower()
-            else 'Privat (Details auf Schulwebsite)' if pd.notna(x) and 'privat' in str(x).lower()
-            else None
+        df['belastungsstufe'] = pd.cut(
+            ndh_pct,
+            bins=[-1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.1],
+            labels=[1, 2, 3, 4, 5, 6, 7, 8, 9],
         )
+
+    # tuition_display: Schulwegweiser provides Trägerschaft with city/private info
+    if 'traegerschaft' in df.columns:
+        def traeger_to_tuition(x):
+            if pd.isna(x): return None
+            xs = str(x).lower()
+            if 'stadt frankfurt' in xs or 'öffentlich' in xs or 'staatlich' in xs:
+                return 'Kostenfrei (öffentliche Schule)'
+            if 'privat' in xs or 'frei' in xs or 'kirchlich' in xs:
+                return 'Privat (Details auf Schulwebsite)'
+            return None
+        df['tuition_display'] = df['traegerschaft'].apply(traeger_to_tuition)
+
+    # Schulwegweiser-specific fields that map to Berlin schema names
+    # (besonderheiten → description supplement; profile → leistungsprofil)
+    if 'profile' in df.columns and 'leistungsprofil' not in df.columns:
+        df['leistungsprofil'] = df['profile']
+
+    if 'ganztagsform' in df.columns and 'betreuungsangebot' not in df.columns:
+        df['betreuungsangebot'] = df['ganztagsform']
+
+    # Metadata source — now Schulwegweiser is primary
+    df['metadata_source'] = 'Frankfurt Schulwegweiser (frankfurt.de)'
+    if 'ndh_count' in df.columns and df['ndh_count'].notna().any():
+        df['leistungsdaten_quelle'] = 'ndH-Anteil (Verzeichnis 6 join)'
+    else:
+        df['leistungsdaten_quelle'] = None
 
     # Step 4: Build output
     output = pd.DataFrame(index=range(len(df)))
@@ -157,7 +195,10 @@ def transform_to_berlin_schema(school_type):
 
     # Data quality
     print("\n  Data quality:")
-    for col in ['schulnummer', 'schulname', 'school_type', 'latitude', 'longitude',
+    for col in ['schulnummer', 'schulname', 'school_type', 'ortsteil',
+                'latitude', 'longitude', 'website', 'email',
+                'schulleitung', 'ganztagsform', 'profile', 'besonderheiten',
+                'auszeichnungen', 'sprachen',
                 'transit_accessibility_score', 'crime_total_crimes_2023',
                 'description', 'embedding', 'tuition_display']:
         if col in output.columns:

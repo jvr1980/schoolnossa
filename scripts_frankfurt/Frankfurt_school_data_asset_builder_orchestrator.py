@@ -54,28 +54,40 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 DATA_DIR = PROJECT_ROOT / "data_frankfurt"
 
 
-def run_phase_1():
-    """Phase 1: School master data from Hessen Verzeichnis 6."""
-    logger.info("=" * 60)
-    logger.info("PHASE 1: School Master Data (Hessen Verzeichnis 6)")
-    logger.info("=" * 60)
-    from scrapers.frankfurt_school_master_scraper import main as scrape
-    return scrape()
+def run_phase_1(force_rescrape=False):
+    """Phase 1: Schulwegweiser PRIMARY scraper — all Frankfurt schools.
 
+    Scrapes frankfurt.de/schulwegweiser as the authoritative source.
+    Covers all 4 categories: Grundschulen, Weiterführende allgemein,
+    Förderschulen, Weiterführende beruflich (~279 schools total).
+    Uses Playwright (headless Chromium) + Nominatim geocoding.
+    First run ~25 min; subsequent runs use cache.
 
-def run_phase_2(force_rescrape=False):
-    """Phase 2: Schulwegweiser portal scraper.
-
-    Scrapes frankfurt.de/schulwegweiser for official school websites, contact info,
-    Schulprofile, Ganztagsform, and other attributes not in Verzeichnis 6.
-    Uses Playwright (headless Chromium). First run ~15 min; cached thereafter.
-    Output: data_frankfurt/intermediate/frankfurt_{type}_schools_with_schulwegweiser.csv
+    Outputs:
+      data_frankfurt/raw/frankfurt_primary_schools.csv
+      data_frankfurt/raw/frankfurt_secondary_schools.csv
+      data_frankfurt/raw/frankfurt_vocational_schools.csv
     """
     logger.info("=" * 60)
-    logger.info("PHASE 2: Schulwegweiser Portal Scraper")
+    logger.info("PHASE 1: Schulwegweiser Primary Scraper (all 4 categories)")
     logger.info("=" * 60)
     from scrapers.frankfurt_schulwegweiser_scraper import main as scrape
     return scrape(force_rescrape=force_rescrape)
+
+
+def run_phase_2():
+    """Phase 2: Verzeichnis 6 enrichment (optional — adds schulnummer + ndH).
+
+    Joins Hessen Statistik Verzeichnis 6 data into the Schulwegweiser raw CSVs
+    to add the official HKM schulnummer and ndH student count (belastungsstufe proxy).
+    Fuzzy-matches schools by name (≥0.75). Schools without a match get SW-{slug} IDs.
+    Safe to skip — downstream phases work without official schulnummern.
+    """
+    logger.info("=" * 60)
+    logger.info("PHASE 2: Verzeichnis 6 Enrichment (schulnummer + ndH)")
+    logger.info("=" * 60)
+    from scrapers.frankfurt_verz6_enrichment import main as enrich
+    return enrich()
 
 
 def run_phase_3():

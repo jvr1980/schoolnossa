@@ -1,5 +1,60 @@
 # SchoolNossa Development Journal
 
+## 2026-04-06 — Frankfurt Pipeline Rebuilt: Schulwegweiser as Primary Source
+
+**What:** Completely rebuilt the Frankfurt data pipeline to use frankfurt.de/schulwegweiser as the PRIMARY data source, replacing Hessen Verzeichnis 6 as Phase 1.
+
+**Why:** The Schulwegweiser is the city's own school directory — more authoritative, more current, and far richer than the statistical Verzeichnis 6. It covers all 4 school categories (Grundschulen, Weiterführende allgemein, Förderschulen, Weiterführende beruflich) with ~279 schools vs 158 from Verzeichnis 6. Most importantly it provides official website URLs, contact info, Schulleitung, Schulprofile, Fremdsprachen, Ganztagsform, Besondere Angebote, and Auszeichnungen directly — no web research needed.
+
+**Coverage map confirmed by browser inspection:**
+
+| Field | Primary | Sec. allgemein | Beruflich | Förderschulen |
+|---|---|---|---|---|
+| Schulleitung | ✓ | ✓ | ✓ | ✓ |
+| Schülerzahl, Klassenzahl | ✓ | ✓ | ✓ | ✓ |
+| Official website | ✓ | ✓ | ✓ | mostly |
+| Email + Telefon | ✓ | ✓ | ✓ | ✓ |
+| Schulform (typed) | ✓ | ✓ | ✓ | ✓ |
+| Profile / Schwerpunkte | ✓ | ✓ | - | ✓ |
+| Förderschwerpunkt | - | - | - | ✓ |
+| Frühe Fremdsprache | ✓ | - | - | - |
+| 1./2./3. Fremdsprache | - | ✓ | ✓ | - |
+| Ganztagsform (Einrichtungsart) | ✓ | ✓ | - | - |
+| Besondere Angebote | ✓ | ✓ | ✓ | - |
+| Auszeichnungen | - | ✓ | - | - |
+| Berufsbereiche + Ausbildungsberufe | - | - | ✓ | - |
+| Stadtteil | ✓ | ✓ | ✓ | ✓ |
+
+**Technical implementation:**
+- Phase 1: `frankfurt_schulwegweiser_scraper.py` (rewritten as full primary scraper)
+  - Scrapes all 4 categories via Playwright + page-text line parser
+  - Text parser locates content start by finding school name→first known label
+  - All multi-value fields (Fremdsprachen, Schulform, Besondere Angebote etc.) handled
+  - Nominatim geocoding of addresses → lat/lon
+  - JSON cache keyed by category; partial-resumption support
+  - Outputs: `raw/frankfurt_primary_schools.csv`, `secondary_schools.csv`, `vocational_schools.csv`
+- Phase 2: `frankfurt_verz6_enrichment.py` (new optional phase)
+  - Downloads Verzeichnis 6 Excel, joins by fuzzy name (≥0.75) + PLZ
+  - Adds `schulnummer` + `ndh_count`; generates SW-{slug} IDs for non-matches
+- Data combiner: rewritten with new column order reflecting Schulwegweiser-first schema
+- Berlin schema transformer: updated mappings (school_type, sprachen, ganztagsform, Trägerschaft → tuition_display, leistungsprofil, betreuungsangebot); metadata_source updated
+
+**School counts:**
+- Grundschulen: 6 pages × 20 = ~120
+- Weiterführende allgemein: 5 pages × 20 = ~100
+- Förderschulen: 1 page = 19
+- Weiterführende beruflich: 2 pages × 20 = ~40
+- Total: ~279 (vs 158 from Verzeichnis 6)
+
+**Parser validation:** 14/14 field extraction checks passed against Adorno-Gymnasium sample.
+
+**Files changed:**
+- `scripts_frankfurt/scrapers/frankfurt_schulwegweiser_scraper.py` — full rewrite as primary scraper
+- `scripts_frankfurt/scrapers/frankfurt_verz6_enrichment.py` — new
+- `scripts_frankfurt/processing/frankfurt_data_combiner.py` — new column schema, removed old SW overlay
+- `scripts_frankfurt/frankfurt_to_berlin_schema.py` — updated field mappings
+- `scripts_frankfurt/Frankfurt_school_data_asset_builder_orchestrator.py` — Phase 1 = SW primary, Phase 2 = Verz6 join
+
 ## 2026-04-06 — Frankfurt Schulwegweiser Scraper (Phase 2 — Official Websites & Profiles)
 
 **What:** Built a Playwright-based scraper for the Frankfurt city school portal (frankfurt.de/schulwegweiser) as a new Phase 2 in the Frankfurt pipeline.
