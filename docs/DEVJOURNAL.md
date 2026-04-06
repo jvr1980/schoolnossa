@@ -1,5 +1,43 @@
 # SchoolNossa Development Journal
 
+## 2026-04-06 — Frankfurt Pipeline Bugs Fixed: Full Clean Run Complete
+
+**What:** Fixed three blocking bugs that corrupted the first Schulwegweiser-primary pipeline run, then re-ran all phases to produce clean final output.
+
+**Why:** After rebuilding the Frankfurt pipeline with Schulwegweiser as primary source, the first full run produced broken 1-school tables instead of the expected ~100/99 schools.
+
+**Root causes and fixes:**
+
+1. **Combiner dedup bug** — `drop_duplicates(subset=['schulnummer'])` treated all `NaN` values as equal, collapsing 99/100 rows to 1. Fixed to only dedup rows that actually have a non-null schulnummer; rows without one are kept as-is.
+
+2. **Verz6 header detection** — `load_verz6()` read the default first sheet ("Titelblatt", 8 rows) instead of the data sheet. Fixed to use `sheet_name='Schulverzeichnis'`; corrected column rename for "Name der Schule" → schulname and "Nichtdeutscher Herkunfts-\nsprache" → ndh_count; cast float schulnummern to int strings. Result: **82 primary + 90 secondary + 6 vocational** matched; remainder get `SW-{slug}` IDs.
+
+3. **Embeddings API key** — `GEMINI_API_KEY` not found via dotenv. Added config.yaml fallback loader to `frankfurt_embeddings_generator.py`. OpenAI key from config.yaml also now loaded (embeddings run with `text-embedding-3-large`).
+
+4. **Intermediate schulnummer backfill** — `_with_pois.csv` files were built before Phase 2 ran, so they lack schulnummer. Added `backfill_from_raw()` to combiner: joins schulnummer + ndh_count from raw CSV via `sw_portal_slug` after loading the enriched intermediate.
+
+5. **Secondary transit gap** — re-ran Phases 4→9 to carry transit data through the full chain.
+
+**Final output (clean):**
+- Secondary: **99 schools**, Berlin schema PASS, 265 Berlin cols + 68 extras
+- Primary: **100 schools**, Berlin schema PASS, 227 Berlin cols + 99 extras
+
+| Field | Secondary | Primary |
+|---|---|---|
+| schulnummer | 100% | 100% |
+| website | 86% | 82% |
+| email | 96% | 99% |
+| schulleitung | 100% | 99% |
+| ganztagsform | 61% | 79% |
+| transit_accessibility_score | 100% | 100% |
+| crime data | 100% | 100% |
+| embedding | 100% | 100% |
+
+**Files changed:**
+- `scripts_frankfurt/processing/frankfurt_data_combiner.py` — dedup fix + backfill_from_raw()
+- `scripts_frankfurt/processing/frankfurt_embeddings_generator.py` — config.yaml key fallback
+- `scripts_frankfurt/scrapers/frankfurt_verz6_enrichment.py` — correct sheet + column names
+
 ## 2026-04-06 — Frankfurt Pipeline Rebuilt: Schulwegweiser as Primary Source
 
 **What:** Completely rebuilt the Frankfurt data pipeline to use frankfurt.de/schulwegweiser as the PRIMARY data source, replacing Hessen Verzeichnis 6 as Phase 1.
