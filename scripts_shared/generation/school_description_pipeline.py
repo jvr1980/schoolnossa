@@ -265,6 +265,14 @@ def find_school_website_from_citations(citations, school_name, city="Frankfurt")
                                           "realschule", "hauptschule", "waldorf", "montessori"]):
                 score += 3
 
+            # City name in domain (e.g., ohs-frankfurt.de, lessing-frankfurt.de)
+            # Strong signal it's a local school site — but exclude the city portal itself
+            for city_kw in ["frankfurt", "berlin", "hamburg", "koeln", "muenchen", "duesseldorf",
+                             "stuttgart", "nuernberg", "leipzig", "hannover"]:
+                if city_kw in domain and not domain.endswith(f"{city_kw}.de"):
+                    score += 2
+                    break
+
             # School name words in domain (strong signal)
             name_normalized = re.sub(r"[^a-z0-9]", "", school_name.lower())
             dom_normalized = re.sub(r"[^a-z0-9]", "", domain.lower())
@@ -282,7 +290,14 @@ def find_school_website_from_citations(citations, school_name, city="Frankfurt")
     scored.sort(key=lambda x: -x[0])
     best_score, best_url = scored[0]
     # Only return URL if it has a meaningful school-specific score (not just a random .de site)
-    return best_url if best_score >= 3 else None
+    if best_score < 3:
+        return None
+    # Normalize: return just scheme + netloc (homepage), not a deep path
+    try:
+        parsed = urlparse(best_url)
+        return f"{parsed.scheme}://{parsed.netloc}"
+    except Exception:
+        return best_url
 
 
 def run_website_search_perplexity(school_name, city, api_key, model="sonar", delay=2.0):
@@ -644,9 +659,10 @@ def process_school(row, city, passes, cache, api_keys, config, force_rerun):
     # --- Website Fallback: targeted search for schools still missing a website ---
     # Runs automatically when Pass 2 is requested and website is still null.
     # Uses citations from Pass 0 first, then fires a targeted Perplexity search if needed.
+    # Re-runs if website_fallback is None/falsy (allows cleanup after filter improvements).
     if 2 in passes:
         p2_website = (entry.get("pass2") or {}).get("website")
-        if not p2_website and "website_fallback" not in entry:
+        if not p2_website and not entry.get("website_fallback"):
             perplexity_key = api_keys.get("perplexity")
             if perplexity_key:
                 # First: try to derive website from existing Pass 0 citations
