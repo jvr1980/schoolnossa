@@ -24,6 +24,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent
 DATA_DIR = PROJECT_ROOT / "data_frankfurt"
 FINAL_DIR = DATA_DIR / "final"
 ENV_FILE = PROJECT_ROOT / ".env"
+CONFIG_FILE = PROJECT_ROOT / "config.yaml"
 
 try:
     from dotenv import load_dotenv
@@ -37,6 +38,24 @@ except ImportError:
                     k, _, v = line.partition('=')
                     if k.strip() and k.strip() not in os.environ:
                         os.environ[k.strip()] = v.strip()
+
+# Fallback: load API keys from config.yaml if not already in environment
+try:
+    import yaml
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE) as f:
+            cfg = yaml.safe_load(f) or {}
+        api_keys = cfg.get("api_keys", {})
+        _key_map = {
+            "GEMINI_API_KEY":     api_keys.get("gemini", ""),
+            "OPENAI_API_KEY":     api_keys.get("openai", ""),
+            "GOOGLE_PLACES_KEY":  api_keys.get("google_places", ""),
+        }
+        for env_var, val in _key_map.items():
+            if val and env_var not in os.environ:
+                os.environ[env_var] = val
+except Exception:
+    pass
 
 OPENAI_MODEL = "text-embedding-3-large"
 GEMINI_MODEL = "models/gemini-embedding-001"

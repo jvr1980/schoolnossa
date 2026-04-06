@@ -66,54 +66,49 @@ def download_verz6() -> Path:
 
 
 def load_verz6() -> pd.DataFrame:
-    """Load and parse Verzeichnis 6 Excel for Frankfurt schools."""
+    """Load and parse Verzeichnis 6 Excel for Frankfurt schools.
+
+    The Excel file has multiple sheets; school data is in 'Schulverzeichnis'.
+    Row 0 is the header row with German column names.
+    """
     path = download_verz6()
-    raw = pd.read_excel(path, header=None, engine="openpyxl")
 
-    # Find the header row (contains 'schulname' or 'Schulname' or 'schulnummer')
-    header_row = None
-    for i, row in raw.iterrows():
-        vals = [str(v).lower() for v in row.values if pd.notna(v)]
-        if any("schulname" in v or "schul-nummer" in v or "schulnummer" in v for v in vals):
-            header_row = i
-            break
-
-    if header_row is None:
-        raise ValueError("Could not find header row in Verzeichnis 6 Excel")
-
-    df = pd.read_excel(path, header=header_row, engine="openpyxl")
+    # Data is in the 'Schulverzeichnis' sheet, header in row 0
+    df = pd.read_excel(path, sheet_name="Schulverzeichnis", header=0, engine="openpyxl")
     df.columns = [str(c).strip() for c in df.columns]
 
-    # Rename Hessen-specific column names
+    # Rename Hessen-specific column names to internal names
     renames = {
-        "Schul-nummer": "schulnummer",
-        "Landkreis":    "landkreis",
+        "Schul-nummer":    "schulnummer",
+        "Landkreis":       "landkreis",
+        "Name der Schule": "schulname",
+        "PLZ":             "plz_verz6",
     }
     df = df.rename(columns={k: v for k, v in renames.items() if k in df.columns})
 
-    # Filter Frankfurt
+    # Filter to Frankfurt (Landkreis 412)
     if "landkreis" in df.columns:
         df = df[df["landkreis"] == FFM_LANDKREIS].copy()
     else:
         logger.warning("  No 'landkreis' column found — not filtering by city")
 
-    # Keep only useful columns
-    keep = ["schulnummer", "schulname"]
-    # ndH column — typically titled with "ndH" or similar
-    ndh_cols = [c for c in df.columns if "ndh" in c.lower() or "nichtdeutsch" in c.lower() or "ndH" in str(c)]
+    # ndH column — "Nichtdeutscher Herkunfts-\nsprache" or similar
+    ndh_cols = [c for c in df.columns
+                if "nichtdeutsch" in c.lower() or "herkunft" in c.lower()
+                or "ndh" in c.lower()]
     if ndh_cols:
-        keep += ndh_cols[:1]
         df = df.rename(columns={ndh_cols[0]: "ndh_count"})
-    # PLZ
-    plz_cols = [c for c in df.columns if "plz" in c.lower() or "postleitzahl" in c.lower()]
-    if plz_cols:
-        keep.append(plz_cols[0])
-        df = df.rename(columns={plz_cols[0]: "plz_verz6"})
+
+    keep = ["schulnummer", "schulname", "plz_verz6"]
+    if "ndh_count" in df.columns:
+        keep.append("ndh_count")
 
     available = [c for c in keep if c in df.columns]
     df = df[available].dropna(subset=["schulnummer", "schulname"])
-    df["schulnummer"] = df["schulnummer"].astype(str).str.strip()
-    df["schulname"]   = df["schulname"].astype(str).str.strip()
+    df["schulnummer"] = df["schulnummer"].apply(
+        lambda x: str(int(float(x))).strip() if pd.notna(x) else None
+    )
+    df["schulname"] = df["schulname"].astype(str).str.strip()
 
     logger.info(f"  Loaded {len(df)} Frankfurt schools from Verzeichnis 6")
     return df
@@ -128,7 +123,7 @@ def normalize(name: str) -> str:
     return name
 
 
-def best_match(sw_name: str, sw_plz: str, verz6_df: pd.DataFrame) -> tuple[str | None, float]:
+def best_match(sw_name, sw_plz, verz6_df):
     """Return (schulnummer, score) of best Verzeichnis 6 match, or (None, 0)."""
     best_score = 0.0
     best_nr    = None
