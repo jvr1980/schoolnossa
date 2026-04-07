@@ -62,9 +62,17 @@ GEMINI_MODEL = "models/gemini-embedding-001"
 
 
 def load_master_table(school_type):
-    for ext, reader in [('.parquet', pd.read_parquet), ('.csv', pd.read_csv)]:
-        p = FINAL_DIR / f"frankfurt_{school_type}_school_master_table{ext}"
+    # Prefer _final.csv (enriched by description pipeline, tuition, etc.)
+    # Fall back to master_table (non-final) if _final doesn't exist yet.
+    candidates = [
+        (FINAL_DIR / f"frankfurt_{school_type}_school_master_table_final.csv",   pd.read_csv),
+        (FINAL_DIR / f"frankfurt_{school_type}_school_master_table_final.parquet", pd.read_parquet),
+        (FINAL_DIR / f"frankfurt_{school_type}_school_master_table.parquet",      pd.read_parquet),
+        (FINAL_DIR / f"frankfurt_{school_type}_school_master_table.csv",          pd.read_csv),
+    ]
+    for p, reader in candidates:
         if p.exists():
+            logger.info(f"Loading master table: {p.name}")
             return reader(p)
     raise FileNotFoundError(f"No master table for {school_type}")
 
