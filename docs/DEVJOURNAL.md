@@ -1,5 +1,56 @@
 # SchoolNossa Development Journal
 
+## 2026-04-07 — Stuttgart Pipeline: Full City Build (95 Primary + 80 Secondary)
+
+**What:** Built the complete Stuttgart school data pipeline from scratch — scraper, 4 enrichments, descriptions, tuition, embeddings, and Berlin schema alignment.
+
+**Data source selection:**
+- **Primary source:** `stuttgart.de/organigramm/adressen` — official city directory with 258 school entries. Scraped via RSS feed (790 URLs) → detail page scraping (JSON metadata + HTML fields). Provides: name, coordinates (WKT), phone, email, Schulart, Stadtbezirk, website.
+- **Supplementary:** LOBW Dienststellensuche (`lobw.kultus-bw.de/didsuche/`) — scraped via ASMX web service API for student/teacher/class counts. jedeschule.codefor.de for principal names.
+- **Rejected:** City PDFs (poster layout, unparseable), jedeschule as primary (inflated BW data with duplicates), Statistisches Landesamt (€101 paywall).
+
+**Pipeline phases (13 total):**
+1. School data scrape (stuttgart.de directory) → 95 primary + 80 secondary
+2. Traffic (Unfallatlas BW, ULAND=08) → 100%
+3. Transit (Overpass API, 2068 stops) → 100%
+4. Crime (PKS Stuttgart 2023, bezirk-level estimates) → 100%
+5. POI (Google Places API) → 100%
+6. Data combiner → 178 columns
+7. Embeddings (Gemini gemini-embedding-001, 768d) → 100%
+8. Berlin schema enforcement → PASS
+10. Descriptions (Perplexity Pass 0 + OpenAI Pass 1+2) → 100% EN/DE
+11-13. Tuition (Gemini Pass 1+2, GPT-5.2 Pass 3) → 17/17 private schools
+
+**Final coverage:**
+| Field | Primary (95) | Secondary (80) |
+|---|---|---|
+| Coordinates | 100% | 100% |
+| Phone | 99% | 100% |
+| Email | 92% | 95% |
+| Website | 100% | 100% |
+| Schulleitung | 54% | 60% |
+| Schülerzahl | 68% | 84% |
+| Lehrerzahl | 63% | 69% |
+| Description EN/DE | 100% | 100% |
+| Besonderheiten | 91% | 96% |
+| Transit/Traffic/Crime/POI | 100% | 100% |
+| Tuition (private) | 5/5 | 12/12 |
+| Embeddings | 100% | 100% |
+| Berlin schema | PASS | PASS |
+
+**Key technical decisions:**
+- Used LOBW ASMX web service API (`SearchDienststellen` + `GetDienststelle`) — undocumented but stable, returns SCHUELER/KLASSEN/LEHRER per school
+- Stuttgart crime: bezirk-level estimates using PKS city totals × district crime indices × district population
+- Tuition Pass 3 results: 8/12 secondary private schools confirmed income-based (Waldorf + Evangelische), 4/12 flat-fee
+
+**Files added:**
+- `scripts_stuttgart/` — 13 pipeline scripts (scraper, 4 enrichments, combiner, embeddings, schema, orchestrator)
+- `data_stuttgart/final/` — 6 parquet + 6 CSV final outputs
+- `data_stuttgart/intermediate/` — enrichment chain CSVs
+- `data_stuttgart/cache/` — LOBW, jedeschule, Unfallatlas, transit stops, description/tuition caches
+
+---
+
 ## 2026-04-07 — Frankfurt POI Gap Fixed: 49% → 99% + Full Clean Pipeline Run
 
 **What:** Fixed a persistent secondary school POI coverage gap (49/99 → 98/99 schools), updated Berlin schema canonical backfills for school stats, and ran the full Frankfurt pipeline to produce clean final output.
