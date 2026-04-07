@@ -1,5 +1,33 @@
 # SchoolNossa Development Journal
 
+## 2026-04-07 — Munich Primary School Pipeline: 148 Grundschulen
+
+**What:** Built the complete Munich primary school (Grundschule) pipeline by refactoring all 11 existing secondary-only scripts to support a `school_type` parameter. Ran all 9 phases producing 148 fully enriched Grundschulen.
+
+**Why:** Munich only had a secondary school pipeline (108 schools). Primary schools were out of scope. Adding them brings Munich to 256 total schools.
+
+**Technical approach:**
+- Refactored all scripts (scraper, 5 enrichment scripts, combiner, embeddings, schema transformer, orchestrator) to accept `school_type='primary'|'secondary'`
+- jedeschule.codefor.de used as data source — filters for `Grundschulen` type patterns
+- Orchestrator now runs both types by default: `--school-types primary,secondary`
+- All file paths parameterized: `munich_{school_type}_schools_with_{enrichment}.csv`
+- Added OSM Overpass-based private school detection (code written, not yet wired in)
+
+**Results (primary):**
+| Field | Coverage |
+|---|---|
+| Schools | 148 (147 Grundschulen + 1 Grundschule) |
+| Coordinates | 148/148 (100%) |
+| Traffic (Unfallatlas) | 148/148, avg 61.8 accidents/500m |
+| Transit (Overpass) | 148/148, avg score 93.7/100 |
+| Crime (PKS city-level) | 148/148, HZ=7684/100k |
+| POI (Google Places) | 148/148, 1197 API calls |
+| Descriptions (Gemini) | 148/148 bilingual DE+EN |
+| Embeddings (OpenAI) | 148/148, 3072-dim |
+| Berlin Schema | PASS, 153/265 columns |
+
+**Known gap:** jedeschule.codefor.de has zero private schools for Munich. Private school detection via OSM is implemented but not yet integrated. Tuition pipeline pending traegerschaft tagging.
+
 ## 2026-04-07 — Stuttgart Pipeline: Full City Build (95 Primary + 80 Secondary)
 
 **What:** Built the complete Stuttgart school data pipeline from scratch — scraper, 4 enrichments, descriptions, tuition, embeddings, and Berlin schema alignment.
