@@ -524,6 +524,11 @@ def load_all_data(
     # Post-process: compute school competition density
     _compute_competition_density(all_profiles, all_info)
 
+    # For schools missing gisd_quintile (e.g. Stuttgart with corrupted PLZ data),
+    # impute a proxy from Zensus catchment features (rent, foreigner %, density)
+    # calibrated on schools where both sources are available.
+    _impute_gisd_from_zensus(all_profiles)
+
     # Regression-based imputation for features missing in some cities.
     # Uses population density (and GISD quintile) as auxiliary predictors,
     # trained on schools that have both the feature AND the auxiliary, then
@@ -532,6 +537,65 @@ def load_all_data(
     _regress_impute(all_profiles)
 
     return all_profiles, all_labeled, all_info
+
+
+def _impute_gisd_from_zensus(profiles: list):
+    """Impute gisd_quintile for schools that have Zensus catchment data but no GISD PLZ match.
+
+    GISD is derived from the same census data underlying the Zensus grid. Where
+    PLZ-based GISD lookup fails (e.g. Stuttgart with corrupted PLZ in the source data),
+    we fit a local OLS: gisd_quintile ~ intercept + avg_rent + foreigner_pct + pop_density
+    on schools with both sources, then apply to schools missing gisd_quintile.
+
+    This is more principled than skipping GISD entirely, because:
+    - Zensus avg_rent and foreigner_pct are the primary inputs to GISD
+    - The fitted mapping is calibrated cross-city (using Berlin, Hamburg, NRW, etc.)
+    - The result is stored as gisd_quintile so downstream imputation can use it
+    """
+    PREDICTORS = ["catchment_avg_rent", "catchment_foreigner_pct", "catchment_population_density"]
+
+    vals = {k: np.array([p.get(k, np.nan) for p in profiles]) for k in PREDICTORS}
+    gisd_q = np.array([p.get("gisd_quintile", np.nan) for p in profiles])
+
+    # Schools with all predictors AND gisd_quintile
+    complete = ~np.isnan(gisd_q)
+    for k in PREDICTORS:
+        complete &= ~np.isnan(vals[k])
+
+    # Schools missing gisd_quintile but having all predictors
+    missing = np.isnan(gisd_q)
+    for k in PREDICTORS:
+        missing &= ~np.isnan(vals[k])
+
+    n_complete, n_missing = complete.sum(), missing.sum()
+    if n_complete < 20 or n_missing == 0:
+        return
+
+    X_complete = np.column_stack([np.ones(n_complete)] + [vals[k][complete] for k in PREDICTORS])
+    y_complete = gisd_q[complete]
+    try:
+        beta, _, _, _ = np.linalg.lstsq(X_complete, y_complete, rcond=None)
+    except np.linalg.LinAlgError:
+        return
+
+    y_hat = X_complete @ beta
+    r2 = float(1 - np.var(y_complete - y_hat) / (np.var(y_complete) + 1e-12))
+
+    if r2 < 0.10:
+        # Calibration too weak (likely homogeneous calibration cities); skip imputation.
+        # Schools will fall back to mean-imputation in standardize_profiles().
+        print(f"  GISD proxy: skipped (calibration R²={r2:.2f} < 0.10 — calibration set too homogeneous)")
+        return
+
+    X_missing = np.column_stack([np.ones(n_missing)] + [vals[k][missing] for k in PREDICTORS])
+    y_pred = np.clip(X_missing @ beta, 1.0, 5.0)  # quintiles are 1–5
+
+    missing_indices = np.where(missing)[0]
+    for i, pred_q in zip(missing_indices, y_pred):
+        profiles[i].set("gisd_quintile", float(round(pred_q, 2)))
+
+    print(f"  GISD proxy (Zensus-derived): imputed gisd_quintile for {n_missing} schools "
+          f"(calibrated on {n_complete} schools, R²={r2:.2f})")
 
 
 def _regress_impute(profiles: list):
