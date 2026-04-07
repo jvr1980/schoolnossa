@@ -32,12 +32,12 @@ def get_berlin_schema():
     return list(pd.read_parquet(BERLIN_SEC_REF).columns)
 
 
-def transform_to_berlin_schema():
+def transform_to_berlin_schema(school_type='secondary'):
     print(f"\n{'='*70}")
-    print("ENFORCE BERLIN SCHEMA ON MUNICH SECONDARY DATA")
+    print(f"ENFORCE BERLIN SCHEMA ON MUNICH {school_type.upper()} DATA")
     print(f"{'='*70}")
 
-    muc_parquet = MUC_DATA_DIR / "munich_secondary_school_master_table_final_with_embeddings.parquet"
+    muc_parquet = MUC_DATA_DIR / f"munich_{school_type}_school_master_table_final_with_embeddings.parquet"
     if not muc_parquet.exists():
         print(f"  Munich parquet not found: {muc_parquet}")
         return None
@@ -124,15 +124,15 @@ def transform_to_berlin_schema():
     print(f"  PASS: {len(berlin_columns)} Berlin cols + {len(muc_extras)} extras")
 
     # Step 6: Save
-    out_pq = MUC_DATA_DIR / "munich_secondary_school_master_table_final_with_embeddings.parquet"
+    out_pq = MUC_DATA_DIR / f"munich_{school_type}_school_master_table_final_with_embeddings.parquet"
     output.to_parquet(out_pq, index=False)
 
-    out_csv = MUC_DATA_DIR / "munich_secondary_school_master_table_final.csv"
+    out_csv = MUC_DATA_DIR / f"munich_{school_type}_school_master_table_final.csv"
     output.drop(columns=['embedding'], errors='ignore').to_csv(out_csv, index=False, encoding='utf-8-sig')
 
-    bs_pq = MUC_DATA_DIR / "munich_secondary_school_master_table_berlin_schema.parquet"
+    bs_pq = MUC_DATA_DIR / f"munich_{school_type}_school_master_table_berlin_schema.parquet"
     output.to_parquet(bs_pq, index=False)
-    bs_csv = MUC_DATA_DIR / "munich_secondary_school_master_table_berlin_schema.csv"
+    bs_csv = MUC_DATA_DIR / f"munich_{school_type}_school_master_table_berlin_schema.csv"
     output.drop(columns=['embedding'], errors='ignore').to_csv(bs_csv, index=False, encoding='utf-8-sig')
 
     print(f"  Saved: {out_pq.name}")
@@ -154,13 +154,18 @@ def transform_to_berlin_schema():
     return output
 
 
-def main():
-    print(f"\n{'='*70}\nMUNICH → BERLIN SCHEMA ENFORCEMENT\n{'='*70}")
-    result = transform_to_berlin_schema()
+def main(school_type='secondary'):
+    print(f"\n{'='*70}\nMUNICH → BERLIN SCHEMA ENFORCEMENT ({school_type.upper()})\n{'='*70}")
+    result = transform_to_berlin_schema(school_type)
     if result is not None:
-        print(f"\n  secondary: {len(result)} schools → Berlin schema")
+        print(f"\n  {school_type}: {len(result)} schools → Berlin schema")
     print(f"{'='*70}")
+    return result
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    args = parser.parse_args()
+    main(args.school_type)

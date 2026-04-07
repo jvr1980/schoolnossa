@@ -27,45 +27,41 @@ INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 FINAL_DIR = DATA_DIR / "final"
 
 
-def find_most_enriched_file():
+def find_most_enriched_file(school_type='secondary'):
     """Find the most enriched intermediate file (last in the chain)."""
     candidates = [
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_metadata.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_pois.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_crime.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_transit.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_traffic.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_metadata.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_pois.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_crime.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_transit.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_traffic.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools.csv",
     ]
     for fp in candidates:
         if fp.exists():
             df = pd.read_csv(fp)
             logger.info(f"Loaded {len(df)} schools from {fp.name} ({len(df.columns)} columns)")
             return df
-    raise FileNotFoundError("No school data found in intermediate/")
+    raise FileNotFoundError(f"No {school_type} school data found in intermediate/")
 
 
-def main():
-    logger.info("=" * 60)
-    logger.info("Phase 7: Munich Data Combiner")
-    logger.info("=" * 60)
+def combine_school_type(school_type='secondary'):
+    logger.info(f"Combining {school_type} school data...")
 
     FINAL_DIR.mkdir(parents=True, exist_ok=True)
 
-    df = find_most_enriched_file()
+    df = find_most_enriched_file(school_type)
 
-    # Save CSV
-    csv_path = FINAL_DIR / "munich_secondary_school_master_table.csv"
+    csv_path = FINAL_DIR / f"munich_{school_type}_school_master_table.csv"
     df.to_csv(csv_path, index=False, encoding='utf-8-sig')
     logger.info(f"Saved CSV: {csv_path}")
 
-    # Save parquet
-    parquet_path = FINAL_DIR / "munich_secondary_school_master_table.parquet"
+    parquet_path = FINAL_DIR / f"munich_{school_type}_school_master_table.parquet"
     df.to_parquet(parquet_path, index=False)
     logger.info(f"Saved parquet: {parquet_path}")
 
     print(f"\n{'='*70}")
-    print("MUNICH DATA COMBINER - COMPLETE")
+    print(f"MUNICH DATA COMBINER ({school_type.upper()}) - COMPLETE")
     print(f"{'='*70}")
     print(f"Schools: {len(df)}")
     print(f"Columns: {len(df.columns)}")
@@ -75,5 +71,16 @@ def main():
     return df
 
 
+def main(school_type='secondary'):
+    logger.info("=" * 60)
+    logger.info(f"Phase 7: Munich Data Combiner ({school_type})")
+    logger.info("=" * 60)
+    return combine_school_type(school_type)
+
+
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    args = parser.parse_args()
+    main(args.school_type)

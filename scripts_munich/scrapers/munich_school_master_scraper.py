@@ -13,17 +13,18 @@ License: CC0 (public domain)
 This script:
 1. Downloads jedeschule.codefor.de CSV (31k+ German schools with coords)
 2. Filters for München (city field)
-3. Filters for secondary school types (Gymnasien, Realschulen, Mittelschulen, etc.)
+3. Filters for school type (primary=Grundschulen or secondary)
 4. Decodes WKB hex coordinates to lat/lon
 5. Geocodes remaining schools without coordinates via Nominatim
 6. Normalizes columns and outputs to intermediate/
 
 Input: jedeschule.codefor.de CSV (web download)
-Output: data_munich/intermediate/munich_secondary_schools.csv
+Output: data_munich/intermediate/munich_{school_type}_schools.csv
 
 Author: Munich School Data Pipeline
 Created: 2026-04-01
 Updated: 2026-04-04 — Switched to jedeschule.codefor.de as primary source
+Updated: 2026-04-07 — Added primary school (Grundschule) support
 """
 
 import requests
@@ -67,6 +68,12 @@ SECONDARY_TYPE_PATTERNS = [
     'Gesamtschule',
     'Fachoberschule', 'Fachoberschulen',
     'Berufsoberschule', 'Berufsoberschulen',
+]
+
+# Primary school types in Bavaria
+PRIMARY_TYPE_PATTERNS = [
+    'Grundschule', 'Grundschulen',
+    'Volksschule',  # older term, sometimes still in data
 ]
 
 
@@ -155,22 +162,40 @@ def filter_munich_schools(df: pd.DataFrame) -> pd.DataFrame:
     return filtered
 
 
-def filter_secondary_schools(df: pd.DataFrame) -> pd.DataFrame:
-    """Filter for secondary school types."""
-    logger.info("Filtering for secondary school types...")
+def filter_schools_by_type(df: pd.DataFrame, school_type: str = 'secondary') -> pd.DataFrame:
+    """Filter for primary or secondary school types."""
+    if school_type == 'primary':
+        patterns = PRIMARY_TYPE_PATTERNS
+        label = 'primary'
+    else:
+        patterns = SECONDARY_TYPE_PATTERNS
+        label = 'secondary'
+
+    logger.info(f"Filtering for {label} school types...")
 
     mask = pd.Series(False, index=df.index)
-    for pattern in SECONDARY_TYPE_PATTERNS:
+    for pattern in patterns:
         mask |= df['school_type'].str.contains(pattern, case=False, na=False)
 
+    # For primary: exclude combined schools that are primarily secondary
+    # (e.g., "Grund- und Mittelschule" should appear in BOTH primary and secondary)
+    if school_type == 'primary':
+        # Include schools that mention Grundschule even if they also mention secondary types
+        pass
+
     filtered = df[mask].copy()
-    logger.info(f"Filtered from {len(df)} to {len(filtered)} secondary schools")
+    logger.info(f"Filtered from {len(df)} to {len(filtered)} {label} schools")
 
     if not filtered.empty:
         for st, count in filtered['school_type'].value_counts().items():
             logger.info(f"  - {st}: {count}")
 
     return filtered
+
+
+def filter_secondary_schools(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter for secondary school types (backward compat)."""
+    return filter_schools_by_type(df, 'secondary')
 
 
 def decode_coordinates(df: pd.DataFrame) -> pd.DataFrame:
@@ -305,24 +330,24 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def save_outputs(df: pd.DataFrame):
+def save_outputs(df: pd.DataFrame, school_type: str = 'secondary'):
     """Save processed data."""
     INTERMEDIATE_DIR.mkdir(parents=True, exist_ok=True)
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    output_path = INTERMEDIATE_DIR / "munich_secondary_schools.csv"
+    output_path = INTERMEDIATE_DIR / f"munich_{school_type}_schools.csv"
     df.to_csv(output_path, index=False, encoding='utf-8-sig')
     logger.info(f"Saved: {output_path} ({len(df)} schools)")
 
-    raw_path = RAW_DIR / "munich_secondary_schools_raw.csv"
+    raw_path = RAW_DIR / f"munich_{school_type}_schools_raw.csv"
     df.to_csv(raw_path, index=False, encoding='utf-8-sig')
 
 
-def print_summary(df: pd.DataFrame):
+def print_summary(df: pd.DataFrame, school_type: str = 'secondary'):
     print(f"\n{'='*70}")
-    print("MUNICH SCHOOL MASTER DATA SCRAPER - COMPLETE")
+    print(f"MUNICH SCHOOL MASTER DATA SCRAPER - COMPLETE ({school_type.upper()})")
     print(f"{'='*70}")
-    print(f"\nTotal secondary schools: {len(df)}")
+    print(f"\nTotal {school_type} schools: {len(df)}")
 
     if 'school_type' in df.columns:
         print("\nBy school type:")
@@ -352,46 +377,55 @@ def print_summary(df: pd.DataFrame):
     print(f"\n{'='*70}")
 
 
-def main():
+def scrape_school_type(school_type: str = 'secondary') -> pd.DataFrame:
+    """Scrape and process schools of a given type."""
+    logger.info(f"Processing {school_type} schools...")
+
+    ensure_directories()
+
+    # Step 1: Download jedeschule data
+    all_schools = download_jedeschule_csv()
+    logger.info(f"Total German schools: {len(all_schools)}")
+
+    # Step 2: Filter for München
+    munich_schools = filter_munich_schools(all_schools)
+
+    # Step 3: Filter for school type
+    filtered = filter_schools_by_type(munich_schools, school_type)
+
+    if len(filtered) == 0:
+        logger.error(f"No {school_type} schools found in München!")
+        return pd.DataFrame()
+
+    # Step 4: Decode WKB coordinates
+    filtered = decode_coordinates(filtered)
+
+    # Step 5: Geocode remaining via Nominatim
+    filtered = geocode_remaining(filtered)
+
+    # Step 6: Normalize columns
+    filtered = normalize_columns(filtered)
+
+    # Step 7: Save
+    save_outputs(filtered, school_type)
+
+    # Print summary
+    print_summary(filtered, school_type)
+
+    return filtered
+
+
+def main(school_type: str = 'secondary'):
     logger.info("=" * 60)
-    logger.info("Starting Munich School Master Data Scraper")
+    logger.info(f"Starting Munich School Master Data Scraper ({school_type})")
     logger.info("=" * 60)
 
     try:
-        ensure_directories()
-
-        # Step 1: Download jedeschule data
-        all_schools = download_jedeschule_csv()
-        logger.info(f"Total German schools: {len(all_schools)}")
-
-        # Step 2: Filter for München
-        munich_schools = filter_munich_schools(all_schools)
-
-        # Step 3: Filter for secondary schools
-        secondary = filter_secondary_schools(munich_schools)
-
-        if len(secondary) == 0:
-            logger.error("No secondary schools found in München!")
+        result = scrape_school_type(school_type)
+        if result.empty:
             sys.exit(1)
-
-        # Step 4: Decode WKB coordinates
-        secondary = decode_coordinates(secondary)
-
-        # Step 5: Geocode remaining via Nominatim
-        secondary = geocode_remaining(secondary)
-
-        # Step 6: Normalize columns
-        secondary = normalize_columns(secondary)
-
-        # Step 7: Save
-        save_outputs(secondary)
-
-        # Print summary
-        print_summary(secondary)
-
         logger.info("Munich School Master Data Scraper complete!")
-        return secondary
-
+        return result
     except Exception as e:
         logger.error(f"Scraper failed: {e}")
         import traceback
@@ -400,4 +434,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    args = parser.parse_args()
+    main(args.school_type)

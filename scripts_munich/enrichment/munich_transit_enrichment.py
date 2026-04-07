@@ -231,23 +231,21 @@ def enrich_school_transit(school_lat, school_lon, stops, radius=RADIUS_1000M):
     return result
 
 
-def find_input_file():
+def find_input_file(school_type='secondary'):
     candidates = [
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_traffic.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_traffic.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools.csv",
     ]
     for f in candidates:
         if f.exists():
             return f
-    raise FileNotFoundError("No school data found. Run earlier phases first.")
+    raise FileNotFoundError(f"No {school_type} school data found. Run earlier phases first.")
 
 
-def main():
-    logger.info("=" * 60)
-    logger.info("Phase 3: Munich Transit Enrichment (Overpass API)")
-    logger.info("=" * 60)
+def enrich_schools(school_type='secondary'):
+    logger.info(f"Enriching {school_type} schools with transit data...")
 
-    input_file = find_input_file()
+    input_file = find_input_file(school_type)
     schools = pd.read_csv(input_file, dtype=str)
     schools['latitude'] = pd.to_numeric(schools['latitude'], errors='coerce')
     schools['longitude'] = pd.to_numeric(schools['longitude'], errors='coerce')
@@ -262,7 +260,7 @@ def main():
     transit_data = []
     iterator = list(with_coords.iterrows())
     if TQDM_AVAILABLE:
-        iterator = tqdm(iterator, desc="Transit enrichment")
+        iterator = tqdm(iterator, desc=f"Transit enrichment ({school_type})")
 
     for idx, row in iterator:
         result = enrich_school_transit(float(row['latitude']), float(row['longitude']), stops)
@@ -277,17 +275,28 @@ def main():
         for col in transit_df.columns:
             schools.at[idx, col] = row[col]
 
-    output_path = INTERMEDIATE_DIR / "munich_secondary_schools_with_transit.csv"
+    output_path = INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_transit.csv"
     schools.to_csv(output_path, index=False, encoding='utf-8-sig')
     logger.info(f"Saved: {output_path}")
 
     enriched = schools['transit_stop_count_1000m'].notna().sum()
-    print(f"\nTransit enrichment: {enriched}/{len(schools)} schools")
+    print(f"\nTransit enrichment ({school_type}): {enriched}/{len(schools)} schools")
     avg_score = pd.to_numeric(schools['transit_accessibility_score'], errors='coerce').mean()
     print(f"Average accessibility score: {avg_score:.1f}/100")
 
     return schools
 
 
+def main(school_type='secondary'):
+    logger.info("=" * 60)
+    logger.info(f"Phase 3: Munich Transit Enrichment ({school_type})")
+    logger.info("=" * 60)
+    return enrich_schools(school_type)
+
+
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    args = parser.parse_args()
+    main(args.school_type)
