@@ -33,11 +33,15 @@ from scripts_shared.regression.dimensions import DIMENSIONS
 
 # School types that can lead to Abitur
 ABITUR_ELIGIBLE_TYPES = {
-    "Gymnasium", "ISS", "ISS-Gymnasium",            # Berlin
-    "Stadtteilschule", "Stadtteilschule_Gymnasium",  # Hamburg
-    "Gesamtschule", "Waldorfschule",                 # NRW
-    "Internationale Schule",                          # NRW
-    "Weiterführende Schule",                          # Frankfurt (Hessen)
+    "Gymnasium", "ISS", "ISS-Gymnasium",                         # Berlin
+    "Stadtteilschule", "Stadtteilschule_Gymnasium",               # Hamburg
+    "Gesamtschule", "Waldorfschule",                              # NRW / Stuttgart
+    "Internationale Schule",                                       # NRW
+    "Weiterführende Schule",                                       # Frankfurt (old schema)
+    "Integrierte Gesamtschule (IGS)", "Kooperative Gesamtschule (KGS)",  # Frankfurt (Hessen)
+    "Gymnasiale Oberstufe",                                        # Frankfurt (Hessen)
+    "Gymnasien", "Berufsoberschulen",                              # Munich (Bayern)
+    "Gemeinschaftsschule",                                         # Stuttgart (BaWü)
 }
 
 # City-specific dims to exclude (not portable)
@@ -103,6 +107,22 @@ OFFICIAL_STATE_AVERAGES = {
         "source": "Hessisches Kultusministerium, Abiturstatistik 2024",
         "rebase": True,
     },
+    "munich": {
+        # Bayerisches Staatsministerium für Unterricht und Kultus, Abitur 2024.
+        # Bayern state average; rebasing applied: no Munich labeled schools in training set.
+        "overall": 2.29,
+        "year": 2024,
+        "source": "Bayerisches Staatsministerium für Unterricht und Kultus, Abitur 2024",
+        "rebase": True,
+    },
+    "stuttgart": {
+        # Kultusministerium Baden-Württemberg, Abiturstatistik 2024.
+        # BaWü state average; rebasing applied: no Stuttgart labeled schools in training set.
+        "overall": 2.32,
+        "year": 2024,
+        "source": "Kultusministerium Baden-Württemberg, Abiturstatistik 2024",
+        "rebase": True,
+    },
 }
 
 # Files to update
@@ -126,6 +146,16 @@ CITY_FILES = [
         "city_prefix": "frankfurt",
         "parquet": "data_frankfurt/final/frankfurt_secondary_school_master_table_final_with_embeddings.parquet",
         "csv": "data_frankfurt/final/frankfurt_secondary_school_master_table_final.csv",
+    },
+    {
+        "city_prefix": "munich",
+        "parquet": "data_munich/final/munich_secondary_school_master_table_final_with_embeddings.parquet",
+        "csv": "data_munich/final/munich_secondary_school_master_table_final.csv",
+    },
+    {
+        "city_prefix": "stuttgart",
+        "parquet": "data_stuttgart/final/stuttgart_secondary_school_master_table_final_with_embeddings.parquet",
+        "csv": "data_stuttgart/final/stuttgart_secondary_school_master_table_final.csv",
     },
 ]
 
@@ -235,6 +265,8 @@ def _compute_rebase_shifts(df_csv, pred_lookup, prefix):
     for _, row in df_csv.iterrows():
         schulnummer = str(row.get("schulnummer", "")).strip()
         stype = str(row.get("school_type", ""))
+        if stype.lower() in ("secondary", "primary", ""):
+            stype = str(row.get("schulart", ""))
         if stype not in ABITUR_ELIGIBLE_TYPES:
             continue
         full_sid = f"{prefix}_{schulnummer}"
@@ -373,6 +405,9 @@ def main():
         for idx, row in df_csv.iterrows():
             schulnummer = str(row.get("schulnummer", "")).strip()
             school_type = str(row.get("school_type", ""))
+            # Use schulart as fallback when school_type is a generic placeholder
+            if school_type.lower() in ("secondary", "primary", ""):
+                school_type = str(row.get("schulart", ""))
             full_sid = f"{prefix}_{schulnummer}"
 
             # Only write predictions for Abitur-eligible school types
