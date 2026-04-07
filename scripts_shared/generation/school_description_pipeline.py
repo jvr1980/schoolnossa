@@ -765,24 +765,37 @@ def apply_cache_to_dataframe(df, cache, passes):
 
     logger.info(f"Applied: {updated_descriptions} description updates, {updated_structured} structured field fills")
 
-    # ── Derived backfills: propagate web-scraped stats to canonical columns ──
-    # Always run after pass2 so web-researched values fill gaps in official data.
-    # Order: most-specific year first, then year-unknown fallback.
-    df, n = _backfill_col(df, "schueler_gesamt",  ["schueler_2024_25", "schueler_2023_24", "schueler_gesamt_web"])
-    if n: logger.info(f"  Backfilled schueler_gesamt from web for {n} schools")
-    df, n = _backfill_col(df, "lehrer_gesamt",    ["lehrer_2024_25", "lehrer_2023_24"])
-    if n: logger.info(f"  Backfilled lehrer_gesamt from web for {n} schools")
+    # ── Derived backfills: propagate web-scraped stats into Berlin-canonical columns ──
+    # Berlin schema uses year-specific columns: schueler_2024_25, lehrer_2024_25, etc.
+    # Web research extracts year-specific values where possible, year-unknown otherwise.
+    # Fill order: exact year match first, then adjacent year, then year-unknown fallback.
+    # Never create new non-Berlin column names — keep extras as city-specific only.
+    df, n = _backfill_col(df, "schueler_2024_25", ["schueler_gesamt_web"])
+    if n: logger.info(f"  Backfilled schueler_2024_25 from web for {n} schools")
+    df, n = _backfill_col(df, "lehrer_2024_25",   ["lehrer_2023_24"])
+    if n: logger.info(f"  Backfilled lehrer_2024_25 from adjacent year for {n} schools")
 
     return df
 
 
 def _backfill_col(df, target_col, source_cols):
-    """Fill nulls in target_col from source_cols (left-to-right priority). Returns (df, n_filled)."""
+    """Fill nulls in target_col from source_cols (left-to-right priority).
+
+    Only writes to target_col — never creates non-Berlin canonical columns.
+    Returns (df, n_filled).
+    """
     n = 0
     for src in source_cols:
         if src not in df.columns:
             continue
         if target_col not in df.columns:
+            # Only create the column if it's a known Berlin-canonical column
+            BERLIN_CANONICAL = {
+                "schueler_2024_25", "schueler_2023_24", "schueler_2022_23",
+                "lehrer_2024_25",   "lehrer_2023_24",   "lehrer_2022_23",
+            }
+            if target_col not in BERLIN_CANONICAL:
+                continue
             df[target_col] = None
         mask = df[target_col].isna() & df[src].notna()
         if mask.sum() > 0:
