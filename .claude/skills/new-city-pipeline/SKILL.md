@@ -1,6 +1,6 @@
 ---
 name: new-city-pipeline
-description: "SchoolNossa project only. Scaffold a complete data pipeline for a new German city — directories, orchestrator, stub scripts, and schema transformer. Use whenever the user mentions adding a new city to SchoolNossa, expanding to another German city, or says things like 'let's do Munich next', 'set up Frankfurt', 'scaffold a pipeline for Stuttgart', 'add a new city', or 'create the pipeline structure for [city]'. Also use when the user wants to understand or replicate the pipeline structure pattern. Only applies when working in the schoolnossa repository."
+description: "Trigger on: 'scaffold [city]', 'set up [city]', 'create pipeline for [city]', 'add a new city', 'pipeline structure'. Generates directories, orchestrator, stub scripts, and schema transformer for a new German city."
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Agent
 ---
 

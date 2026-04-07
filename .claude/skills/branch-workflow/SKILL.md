@@ -1,6 +1,6 @@
 ---
 name: branch-workflow
-description: "Git branching workflow — creates feature branches for changes, merges to main after user confirms testing. Use when the user asks to make code changes, implement features, or fix bugs. Also trigger proactively when starting ANY implementation task to ensure a feature branch is created first, when a significant unit of work is complete and should be committed, or when the user says 'commit', 'push', 'merge', 'save progress', 'let's wrap up', or 'branch'. Provides safe rollback via merge commits."
+description: "Trigger on: 'commit', 'push', 'merge', 'save progress', 'branch', 'wrap up', or proactively when starting any code change. Creates feature branches, commits work, merges to main after user confirms."
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Agent
 ---
 

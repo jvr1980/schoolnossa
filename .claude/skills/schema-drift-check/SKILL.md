@@ -1,6 +1,6 @@
 ---
 name: schema-drift-check
-description: "SchoolNossa project only. Compare final parquet/CSV outputs across all cities to detect schema divergence — missing columns, type mismatches, naming inconsistencies, and undocumented city-specific columns. Use when the user asks 'do all cities match?', 'check schema alignment', 'compare columns across cities', 'is Hamburg compatible with Berlin?', or any question about cross-city data consistency. Also use after completing a pipeline for a new city, after modifying the Berlin reference schema, or when the frontend shows unexpected missing data for certain cities. Only applies when working in the schoolnossa repository."
+description: "Trigger on: 'schema check', 'do all cities match', 'compare columns', 'schema alignment', 'compatible with Berlin', 'drift', or after completing a new city pipeline. Compares all city outputs against Berlin reference schema."
 allowed-tools: Bash, Read, Write, Glob, Grep, Agent
 ---
 

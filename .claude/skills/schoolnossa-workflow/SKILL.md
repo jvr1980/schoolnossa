@@ -1,6 +1,6 @@
 ---
 name: schoolnossa-workflow
-description: "SchoolNossa project only. Master workflow coordinator for expanding SchoolNossa to new cities. This is the FIRST skill to trigger for any SchoolNossa pipeline work — it determines where you are in the process and routes to the right sub-skill. Trigger on ANY of: 'expand to [city]', 'add [city]', 'let's do [city] next', 'new city', 'what's next for [city]', 'where are we with [city]', 'schoolnossa workflow', 'pipeline status', 'continue with [city]', or any mention of expanding SchoolNossa to a new German city. Also trigger when resuming work on an in-progress city pipeline. Only applies when working in the schoolnossa repository."
+description: "Trigger on: 'add [city]', 'expand to [city]', 'new city', 'status', 'what's next', 'pipeline', 'where are we', 'continue', or any German city name (Munich, Frankfurt, Stuttgart, Leipzig). Master coordinator — checks pipeline state and routes to sub-skills."
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Agent, Skill
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: data-source-research
-description: "SchoolNossa project only. Research and document available open data sources for a new German city's school pipeline. Use whenever the user wants to explore what data exists for a city before coding, asks 'what data is available for Munich?', 'can we get crime data for Frankfurt?', 'research sources for Stuttgart', or any question about whether a specific data type (traffic, crime, transit, schools, demographics) is available as open data in a German city. Also trigger when the user asks which existing pipeline to base a new city on. Only applies when working in the schoolnossa repository."
+description: "Trigger on: 'research [city]', 'what data exists for [city]', 'data sources', 'open data', 'what's available', or questions about traffic/crime/transit/school data availability in German cities. Produces a structured research doc before coding starts."
 allowed-tools: Bash, Read, Write, Glob, Grep, Agent, WebSearch, WebFetch
 ---
 

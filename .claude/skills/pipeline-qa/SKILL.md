@@ -1,6 +1,6 @@
 ---
 name: pipeline-qa
-description: "SchoolNossa project only. Validate a completed city pipeline's output for data quality, schema alignment, coverage, and correctness. Use whenever the user asks to check, validate, or QA pipeline output — 'does the data look right?', 'check the NRW output', 'validate Hamburg pipeline', 'run QA on the final CSV', 'how's the coverage?', 'are there any issues with the data?'. Also trigger after any pipeline run completes, or when the user reports unexpected values or missing data in the frontend. Only applies when working in the schoolnossa repository."
+description: "Trigger on: 'validate [city]', 'check output', 'QA', 'does the data look right', 'coverage', 'any issues', 'check the CSV/parquet', or after a pipeline run completes. Runs 9 quality checks and generates a QA report for pipeline output."
 allowed-tools: Bash, Read, Write, Glob, Grep, Agent
 ---
 

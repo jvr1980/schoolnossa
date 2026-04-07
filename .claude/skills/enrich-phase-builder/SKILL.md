@@ -1,6 +1,6 @@
 ---
 name: enrich-phase-builder
-description: "SchoolNossa project only. Generate a production-ready enrichment script for a specific city and enrichment type (traffic, transit, crime, POI, demographics, website metadata). Use when the user asks to 'build the traffic enrichment for Munich', 'add crime data to the Frankfurt pipeline', 'implement transit phase', 'write the POI enrichment script', or any request to create or implement a specific enrichment phase for any city pipeline. Also use when adapting an enrichment from one city to another. Follows established pipeline patterns with fallback chain, Berlin-compatible column naming, caching, and rate limiting. Only applies when working in the schoolnossa repository."
+description: "Trigger on: 'build [enrichment] for [city]', 'implement [phase]', 'add traffic/transit/crime/POI/demographics enrichment', 'write enrichment script', or 'adapt [enrichment] from [city]'. Generates production-ready enrichment scripts following established pipeline patterns."
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep, Agent
 ---
 
