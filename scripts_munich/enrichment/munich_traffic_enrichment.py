@@ -210,23 +210,21 @@ def count_accidents_near_schools(schools_df, accidents_df, radius_m=SEARCH_RADIU
     return results
 
 
-def find_input_file():
+def find_input_file(school_type='secondary'):
     """Find the best available input file (fallback chain)."""
     candidates = [
-        INTERMEDIATE_DIR / "munich_secondary_schools.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools.csv",
     ]
     for f in candidates:
         if f.exists():
             return f
-    raise FileNotFoundError("No school data found. Run Phase 1 first.")
+    raise FileNotFoundError(f"No {school_type} school data found. Run Phase 1 first.")
 
 
-def main():
-    logger.info("=" * 60)
-    logger.info("Phase 2: Munich Traffic Enrichment (Unfallatlas)")
-    logger.info("=" * 60)
+def enrich_schools(school_type='secondary'):
+    logger.info(f"Enriching {school_type} schools with traffic data...")
 
-    input_file = find_input_file()
+    input_file = find_input_file(school_type)
     logger.info(f"Input: {input_file}")
     schools = pd.read_csv(input_file, dtype=str)
     schools['latitude'] = pd.to_numeric(schools['latitude'], errors='coerce')
@@ -263,16 +261,27 @@ def main():
             None
         )
 
-    output_path = INTERMEDIATE_DIR / "munich_secondary_schools_with_traffic.csv"
+    output_path = INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_traffic.csv"
     schools.to_csv(output_path, index=False, encoding='utf-8-sig')
     logger.info(f"Saved: {output_path} ({len(schools)} schools)")
 
     enriched = schools['traffic_accidents_total'].notna().sum()
-    print(f"\nTraffic enrichment: {enriched}/{len(schools)} schools enriched")
+    print(f"\nTraffic enrichment ({school_type}): {enriched}/{len(schools)} schools enriched")
     print(f"Total accidents within {SEARCH_RADIUS_M}m: {pd.to_numeric(schools['traffic_accidents_total'], errors='coerce').sum():.0f}")
 
     return schools
 
 
+def main(school_type='secondary'):
+    logger.info("=" * 60)
+    logger.info(f"Phase 2: Munich Traffic Enrichment ({school_type})")
+    logger.info("=" * 60)
+    return enrich_schools(school_type)
+
+
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    args = parser.parse_args()
+    main(args.school_type)

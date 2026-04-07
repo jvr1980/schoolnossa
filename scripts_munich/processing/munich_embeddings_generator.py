@@ -126,37 +126,32 @@ def generate_gemini_embeddings(texts):
     return embeddings
 
 
-def main():
-    logger.info("=" * 60)
-    logger.info("Phase 8: Munich Embeddings Generator")
-    logger.info("=" * 60)
+def generate_for_school_type(school_type='secondary'):
+    logger.info(f"Generating embeddings for {school_type} schools...")
 
     FINAL_DIR.mkdir(parents=True, exist_ok=True)
 
-    input_path = FINAL_DIR / "munich_secondary_school_master_table.csv"
+    input_path = FINAL_DIR / f"munich_{school_type}_school_master_table.csv"
     if not input_path.exists():
         raise FileNotFoundError(f"Input not found: {input_path}. Run Phase 7 first.")
 
     df = pd.read_csv(input_path)
     logger.info(f"Loaded {len(df)} schools")
 
-    # Save final CSV (without embeddings)
-    final_csv = FINAL_DIR / "munich_secondary_school_master_table_final.csv"
+    final_csv = FINAL_DIR / f"munich_{school_type}_school_master_table_final.csv"
     df.to_csv(final_csv, index=False, encoding='utf-8-sig')
     logger.info(f"Saved final CSV: {final_csv}")
 
     if SKIP_EMBEDDINGS:
         logger.info("Skipping embedding generation (SKIP_EMBEDDINGS=1)")
-        final_parquet = FINAL_DIR / "munich_secondary_school_master_table_final_with_embeddings.parquet"
+        final_parquet = FINAL_DIR / f"munich_{school_type}_school_master_table_final_with_embeddings.parquet"
         df.to_parquet(final_parquet, index=False)
         logger.info(f"Saved parquet (no embeddings): {final_parquet}")
         return df
 
-    # Generate text for embedding
     texts = [create_text_for_embedding(row) for _, row in df.iterrows()]
     logger.info(f"Created embedding texts for {len(texts)} schools")
 
-    # Try OpenAI first, fallback to Gemini
     embeddings = None
     if OPENAI_API_KEY:
         logger.info("Generating embeddings with OpenAI...")
@@ -168,17 +163,15 @@ def main():
         logger.warning("No API key available for embeddings. Set OPENAI_API_KEY or GEMINI_API_KEY.")
         embeddings = [None] * len(df)
 
-    # Add embeddings column
     df['embedding'] = embeddings
 
-    # Save final parquet
-    final_parquet = FINAL_DIR / "munich_secondary_school_master_table_final_with_embeddings.parquet"
+    final_parquet = FINAL_DIR / f"munich_{school_type}_school_master_table_final_with_embeddings.parquet"
     df.to_parquet(final_parquet, index=False)
     logger.info(f"Saved parquet with embeddings: {final_parquet}")
 
     embedded_count = sum(1 for e in embeddings if e is not None)
     print(f"\n{'='*70}")
-    print("MUNICH EMBEDDINGS GENERATOR - COMPLETE")
+    print(f"MUNICH EMBEDDINGS GENERATOR ({school_type.upper()}) - COMPLETE")
     print(f"{'='*70}")
     print(f"Schools: {len(df)}")
     print(f"Embeddings: {embedded_count}/{len(df)}")
@@ -188,5 +181,16 @@ def main():
     return df
 
 
+def main(school_type='secondary'):
+    logger.info("=" * 60)
+    logger.info(f"Phase 8: Munich Embeddings Generator ({school_type})")
+    logger.info("=" * 60)
+    return generate_for_school_type(school_type)
+
+
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    args = parser.parse_args()
+    main(args.school_type)

@@ -13,17 +13,18 @@ License: CC0 (public domain)
 This script:
 1. Downloads jedeschule.codefor.de CSV (31k+ German schools with coords)
 2. Filters for München (city field)
-3. Filters for secondary school types (Gymnasien, Realschulen, Mittelschulen, etc.)
+3. Filters for school type (primary=Grundschulen or secondary)
 4. Decodes WKB hex coordinates to lat/lon
 5. Geocodes remaining schools without coordinates via Nominatim
 6. Normalizes columns and outputs to intermediate/
 
 Input: jedeschule.codefor.de CSV (web download)
-Output: data_munich/intermediate/munich_secondary_schools.csv
+Output: data_munich/intermediate/munich_{school_type}_schools.csv
 
 Author: Munich School Data Pipeline
 Created: 2026-04-01
 Updated: 2026-04-04 — Switched to jedeschule.codefor.de as primary source
+Updated: 2026-04-07 — Added primary school (Grundschule) support
 """
 
 import requests
@@ -68,6 +69,37 @@ SECONDARY_TYPE_PATTERNS = [
     'Fachoberschule', 'Fachoberschulen',
     'Berufsoberschule', 'Berufsoberschulen',
 ]
+
+# Primary school types in Bavaria
+PRIMARY_TYPE_PATTERNS = [
+    'Grundschule', 'Grundschulen',
+    'Volksschule',  # older term, sometimes still in data
+]
+
+# Keywords that indicate a private school operator in OSM data
+PRIVATE_OPERATOR_KEYWORDS = [
+    'ggmbh', 'gag', 'e.v.', 'ev ', 'stiftung', 'verein', 'schulverein',
+    'phorms', 'montessori', 'waldorf', 'steiner',
+]
+
+# Keywords in school name that indicate private
+PRIVATE_NAME_KEYWORDS = [
+    'privat', 'privatschule', 'private ', 'freie schule', 'freie ',
+    'montessori', 'waldorf', 'rudolf steiner', 'rudolf-steiner',
+    'international school', 'phorms', 'lukas-schule', 'lukas-',
+    'nymphenburger', 'isar gymnasium', 'isar grundschule',
+    'bavarian international', 'european school', 'munich international',
+    'obermenzinger', 'sabel', 'begemann',
+    'parzival', 'christophorus', 'samuel-heinicke',
+]
+
+# Public operator keywords — exclude these from private detection
+PUBLIC_OPERATOR_KEYWORDS = [
+    'freistaat bayern', 'landeshauptstadt münchen', 'stadt münchen',
+    'staatlich', 'städtisch',
+]
+
+OVERPASS_URL_SCRAPER = "https://overpass-api.de/api/interpreter"
 
 
 def ensure_directories():
@@ -155,22 +187,40 @@ def filter_munich_schools(df: pd.DataFrame) -> pd.DataFrame:
     return filtered
 
 
-def filter_secondary_schools(df: pd.DataFrame) -> pd.DataFrame:
-    """Filter for secondary school types."""
-    logger.info("Filtering for secondary school types...")
+def filter_schools_by_type(df: pd.DataFrame, school_type: str = 'secondary') -> pd.DataFrame:
+    """Filter for primary or secondary school types."""
+    if school_type == 'primary':
+        patterns = PRIMARY_TYPE_PATTERNS
+        label = 'primary'
+    else:
+        patterns = SECONDARY_TYPE_PATTERNS
+        label = 'secondary'
+
+    logger.info(f"Filtering for {label} school types...")
 
     mask = pd.Series(False, index=df.index)
-    for pattern in SECONDARY_TYPE_PATTERNS:
+    for pattern in patterns:
         mask |= df['school_type'].str.contains(pattern, case=False, na=False)
 
+    # For primary: exclude combined schools that are primarily secondary
+    # (e.g., "Grund- und Mittelschule" should appear in BOTH primary and secondary)
+    if school_type == 'primary':
+        # Include schools that mention Grundschule even if they also mention secondary types
+        pass
+
     filtered = df[mask].copy()
-    logger.info(f"Filtered from {len(df)} to {len(filtered)} secondary schools")
+    logger.info(f"Filtered from {len(df)} to {len(filtered)} {label} schools")
 
     if not filtered.empty:
         for st, count in filtered['school_type'].value_counts().items():
             logger.info(f"  - {st}: {count}")
 
     return filtered
+
+
+def filter_secondary_schools(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter for secondary school types (backward compat)."""
+    return filter_schools_by_type(df, 'secondary')
 
 
 def decode_coordinates(df: pd.DataFrame) -> pd.DataFrame:
@@ -305,24 +355,24 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def save_outputs(df: pd.DataFrame):
+def save_outputs(df: pd.DataFrame, school_type: str = 'secondary'):
     """Save processed data."""
     INTERMEDIATE_DIR.mkdir(parents=True, exist_ok=True)
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    output_path = INTERMEDIATE_DIR / "munich_secondary_schools.csv"
+    output_path = INTERMEDIATE_DIR / f"munich_{school_type}_schools.csv"
     df.to_csv(output_path, index=False, encoding='utf-8-sig')
     logger.info(f"Saved: {output_path} ({len(df)} schools)")
 
-    raw_path = RAW_DIR / "munich_secondary_schools_raw.csv"
+    raw_path = RAW_DIR / f"munich_{school_type}_schools_raw.csv"
     df.to_csv(raw_path, index=False, encoding='utf-8-sig')
 
 
-def print_summary(df: pd.DataFrame):
+def print_summary(df: pd.DataFrame, school_type: str = 'secondary'):
     print(f"\n{'='*70}")
-    print("MUNICH SCHOOL MASTER DATA SCRAPER - COMPLETE")
+    print(f"MUNICH SCHOOL MASTER DATA SCRAPER - COMPLETE ({school_type.upper()})")
     print(f"{'='*70}")
-    print(f"\nTotal secondary schools: {len(df)}")
+    print(f"\nTotal {school_type} schools: {len(df)}")
 
     if 'school_type' in df.columns:
         print("\nBy school type:")
@@ -352,46 +402,262 @@ def print_summary(df: pd.DataFrame):
     print(f"\n{'='*70}")
 
 
-def main():
+def is_private_school(name: str, operator: str) -> bool:
+    """Determine if a school is private based on OSM name and operator."""
+    name_l = name.lower()
+    op_l = operator.lower()
+
+    # Exclude explicitly public schools
+    if any(kw in op_l for kw in PUBLIC_OPERATOR_KEYWORDS):
+        return False
+    if any(kw in name_l for kw in ['staatlich', 'städtisch']):
+        return False
+
+    # Check operator for private indicators
+    if any(kw in op_l for kw in PRIVATE_OPERATOR_KEYWORDS):
+        return True
+
+    # Check name for private indicators
+    if any(kw in name_l for kw in PRIVATE_NAME_KEYWORDS):
+        return True
+
+    return False
+
+
+def classify_osm_school_type(tags: dict) -> Optional[str]:
+    """Classify an OSM school into primary or secondary based on tags and name."""
+    name = tags.get('name', '').lower()
+    isced = tags.get('isced:level', '')
+    school_type_tag = tags.get('school:type', '').lower()
+
+    # ISCED levels: 1 = primary, 2 = lower secondary, 3 = upper secondary
+    if '1' in isced and '2' not in isced and '3' not in isced:
+        return 'primary'
+    if '2' in isced or '3' in isced:
+        return 'secondary'
+
+    # Name-based classification
+    primary_kw = ['grundschule', 'primary school', 'elementary']
+    secondary_kw = ['gymnasium', 'realschule', 'mittelschule', 'förderzentrum',
+                    'fachoberschule', 'berufsoberschule', 'gesamtschule',
+                    'secondary', 'high school', 'oberschule']
+
+    for kw in primary_kw:
+        if kw in name:
+            return 'primary'
+    for kw in secondary_kw:
+        if kw in name:
+            return 'secondary'
+
+    # Schools with mixed ISCED (e.g., "1;2") — appear in both
+    if '1' in isced:
+        return 'both'
+
+    return None
+
+
+def fetch_osm_private_schools() -> pd.DataFrame:
+    """Fetch private schools from OSM that aren't in jedeschule data."""
+    cache_file = CACHE_DIR / "osm_private_schools.json"
+    if cache_file.exists():
+        age_days = (datetime.now().timestamp() - cache_file.stat().st_mtime) / 86400
+        if age_days < 30:
+            logger.info("Loading OSM private schools from cache...")
+            with open(cache_file) as f:
+                elements = json.load(f)
+            return _parse_osm_schools(elements)
+
+    logger.info("Fetching private schools from OSM Overpass API...")
+    query = '''
+    [out:json][timeout:60];
+    area["name"="München"]["admin_level"="6"]->.searchArea;
+    (
+      node["amenity"="school"](area.searchArea);
+      way["amenity"="school"](area.searchArea);
+      relation["amenity"="school"](area.searchArea);
+    );
+    out center body;
+    '''
+    try:
+        resp = requests.post(OVERPASS_URL_SCRAPER, data={'data': query}, timeout=60)
+        resp.raise_for_status()
+        elements = resp.json().get('elements', [])
+        logger.info(f"Fetched {len(elements)} OSM schools")
+
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        with open(cache_file, 'w') as f:
+            json.dump(elements, f)
+
+        return _parse_osm_schools(elements)
+    except Exception as e:
+        logger.warning(f"OSM query failed: {e}")
+        return pd.DataFrame()
+
+
+def _parse_osm_schools(elements: list) -> pd.DataFrame:
+    """Parse OSM elements into a DataFrame of private schools."""
+    schools = []
+    for elem in elements:
+        tags = elem.get('tags', {})
+        name = tags.get('name', '')
+        operator = tags.get('operator', '')
+
+        if not name:
+            continue
+        if not is_private_school(name, operator):
+            continue
+
+        # Get coordinates (center for ways/relations)
+        lat = elem.get('lat') or elem.get('center', {}).get('lat')
+        lon = elem.get('lon') or elem.get('center', {}).get('lon')
+
+        school_type = classify_osm_school_type(tags)
+
+        schools.append({
+            'schulnummer': f"osm_{elem.get('id', '')}",
+            'schulname': name,
+            'strasse': tags.get('addr:street', ''),
+            'plz': tags.get('addr:postcode', ''),
+            'ort': tags.get('addr:city', 'München'),
+            'school_type': name,  # will be overridden by classify
+            'traegerschaft': 'privat',
+            'traeger': operator or 'Privatschule',
+            'website': tags.get('website', tags.get('contact:website', '')),
+            'phone': tags.get('phone', tags.get('contact:phone', '')),
+            'email': tags.get('email', tags.get('contact:email', '')),
+            'latitude': lat,
+            'longitude': lon,
+            'data_source': 'OpenStreetMap (OSM)',
+            '_osm_school_type': school_type,
+        })
+
+    df = pd.DataFrame(schools)
+    if not df.empty:
+        logger.info(f"Found {len(df)} private schools in OSM")
+    return df
+
+
+def merge_osm_private_schools(jedeschule_df: pd.DataFrame, school_type: str) -> pd.DataFrame:
+    """Merge OSM private schools into the jedeschule dataset."""
+    osm = fetch_osm_private_schools()
+    if osm.empty:
+        return jedeschule_df
+
+    # Filter OSM schools by school type
+    if school_type == 'primary':
+        osm = osm[osm['_osm_school_type'].isin(['primary', 'both'])].copy()
+    else:
+        osm = osm[osm['_osm_school_type'].isin(['secondary', 'both'])].copy()
+
+    if osm.empty:
+        logger.info(f"No OSM private {school_type} schools to merge")
+        return jedeschule_df
+
+    # Deduplicate: remove OSM schools that are already in jedeschule (by name similarity)
+    existing_names = set(jedeschule_df['schulname'].str.lower().str.strip())
+    new_schools = []
+    for _, row in osm.iterrows():
+        osm_name = row['schulname'].lower().strip()
+        # Check if any existing name is a substring match
+        is_dup = any(osm_name in existing or existing in osm_name
+                     for existing in existing_names if len(existing) > 10)
+        if not is_dup:
+            new_schools.append(row)
+
+    if not new_schools:
+        logger.info(f"All OSM private schools already in dataset")
+        return jedeschule_df
+
+    osm_new = pd.DataFrame(new_schools)
+    osm_new = osm_new.drop(columns=['_osm_school_type'], errors='ignore')
+
+    # Set proper school_type based on name
+    for idx, row in osm_new.iterrows():
+        name = row['schulname']
+        if school_type == 'primary':
+            osm_new.at[idx, 'school_type'] = 'Grundschule (privat)'
+        else:
+            # Try to classify more specifically
+            name_l = name.lower()
+            if 'gymnasium' in name_l:
+                osm_new.at[idx, 'school_type'] = 'Gymnasium (privat)'
+            elif 'realschule' in name_l:
+                osm_new.at[idx, 'school_type'] = 'Realschule (privat)'
+            elif 'mittelschule' in name_l:
+                osm_new.at[idx, 'school_type'] = 'Mittelschule (privat)'
+            elif 'förderzentrum' in name_l or 'förderschule' in name_l:
+                osm_new.at[idx, 'school_type'] = 'Förderzentrum (privat)'
+            else:
+                osm_new.at[idx, 'school_type'] = f'{school_type.title()}schule (privat)'
+
+    # Also tag existing jedeschule schools as public
+    jedeschule_df = jedeschule_df.copy()
+    if 'traegerschaft' not in jedeschule_df.columns:
+        jedeschule_df['traegerschaft'] = None
+    jedeschule_df['traegerschaft'] = jedeschule_df['traegerschaft'].fillna('öffentlich')
+
+    logger.info(f"Adding {len(osm_new)} private {school_type} schools from OSM")
+    for _, row in osm_new.iterrows():
+        logger.info(f"  + {row['schulname']}")
+
+    # Add metadata columns that OSM schools might be missing
+    osm_new['bundesland'] = 'Bayern'
+    osm_new['stadt'] = 'München'
+    osm_new['data_retrieved'] = datetime.now().strftime('%Y-%m-%d')
+
+    merged = pd.concat([jedeschule_df, osm_new], ignore_index=True)
+    return merged
+
+
+def scrape_school_type(school_type: str = 'secondary') -> pd.DataFrame:
+    """Scrape and process schools of a given type."""
+    logger.info(f"Processing {school_type} schools...")
+
+    ensure_directories()
+
+    # Step 1: Download jedeschule data
+    all_schools = download_jedeschule_csv()
+    logger.info(f"Total German schools: {len(all_schools)}")
+
+    # Step 2: Filter for München
+    munich_schools = filter_munich_schools(all_schools)
+
+    # Step 3: Filter for school type
+    filtered = filter_schools_by_type(munich_schools, school_type)
+
+    if len(filtered) == 0:
+        logger.error(f"No {school_type} schools found in München!")
+        return pd.DataFrame()
+
+    # Step 4: Decode WKB coordinates
+    filtered = decode_coordinates(filtered)
+
+    # Step 5: Geocode remaining via Nominatim
+    filtered = geocode_remaining(filtered)
+
+    # Step 6: Normalize columns
+    filtered = normalize_columns(filtered)
+
+    # Step 7: Save
+    save_outputs(filtered, school_type)
+
+    # Print summary
+    print_summary(filtered, school_type)
+
+    return filtered
+
+
+def main(school_type: str = 'secondary'):
     logger.info("=" * 60)
-    logger.info("Starting Munich School Master Data Scraper")
+    logger.info(f"Starting Munich School Master Data Scraper ({school_type})")
     logger.info("=" * 60)
 
     try:
-        ensure_directories()
-
-        # Step 1: Download jedeschule data
-        all_schools = download_jedeschule_csv()
-        logger.info(f"Total German schools: {len(all_schools)}")
-
-        # Step 2: Filter for München
-        munich_schools = filter_munich_schools(all_schools)
-
-        # Step 3: Filter for secondary schools
-        secondary = filter_secondary_schools(munich_schools)
-
-        if len(secondary) == 0:
-            logger.error("No secondary schools found in München!")
+        result = scrape_school_type(school_type)
+        if result.empty:
             sys.exit(1)
-
-        # Step 4: Decode WKB coordinates
-        secondary = decode_coordinates(secondary)
-
-        # Step 5: Geocode remaining via Nominatim
-        secondary = geocode_remaining(secondary)
-
-        # Step 6: Normalize columns
-        secondary = normalize_columns(secondary)
-
-        # Step 7: Save
-        save_outputs(secondary)
-
-        # Print summary
-        print_summary(secondary)
-
         logger.info("Munich School Master Data Scraper complete!")
-        return secondary
-
+        return result
     except Exception as e:
         logger.error(f"Scraper failed: {e}")
         import traceback
@@ -400,4 +666,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    args = parser.parse_args()
+    main(args.school_type)

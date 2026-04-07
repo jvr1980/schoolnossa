@@ -55,7 +55,7 @@ MAX_WORKERS = 5
 SAVE_INTERVAL = 25
 MAX_RETRIES = 3
 
-CHECKPOINT_FILE = INTERMEDIATE_DIR / "munich_poi_enrichment_checkpoint.json"
+CHECKPOINT_FILE_TEMPLATE = str(INTERMEDIATE_DIR / "munich_{}_poi_enrichment_checkpoint.json")
 NEARBY_SEARCH_URL = "https://places.googleapis.com/v1/places:searchNearby"
 TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
 
@@ -194,36 +194,36 @@ def enrich_school(idx, lat, lon, school_name=""):
     return idx, result, total_api
 
 
-def find_input_file():
+def find_input_file(school_type='secondary'):
     candidates = [
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_crime.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_transit.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_traffic.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_crime.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_transit.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_traffic.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools.csv",
     ]
     for f in candidates:
         if f.exists():
             return f
-    raise FileNotFoundError("No school data found. Run earlier phases first.")
+    raise FileNotFoundError(f"No {school_type} school data found. Run earlier phases first.")
 
 
-def main():
-    logger.info("=" * 60)
-    logger.info("Phase 5: Munich POI Enrichment (Google Places API)")
-    logger.info("=" * 60)
+def enrich_schools(school_type='secondary'):
+    logger.info(f"Enriching {school_type} schools with POI data...")
 
     if not GOOGLE_PLACES_API_KEY:
         logger.error("GOOGLE_PLACES_API_KEY not set! Set it and rerun.")
         return
 
-    input_file = find_input_file()
+    checkpoint_file = Path(CHECKPOINT_FILE_TEMPLATE.format(school_type))
+
+    input_file = find_input_file(school_type)
     df = pd.read_csv(input_file)
     logger.info(f"Loaded {len(df)} schools from {input_file.name}")
 
     processed_indices = set()
-    if CHECKPOINT_FILE.exists():
+    if checkpoint_file.exists():
         try:
-            with open(CHECKPOINT_FILE) as f:
+            with open(checkpoint_file) as f:
                 processed_indices = set(json.load(f).get("processed_indices", []))
         except Exception:
             pass
@@ -248,7 +248,7 @@ def main():
         futures = {executor.submit(enrich_school, idx, row['latitude'], row['longitude'],
                                     row.get('schulname', '')): idx
                    for idx, row in to_process}
-        pbar = tqdm(total=len(to_process), desc="POI enrichment") if TQDM_AVAILABLE else None
+        pbar = tqdm(total=len(to_process), desc=f"POI enrichment ({school_type})") if TQDM_AVAILABLE else None
         for future in as_completed(futures):
             try:
                 idx, poi_data, ac = future.result()
@@ -259,7 +259,7 @@ def main():
                 save_counter += 1
                 if pbar: pbar.update(1)
                 if save_counter >= SAVE_INTERVAL:
-                    with open(CHECKPOINT_FILE, 'w') as f:
+                    with open(checkpoint_file, 'w') as f:
                         json.dump({"processed_indices": list(processed_indices)}, f)
                     save_counter = 0
             except Exception as e:
@@ -267,14 +267,14 @@ def main():
                 logger.warning(f"Error: {e}")
         if pbar: pbar.close()
 
-    out = INTERMEDIATE_DIR / "munich_secondary_schools_with_pois.csv"
+    out = INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_pois.csv"
     df.to_csv(out, index=False, encoding='utf-8-sig')
 
-    if CHECKPOINT_FILE.exists():
-        CHECKPOINT_FILE.unlink()
+    if checkpoint_file.exists():
+        checkpoint_file.unlink()
 
     stats = tracker.get_stats()
-    print(f"\n{'='*70}\nMUNICH POI ENRICHMENT - COMPLETE\n{'='*70}")
+    print(f"\n{'='*70}\nMUNICH POI ENRICHMENT ({school_type.upper()}) - COMPLETE\n{'='*70}")
     print(f"Processed: {stats['processed']}, API calls: {stats['api_calls']}")
     for cat in POI_CATEGORIES:
         col = f"poi_{cat}_count_500m"
@@ -284,5 +284,16 @@ def main():
     return df
 
 
+def main(school_type='secondary'):
+    logger.info("=" * 60)
+    logger.info(f"Phase 5: Munich POI Enrichment ({school_type})")
+    logger.info("=" * 60)
+    return enrich_schools(school_type)
+
+
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    args = parser.parse_args()
+    main(args.school_type)

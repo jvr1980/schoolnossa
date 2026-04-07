@@ -101,40 +101,49 @@ def enrich_with_crime(schools_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def find_input_file():
+def find_input_file(school_type='secondary'):
     candidates = [
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_transit.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_traffic.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_transit.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_traffic.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools.csv",
     ]
     for f in candidates:
         if f.exists():
             return f
-    raise FileNotFoundError("No school data found. Run earlier phases first.")
+    raise FileNotFoundError(f"No {school_type} school data found. Run earlier phases first.")
 
 
-def main():
-    logger.info("=" * 60)
-    logger.info("Phase 4: Munich Crime Enrichment (City-Level PKS)")
-    logger.info("=" * 60)
+def enrich_schools(school_type='secondary'):
+    logger.info(f"Enriching {school_type} schools with crime data...")
 
-    input_file = find_input_file()
+    input_file = find_input_file(school_type)
     logger.info(f"Input: {input_file}")
     schools = pd.read_csv(input_file, dtype=str)
     logger.info(f"Loaded {len(schools)} schools")
 
     schools = enrich_with_crime(schools)
 
-    output_path = INTERMEDIATE_DIR / "munich_secondary_schools_with_crime.csv"
+    output_path = INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_crime.csv"
     schools.to_csv(output_path, index=False, encoding='utf-8-sig')
     logger.info(f"Saved: {output_path}")
 
-    print(f"\nCrime enrichment: {len(schools)} schools (city-level data)")
+    print(f"\nCrime enrichment ({school_type}): {len(schools)} schools (city-level data)")
     print(f"Häufigkeitszahl: {MUNICH_CRIME_DATA['haeufigkeitszahl_2023']}/100k")
     print(f"Aufklärungsquote: {MUNICH_CRIME_DATA['aufklaerungsquote_2023']}%")
 
     return schools
 
 
+def main(school_type='secondary'):
+    logger.info("=" * 60)
+    logger.info(f"Phase 4: Munich Crime Enrichment ({school_type})")
+    logger.info("=" * 60)
+    return enrich_schools(school_type)
+
+
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    args = parser.parse_args()
+    main(args.school_type)
