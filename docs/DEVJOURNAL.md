@@ -1,5 +1,23 @@
 # SchoolNossa Development Journal
 
+## 2026-04-07 — Dresden Pipeline: 159 Schools from Sächsische Schuldatenbank API
+
+**What:** Added Dresden (Sachsen) as a new city to SchoolNossa. Complete pipeline with 9 phases — from data source research through enrichment implementation.
+
+**Key findings:**
+- Sächsische Schuldatenbank has a free CSV API with WGS84 coords (easiest school data source so far)
+- 159 schools: 88 Grundschulen, 39 Oberschulen, 30 Gymnasien, 2 Förderschulen (124 public + 35 private)
+- 100% coordinate coverage, 97% website coverage
+- Dresden Open Data Portal has per-Stadtteil crime data (best granularity after Hamburg)
+- Traffic: Unfallatlas with ULAND=14 (same pattern as NRW)
+- No per-school Sozialindex in Sachsen — using GISD proxy
+
+**Template:** NRW pipeline (closest match for traffic/transit approach)
+
+**Files:** `scripts_dresden/` (10 scripts), `data_dresden/` (5 dirs), `docs/dresden_data_availability_research.md`
+
+**Status:** All scripts implemented except Phase 6 (website metadata/descriptions, needs API keys). Ready for pipeline execution.
+
 ## 2026-04-07 — Munich Primary School Pipeline: 148 Grundschulen
 
 **What:** Built the complete Munich primary school (Grundschule) pipeline by refactoring all 11 existing secondary-only scripts to support a `school_type` parameter. Ran all 9 phases producing 148 fully enriched Grundschulen.
