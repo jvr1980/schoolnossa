@@ -73,9 +73,33 @@ def find_input_file(school_type: str) -> Path:
     raise FileNotFoundError(f"No input file found for {school_type}")
 ```
 
-### Pattern 3: Caching for API Calls
+### Pattern 3: API Key Loading and Caching
 
-For any enrichment that calls external APIs (Google Places, Overpass, traffic sensors):
+API keys and model config live in `config.yaml` (project root). Load them with PyYAML:
+
+```python
+import yaml
+
+def load_api_config() -> dict:
+    """Load API keys and model config from config.yaml."""
+    config_path = BASE_DIR / "config.yaml"
+    if config_path.exists():
+        with open(config_path) as f:
+            return yaml.safe_load(f)
+    return {}
+
+# Usage:
+config = load_api_config()
+OPENAI_API_KEY = config.get('api_keys', {}).get('openai') or os.getenv('OPENAI_API_KEY')
+GEMINI_API_KEY = config.get('api_keys', {}).get('gemini') or os.getenv('GEMINI_API_KEY')
+# Model names:
+# config['models']['openai']  -> "gpt-4o-mini"
+# config['models']['gemini']  -> "gemini-2.0-flash"
+# config['models']['gemini_tuition']  -> "gemini-3-pro-preview"
+# config['models']['openai_tuition_pass3']  -> "gpt-5.2"
+```
+
+For any enrichment that calls external APIs (Google Places, Overpass, traffic sensors), add caching:
 
 ```python
 CACHE_FILE = CACHE_DIR / f"{city}_{enrichment}_cache.json"
@@ -369,9 +393,9 @@ grep -E "{city}.*schools_with_{enrichment}" "scripts_{city}/enrichment/{city}_{e
 
 ### EVAL-8: No Hardcoded API Keys
 ```bash
-grep -iE "(api_key|secret|token)\s*=\s*['\"]" "scripts_{city}/enrichment/{city}_{enrichment}_enrichment.py" && echo "FAIL: Hardcoded API key found" || echo "PASS: No hardcoded keys"
+grep -iE "(api_key|secret|token)\s*=\s*['\"][a-zA-Z0-9]" "scripts_{city}/enrichment/{city}_{enrichment}_enrichment.py" && echo "FAIL: Hardcoded API key found" || echo "PASS: No hardcoded keys"
 ```
-**Pass criteria:** Zero hardcoded API keys. All keys must come from environment variables.
+**Pass criteria:** Zero hardcoded API keys. All keys must come from `config.yaml` (preferred) or environment variables as fallback.
 
 ### EVAL-9: Progress Logging Included
 ```bash

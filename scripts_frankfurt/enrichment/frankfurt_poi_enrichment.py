@@ -201,8 +201,10 @@ def enrich_schools(school_type="secondary"):
         logger.error("GOOGLE_PLACES_API_KEY not set!")
         return pd.DataFrame()
 
+    input_file = None
     for d in [INTERMEDIATE_DIR, RAW_DIR]:
-        for pat in [f"frankfurt_{school_type}_schools_with_crime.csv",
+        for pat in [f"frankfurt_{school_type}_schools_with_pois.csv",
+                    f"frankfurt_{school_type}_schools_with_crime.csv",
                     f"frankfurt_{school_type}_schools_with_transit.csv",
                     f"frankfurt_{school_type}_schools_with_traffic.csv",
                     f"frankfurt_{school_type}_schools.csv"]:
@@ -210,10 +212,9 @@ def enrich_schools(school_type="secondary"):
             if f.exists():
                 input_file = f
                 break
-        else:
-            continue
-        break
-    else:
+        if input_file:
+            break
+    if not input_file:
         logger.error(f"No {school_type} data found")
         return pd.DataFrame()
 
@@ -229,15 +230,24 @@ def enrich_schools(school_type="secondary"):
         except Exception:
             pass
 
+    # Also skip schools that already have POI data (e.g. loaded from with_pois.csv)
+    already_enriched = set()
+    if "poi_supermarket_count_500m" in df.columns:
+        already_enriched = set(df[df["poi_supermarket_count_500m"].notna()].index.tolist())
+
     to_process = [(idx, row) for idx, row in df.iterrows()
                   if pd.notna(row.get('latitude')) and pd.notna(row.get('longitude'))
-                  and idx not in processed_indices]
+                  and idx not in processed_indices
+                  and idx not in already_enriched]
 
     if not to_process:
         logger.info("All schools processed!")
         return df
 
-    if not processed_indices:
+    # Only drop existing POI columns if starting completely fresh (no checkpoint and
+    # not reading from a with_pois file that already has enriched data)
+    reading_pois_file = "with_pois" in input_file.name
+    if not processed_indices and not reading_pois_file:
         old_cols = [c for c in df.columns if c.startswith('poi_')]
         if old_cols:
             df = df.drop(columns=old_cols)
@@ -266,8 +276,9 @@ def enrich_schools(school_type="secondary"):
                         json.dump({"processed_indices": list(processed_indices)}, f)
                     save_counter = 0
             except Exception as e:
+                orig_idx = futures[future]
                 tracker.increment(success=False)
-                logger.warning(f"Error: {e}")
+                logger.warning(f"Error for school idx={orig_idx}: {type(e).__name__}: {e}")
         if pbar: pbar.close()
 
     INTERMEDIATE_DIR.mkdir(parents=True, exist_ok=True)

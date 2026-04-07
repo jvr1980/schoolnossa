@@ -1,5 +1,38 @@
 # SchoolNossa Development Journal
 
+## 2026-04-07 — Frankfurt POI Gap Fixed: 49% → 99% + Full Clean Pipeline Run
+
+**What:** Fixed a persistent secondary school POI coverage gap (49/99 → 98/99 schools), updated Berlin schema canonical backfills for school stats, and ran the full Frankfurt pipeline to produce clean final output.
+
+**Root cause of POI gap:** `frankfurt_poi_enrichment.py` always read from `with_crime.csv` (no POI data) regardless of whether a `with_pois.csv` already existed. On a checkpoint-based re-run, only newly processed schools were written to the output — losing all previously enriched data. The same 26 alphabetically-first schools (indices 0–25) were consistently skipped because they'd been in a stale checkpoint from a partial prior run, and the next run overwrote the output with only the new batch.
+
+**Fixes:**
+1. **POI enrichment input fallback** — added `with_pois.csv` as highest-priority input source (before `with_crime.csv`), so partial results are preserved across re-runs
+2. **Already-enriched skip logic** — schools with non-null `poi_supermarket_count_500m` are now excluded from `to_process`, preventing duplicate API calls
+3. **No-checkpoint POI-file guard** — don't drop existing POI columns when reading from `with_pois.csv` (only drop when starting truly fresh from `with_crime.csv`)
+4. **Better error logging** — exception handler now logs `idx`, `type(e).__name__`, and message for easier diagnosis
+5. **POI→final merge** — after POI fix, merged 81 updated POI columns from `master_table.csv` into `_final.csv` and parquet before Phase 9, so the Berlin schema output carries full POI coverage
+
+**Final output (clean):**
+| Field | Secondary | Primary |
+|---|---|---|
+| schulnummer | 100% | 100% |
+| website | 100% | 99% |
+| email | 96% | 99% |
+| schulleitung | 100% | 99% |
+| schueler_2024_25 | 100% | 97% |
+| poi_supermarket_count_500m | 99% | 99% |
+| transit_accessibility_score | 100% | 100% |
+| crime data | 100% | 100% |
+| description | 100% | 100% |
+| tuition_display | 97% | 99% |
+| embedding | 100% | 100% |
+
+**Files changed:**
+- `scripts_frankfurt/enrichment/frankfurt_poi_enrichment.py` — input fallback + already-enriched skip + no-drop guard + better error logging
+
+<!-- NEW ENTRIES GO ABOVE THIS LINE -->
+
 ## 2026-04-06 — Frankfurt Pipeline Rebuilt: Schulwegweiser as Primary Source
 
 **What:** Completely rebuilt the Frankfurt data pipeline to use frankfurt.de/schulwegweiser as the PRIMARY data source, replacing Hessen Verzeichnis 6 as Phase 1.
