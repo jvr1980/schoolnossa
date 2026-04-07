@@ -118,26 +118,24 @@ Focus on: academic profile, special programs, languages offered, notable feature
         return None, None
 
 
-def find_input_file():
+def find_input_file(school_type='secondary'):
     candidates = [
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_pois.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_crime.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_transit.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools_with_traffic.csv",
-        INTERMEDIATE_DIR / "munich_secondary_schools.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_pois.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_crime.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_transit.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_traffic.csv",
+        INTERMEDIATE_DIR / f"munich_{school_type}_schools.csv",
     ]
     for f in candidates:
         if f.exists():
             return f
-    raise FileNotFoundError("No school data found. Run earlier phases first.")
+    raise FileNotFoundError(f"No {school_type} school data found. Run earlier phases first.")
 
 
-def main():
-    logger.info("=" * 60)
-    logger.info("Phase 6: Munich Website Metadata & Descriptions")
-    logger.info("=" * 60)
+def enrich_schools(school_type='secondary'):
+    logger.info(f"Enriching {school_type} schools with website metadata...")
 
-    input_file = find_input_file()
+    input_file = find_input_file(school_type)
     df = pd.read_csv(input_file, dtype=str)
     logger.info(f"Loaded {len(df)} schools from {input_file.name}")
 
@@ -147,11 +145,16 @@ def main():
         if col not in df.columns:
             df[col] = None
 
-    # Load description cache
-    desc_cache_file = CACHE_DIR / "description_cache.json"
+    # Load description cache (separate per school type)
+    desc_cache_file = CACHE_DIR / f"description_cache_{school_type}.json"
+    # Also check legacy cache file for backward compat
+    legacy_cache_file = CACHE_DIR / "description_cache.json"
     desc_cache = {}
     if desc_cache_file.exists():
         with open(desc_cache_file) as f:
+            desc_cache = json.load(f)
+    elif school_type == 'secondary' and legacy_cache_file.exists():
+        with open(legacy_cache_file) as f:
             desc_cache = json.load(f)
 
     processed = 0
@@ -172,14 +175,12 @@ def main():
                 df.at[idx, 'website_content_summary'] = website_text[:500]
 
         school_name = str(row.get('schulname', '')).strip()
-        school_type = str(row.get('school_type', row.get('schulart', ''))).strip()
+        school_type_str = str(row.get('school_type', row.get('schulart', ''))).strip()
 
-        # Generate descriptions even without website content
-        # (Gemini can use Google Search grounding for context)
         if not school_name or school_name == 'nan':
             continue
 
-        desc_de, desc_en = generate_description(school_name, school_type, website_text)
+        desc_de, desc_en = generate_description(school_name, school_type_str, website_text)
         if desc_de:
             df.at[idx, 'description_de'] = desc_de
             df.at[idx, 'description_en'] = desc_en
@@ -195,18 +196,30 @@ def main():
             logger.info(f"  Processed {processed}/{len(df)} descriptions")
 
     # Save cache
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
     with open(desc_cache_file, 'w') as f:
         json.dump(desc_cache, f, ensure_ascii=False)
 
-    output_path = INTERMEDIATE_DIR / "munich_secondary_schools_with_metadata.csv"
+    output_path = INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_metadata.csv"
     df.to_csv(output_path, index=False, encoding='utf-8-sig')
     logger.info(f"Saved: {output_path}")
 
     desc_count = df['description_de'].notna().sum()
-    print(f"\nWebsite metadata enrichment: {desc_count}/{len(df)} schools with descriptions")
+    print(f"\nWebsite metadata enrichment ({school_type}): {desc_count}/{len(df)} schools with descriptions")
 
     return df
 
 
+def main(school_type='secondary'):
+    logger.info("=" * 60)
+    logger.info(f"Phase 6: Munich Website Metadata & Descriptions ({school_type})")
+    logger.info("=" * 60)
+    return enrich_schools(school_type)
+
+
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    args = parser.parse_args()
+    main(args.school_type)

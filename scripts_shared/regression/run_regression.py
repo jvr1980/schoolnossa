@@ -87,7 +87,7 @@ def _load_zensus(city: str) -> "pd.DataFrame | None":
     if city in _zensus_cache:
         return _zensus_cache[city]
 
-    city_map = {"berlin": "berlin", "hamburg": "hamburg", "nrw_koeln": "koeln", "nrw_duesseldorf": "duesseldorf", "frankfurt": "frankfurt"}
+    city_map = {"berlin": "berlin", "hamburg": "hamburg", "nrw_koeln": "koeln", "nrw_duesseldorf": "duesseldorf", "frankfurt": "frankfurt", "munich": "munich", "stuttgart": "stuttgart"}
 
     # NRW covers two cities — load and merge both
     if city == "nrw":
@@ -239,8 +239,8 @@ NRW_COLUMN_MAP = {
     "sozialindexstufe": "sozialindex",
 }
 
-# Frankfurt uses city-level crime (same value for all schools → excluded from model)
-# and has no Zensus grid. Available: POI, transit, GISD via PLZ, school-internal.
+# Frankfurt/Munich/Stuttgart use city-level crime (same value for all schools → not
+# discriminative, but included for completeness; crime_safety_rank excluded as NON_PORTABLE).
 FRANKFURT_COLUMN_MAP = {
     # Crime — city-level only; crime_safety_rank is excluded as NON_PORTABLE_DIM anyway
     "crime_total_crimes_2023": "crime_index",
@@ -368,7 +368,10 @@ def load_city_data(
         # --- School-internal features ---
 
         # Is Gymnasium (binary)
-        stype = (row.get("school_type") or row.get("schulart") or "").lower()
+        # Prefer schulart when school_type is a generic placeholder (e.g. "secondary")
+        stype_raw = row.get("school_type", "") or ""
+        schulart_raw = row.get("schulart", "") or ""
+        stype = (schulart_raw if stype_raw.lower() in ("secondary", "primary", "") else stype_raw).lower()
         if "gymnasium" in stype:
             p.set("is_gymnasium", 1.0)
         elif stype:  # only set 0 if we have type info
@@ -493,6 +496,20 @@ def load_all_data(
             str(PROJECT_ROOT / "data_frankfurt" / "final" / "frankfurt_secondary_school_master_table_final.csv"),
             FRANKFURT_COLUMN_MAP,
             "frankfurt",
+        ))
+
+    if city in ("munich", "all"):
+        datasets.append((
+            str(PROJECT_ROOT / "data_munich" / "final" / "munich_secondary_school_master_table_final.csv"),
+            FRANKFURT_COLUMN_MAP,  # same column pattern as Frankfurt
+            "munich",
+        ))
+
+    if city in ("stuttgart", "all"):
+        datasets.append((
+            str(PROJECT_ROOT / "data_stuttgart" / "final" / "stuttgart_secondary_school_master_table_final.csv"),
+            FRANKFURT_COLUMN_MAP,  # same column pattern as Frankfurt
+            "stuttgart",
         ))
 
     for path, col_map, label in datasets:
