@@ -691,8 +691,8 @@ def apply_cache_to_dataframe(df, cache, passes):
             df.at[idx, "tuition_tier"] = p1.get("cost_tier")
             df.at[idx, "tuition_tier_reasoning"] = p1.get("reasoning")
             # Only write monthly if not already set from official data
-            existing = df.at[idx, "tuition_monthly_eur"]
-            if pd.isna(existing) or not existing:
+            existing = df.at[idx, "tuition_monthly_eur"] if "tuition_monthly_eur" in df.columns else None
+            if existing is None or pd.isna(existing) or not existing:
                 df.at[idx, "tuition_monthly_eur"] = p1.get("approximate_monthly_tuition_eur")
             updated += 1
 
