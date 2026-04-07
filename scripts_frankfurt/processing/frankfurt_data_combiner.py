@@ -103,9 +103,15 @@ def clean_data(df):
 
     if 'schulnummer' in df.columns:
         orig = len(df)
-        df = df.drop_duplicates(subset=['schulnummer'], keep='first')
+        # Only deduplicate rows that actually HAVE a schulnummer (non-null, non-empty)
+        has_nr = df['schulnummer'].notna() & (df['schulnummer'].astype(str).str.strip() != '') & \
+                 (df['schulnummer'].astype(str) != 'nan')
+        if has_nr.sum() > 0:
+            df_with = df[has_nr].drop_duplicates(subset=['schulnummer'], keep='first')
+            df_without = df[~has_nr]
+            df = pd.concat([df_with, df_without], ignore_index=True)
         if len(df) < orig:
-            logger.info(f"Removed {orig - len(df)} duplicates")
+            logger.info(f"Removed {orig - len(df)} duplicates (by schulnummer)")
 
     for col in ['latitude', 'longitude', 'transit_accessibility_score',
                 'traffic_accidents_total', 'crime_haeufigkeitszahl_2023',
@@ -119,8 +125,44 @@ def clean_data(df):
     return df
 
 
+def backfill_from_raw(df, school_type):
+    """Backfill schulnummer + ndh_count from raw CSV when intermediate files are missing them."""
+    raw_path = RAW_DIR / f"frankfurt_{school_type}_schools.csv"
+    if not raw_path.exists():
+        return df
+
+    raw = pd.read_csv(raw_path)
+    backfill_cols = [c for c in ["schulnummer", "ndh_count"] if c in raw.columns]
+    if not backfill_cols:
+        return df
+
+    # Use sw_portal_slug as the join key (stable identifier)
+    if "sw_portal_slug" not in raw.columns or "sw_portal_slug" not in df.columns:
+        return df
+
+    raw_sub = raw[["sw_portal_slug"] + backfill_cols].dropna(subset=["sw_portal_slug"])
+
+    for col in backfill_cols:
+        is_missing = df[col].isna() | (df[col].astype(str).str.strip() == "") | \
+                     (df[col].astype(str) == "nan") if col in df.columns else pd.Series([True] * len(df))
+        if is_missing.sum() == 0:
+            continue  # nothing to backfill
+
+        merged = df[["sw_portal_slug"]].merge(raw_sub[["sw_portal_slug", col]],
+                                               on="sw_portal_slug", how="left")
+        if col not in df.columns:
+            df[col] = merged[col].values
+        else:
+            df[col] = df[col].where(~is_missing, merged[col].values)
+
+    backfilled = df["schulnummer"].notna().sum() if "schulnummer" in df.columns else 0
+    logger.info(f"Backfilled from raw: {backfilled} schools with schulnummer")
+    return df
+
+
 def combine_school_type(school_type):
     df = find_most_enriched_file(school_type)
+    df = backfill_from_raw(df, school_type)
     df = clean_data(df)
     df = standardize_columns(df)
 

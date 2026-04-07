@@ -1,0 +1,334 @@
+2026-04-06 14:35:46,924 - INFO - Starting description pipeline: city=frankfurt, type=secondary, passes=[0, 1, 2]
+2026-04-06 14:35:46,926 - INFO - Loading: /Users/josevonroth/Documents/schoolnossa/data_frankfurt/final/frankfurt_secondary_school_master_table_final.csv
+2026-04-06 14:35:46,935 - INFO - Cache loaded: 0 existing entries
+2026-04-06 14:35:46,937 - INFO - [1/73] Meisterschule (3100)
+2026-04-06 14:36:00,093 - INFO -   [3100] Pass 0 complete (3354 chars)
+2026-04-06 14:36:12,387 - INFO -   [3100] Pass 1 complete
+2026-04-06 14:36:18,325 - INFO -   [3100] Pass 2 complete. Found: ['gruendungsjahr', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:36:18,326 - INFO - [2/73] Walter-Kolb-Schule (3109)
+2026-04-06 14:36:30,202 - INFO -   [3109] Pass 0 complete (4098 chars)
+2026-04-06 14:36:43,930 - INFO -   [3109] Pass 1 complete
+2026-04-06 14:36:50,654 - INFO -   [3109] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web', 'nachfrage_plaetze_2025_26']
+2026-04-06 14:36:50,655 - INFO - [3/73] Hostatoschule (3114)
+2026-04-06 14:37:02,687 - INFO -   [3114] Pass 0 complete (4332 chars)
+2026-04-06 14:37:14,135 - INFO -   [3114] Pass 1 complete
+2026-04-06 14:37:20,897 - INFO -   [3114] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'lehrer_2023_24', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:37:20,898 - INFO - [4/73] Isaak-Emil-Lichtigfeld-Schule (3178)
+2026-04-06 14:37:31,443 - INFO -   [3178] Pass 0 complete (3729 chars)
+2026-04-06 14:37:42,437 - INFO -   [3178] Pass 1 complete
+2026-04-06 14:37:47,069 - INFO -   [3178] Pass 2 complete. Found: ['gruendungsjahr', 'lehrer_2024_25', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web', 'migration_2024_25']
+2026-04-06 14:37:47,070 - INFO - [5/73] Konrad-Haenisch-Schule (3179)
+2026-04-06 14:38:01,142 - INFO -   [3179] Pass 0 complete (4296 chars)
+2026-04-06 14:38:12,177 - INFO -   [3179] Pass 1 complete
+2026-04-06 14:38:17,791 - INFO -   [3179] Pass 2 complete. Found: ['sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:38:17,793 - INFO - [6/73] Edith-Stein-Schule (3180)
+2026-04-06 14:38:29,502 - INFO -   [3180] Pass 0 complete (4185 chars)
+2026-04-06 14:38:41,303 - INFO -   [3180] Pass 1 complete
+2026-04-06 14:38:48,138 - INFO -   [3180] Pass 2 complete. Found: ['website', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:38:48,139 - INFO - [7/73] Carlo-Mierendorff-Schule (3181)
+2026-04-06 14:38:57,767 - INFO -   [3181] Pass 0 complete (3869 chars)
+2026-04-06 14:39:06,825 - INFO -   [3181] Pass 1 complete
+2026-04-06 14:39:12,427 - INFO -   [3181] Pass 2 complete. Found: ['website', 'schueler_gesamt_web']
+2026-04-06 14:39:12,428 - INFO - [8/73] Freie Christliche Schule (4260)
+2026-04-06 14:39:23,533 - INFO -   [4260] Pass 0 complete (3935 chars)
+2026-04-06 14:39:35,655 - INFO -   [4260] Pass 1 complete
+2026-04-06 14:39:41,492 - INFO -   [4260] Pass 2 complete. Found: ['gruendungsjahr', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:39:41,493 - INFO - [9/73] Freie Schule Frankfurt (4268)
+2026-04-06 14:39:49,932 - INFO -   [4268] Pass 0 complete (1666 chars)
+2026-04-06 14:39:58,490 - INFO -   [4268] Pass 1 complete
+2026-04-06 14:40:05,248 - INFO -   [4268] Pass 2 complete. Found: ['schueler_gesamt_web']
+2026-04-06 14:40:05,249 - INFO - [10/73] Michael-Ende-Schule (4288)
+2026-04-06 14:40:16,298 - INFO -   [4288] Pass 0 complete (4284 chars)
+2026-04-06 14:40:32,165 - INFO -   [4288] Pass 1 complete
+2026-04-06 14:40:38,462 - INFO -   [4288] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:40:38,466 - INFO - Cache saved (10/73)
+2026-04-06 14:40:38,467 - INFO - [11/73] Lycée Français Victor Hugo (4324)
+2026-04-06 14:40:53,033 - INFO -   [4324] Pass 0 complete (3532 chars)
+2026-04-06 14:41:05,157 - INFO -   [4324] Pass 1 complete
+2026-04-06 14:41:13,097 - INFO -   [4324] Pass 2 complete. Found: ['gruendungsjahr', 'lehrer_2024_25', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:41:13,098 - INFO - [12/73] Phorms Frankfurt (4383)
+2026-04-06 14:41:27,375 - INFO -   [4383] Pass 0 complete (4201 chars)
+2026-04-06 14:41:41,483 - INFO -   [4383] Pass 1 complete
+2026-04-06 14:41:48,596 - INFO -   [4383] Pass 2 complete. Found: ['sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:41:48,597 - INFO - [13/73] Ludwig-Börne-Schule (4385)
+2026-04-06 14:42:06,922 - INFO -   [4385] Pass 0 complete (4178 chars)
+2026-04-06 14:42:21,635 - INFO -   [4385] Pass 1 complete
+2026-04-06 14:42:28,152 - INFO -   [4385] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:42:28,153 - INFO - [14/73] IGS Herder (4386)
+2026-04-06 14:42:42,070 - INFO -   [4386] Pass 0 complete (4346 chars)
+2026-04-06 14:42:58,019 - WARNING -   [4386] Pass 1 failed: Expecting ',' delimiter: line 1 column 2353 (char 2352)
+2026-04-06 14:43:03,642 - INFO -   [4386] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'lehrer_2024_25', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:43:03,642 - INFO - [15/73] Gymnasium Riedberg (4387)
+2026-04-06 14:43:12,510 - INFO -   [4387] Pass 0 complete (4132 chars)
+2026-04-06 14:43:26,793 - INFO -   [4387] Pass 1 complete
+2026-04-06 14:43:32,906 - INFO -   [4387] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:43:32,906 - INFO - [16/73] Rackow-Schule Frankfurt (4389)
+2026-04-06 14:43:50,327 - INFO -   [4389] Pass 0 complete (4965 chars)
+2026-04-06 14:44:01,352 - INFO -   [4389] Pass 1 complete
+2026-04-06 14:44:10,089 - INFO -   [4389] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:44:10,089 - INFO - [17/73] ASB Erasmus Frankfurter Stadtschule (4390)
+2026-04-06 14:44:21,088 - INFO -   [4390] Pass 0 complete (4301 chars)
+2026-04-06 14:44:31,438 - INFO -   [4390] Pass 1 complete
+2026-04-06 14:44:37,889 - INFO -   [4390] Pass 2 complete. Found: ['gruendungsjahr', 'schueler_gesamt_web']
+2026-04-06 14:44:37,890 - INFO - [18/73] IGS West (4391)
+2026-04-06 14:44:50,861 - INFO -   [4391] Pass 0 complete (4347 chars)
+2026-04-06 14:45:04,561 - INFO -   [4391] Pass 1 complete
+2026-04-06 14:45:12,913 - INFO -   [4391] Pass 2 complete. Found: ['sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:45:12,914 - INFO - [19/73] Adorno-Gymnasium (4397)
+2026-04-06 14:45:23,343 - INFO -   [4397] Pass 0 complete (3948 chars)
+2026-04-06 14:45:37,681 - INFO -   [4397] Pass 1 complete
+2026-04-06 14:45:43,273 - INFO -   [4397] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:45:43,275 - INFO - [20/73] IGS Süd (4399)
+2026-04-06 14:45:55,809 - INFO -   [4399] Pass 0 complete (4008 chars)
+2026-04-06 14:46:07,249 - INFO -   [4399] Pass 1 complete
+2026-04-06 14:46:13,230 - INFO -   [4399] Pass 2 complete. Found: ['besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:46:13,235 - INFO - Cache saved (20/73)
+2026-04-06 14:46:13,235 - INFO - [21/73] Gymnasium Nord (Westhausen) (4401)
+2026-04-06 14:46:27,001 - INFO -   [4401] Pass 0 complete (4432 chars)
+2026-04-06 14:46:40,110 - INFO -   [4401] Pass 1 complete
+2026-04-06 14:46:47,591 - INFO -   [4401] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:46:47,592 - INFO - [22/73] Josephine-Baker-Gesamtschule (4403)
+2026-04-06 14:47:02,402 - INFO -   [4403] Pass 0 complete (4328 chars)
+2026-04-06 14:47:16,821 - INFO -   [4403] Pass 1 complete
+2026-04-06 14:47:22,513 - INFO -   [4403] Pass 2 complete. Found: ['besonderheiten', 'ganztagsform', 'schueler_gesamt_web', 'nachfrage_wuensche_2024_25']
+2026-04-06 14:47:22,513 - INFO - [23/73] Toni-Sender-Oberstufe (4405)
+2026-04-06 14:47:34,783 - INFO -   [4405] Pass 0 complete (4798 chars)
+2026-04-06 14:47:47,692 - INFO -   [4405] Pass 1 complete
+2026-04-06 14:47:54,454 - INFO -   [4405] Pass 2 complete. Found: ['sprachen', 'besonderheiten', 'schueler_gesamt_web', 'nachfrage_plaetze_2025_26', 'nachfrage_wuensche_2025_26', 'migration_2024_25']
+2026-04-06 14:47:54,455 - INFO - [24/73] IGS 15 (4406)
+2026-04-06 14:48:05,455 - INFO -   [4406] Pass 0 complete (1892 chars)
+2026-04-06 14:48:16,539 - INFO -   [4406] Pass 1 complete
+2026-04-06 14:48:23,890 - INFO -   [4406] Pass 2 complete. Found: ['ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:48:23,893 - INFO - [25/73] Gymnasium Römerhof (4407)
+2026-04-06 14:48:33,977 - INFO -   [4407] Pass 0 complete (3243 chars)
+2026-04-06 14:48:48,382 - INFO -   [4407] Pass 1 complete
+2026-04-06 14:48:55,277 - INFO -   [4407] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:48:55,277 - INFO - [26/73] Johanna-Tesch-Schule (4413)
+2026-04-06 14:49:06,383 - INFO -   [4413] Pass 0 complete (3652 chars)
+2026-04-06 14:49:16,373 - INFO -   [4413] Pass 1 complete
+2026-04-06 14:49:23,180 - INFO -   [4413] Pass 2 complete. Found: ['schueler_gesamt_web']
+2026-04-06 14:49:23,181 - INFO - [27/73] Stadtgymnasium Frankfurt (4415)
+2026-04-06 14:49:32,737 - INFO -   [4415] Pass 0 complete (2740 chars)
+2026-04-06 14:49:41,876 - INFO -   [4415] Pass 1 complete
+2026-04-06 14:49:48,118 - INFO -   [4415] Pass 2 complete. Found: ['sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:49:48,118 - INFO - [28/73] Neues Gymnasium Frankfurt (4417)
+2026-04-06 14:49:58,640 - INFO -   [4417] Pass 0 complete (4337 chars)
+2026-04-06 14:50:15,091 - INFO -   [4417] Pass 1 complete
+2026-04-06 14:50:20,763 - INFO -   [4417] Pass 2 complete. Found: ['website', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web', 'nachfrage_plaetze_2024_25']
+2026-04-06 14:50:20,763 - INFO - [29/73] Karl Popper Schule (4419)
+2026-04-06 14:50:35,018 - INFO -   [4419] Pass 0 complete (4114 chars)
+2026-04-06 14:50:46,999 - INFO -   [4419] Pass 1 complete
+2026-04-06 14:50:53,560 - INFO -   [4419] Pass 2 complete. Found: ['website', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:50:53,561 - INFO - [30/73] Gymnasium Süd (4426)
+2026-04-06 14:51:10,036 - INFO -   [4426] Pass 0 complete (4403 chars)
+2026-04-06 14:51:20,658 - INFO -   [4426] Pass 1 complete
+2026-04-06 14:51:26,530 - INFO -   [4426] Pass 2 complete. Found: ['gruendungsjahr', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:51:26,536 - INFO - Cache saved (30/73)
+2026-04-06 14:51:26,536 - INFO - [31/73] Geschwister-Scholl-Schule (5001)
+2026-04-06 14:51:39,837 - INFO -   [5001] Pass 0 complete (3486 chars)
+2026-04-06 14:51:52,439 - INFO -   [5001] Pass 1 complete
+2026-04-06 14:52:00,134 - INFO -   [5001] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform']
+2026-04-06 14:52:00,135 - INFO - [32/73] Brüder-Grimm-Schule (5002)
+2026-04-06 14:52:13,628 - INFO -   [5002] Pass 0 complete (4727 chars)
+2026-04-06 14:52:23,357 - INFO -   [5002] Pass 1 complete
+2026-04-06 14:52:29,087 - INFO -   [5002] Pass 2 complete. Found: ['gruendungsjahr', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:52:29,088 - INFO - [33/73] Deutschherrenschule (5003)
+2026-04-06 14:52:43,685 - INFO -   [5003] Pass 0 complete (4614 chars)
+2026-04-06 14:52:53,316 - INFO -   [5003] Pass 1 complete
+2026-04-06 14:53:00,184 - INFO -   [5003] Pass 2 complete. Found: ['website', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:53:00,185 - INFO - [34/73] Anne-Frank-Schule (5004)
+2026-04-06 14:53:10,047 - INFO -   [5004] Pass 0 complete (2396 chars)
+2026-04-06 14:53:21,642 - INFO -   [5004] Pass 1 complete
+2026-04-06 14:53:28,380 - INFO -   [5004] Pass 2 complete. Found: ['schueler_gesamt_web']
+2026-04-06 14:53:28,381 - INFO - [35/73] Louise-von-Rothschild-Schule (5007)
+2026-04-06 14:53:41,432 - INFO -   [5007] Pass 0 complete (4325 chars)
+2026-04-06 14:53:55,679 - INFO -   [5007] Pass 1 complete
+2026-04-06 14:54:03,199 - INFO -   [5007] Pass 2 complete. Found: ['gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:54:03,199 - INFO - [36/73] Falkschule (5010)
+2026-04-06 14:54:17,641 - INFO -   [5010] Pass 0 complete (4520 chars)
+2026-04-06 14:54:27,369 - INFO -   [5010] Pass 1 complete
+2026-04-06 14:54:34,957 - INFO -   [5010] Pass 2 complete. Found: ['gruendungsjahr', 'lehrer_2024_25', 'sprachen', 'besonderheiten', 'schueler_gesamt_web', 'migration_2024_25']
+2026-04-06 14:54:34,958 - INFO - [37/73] Fürstenbergerschule (5012)
+2026-04-06 14:54:46,399 - INFO -   [5012] Pass 0 complete (4233 chars)
+2026-04-06 14:54:59,314 - INFO -   [5012] Pass 1 complete
+2026-04-06 14:55:07,094 - INFO -   [5012] Pass 2 complete. Found: ['website', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:55:07,094 - INFO - [38/73] Robert-Koch-Schule (5013)
+2026-04-06 14:55:20,612 - INFO -   [5013] Pass 0 complete (4467 chars)
+2026-04-06 14:55:35,054 - INFO -   [5013] Pass 1 complete
+2026-04-06 14:55:46,665 - INFO -   [5013] Pass 2 complete. Found: ['website', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:55:46,666 - INFO - [39/73] Wöhlerschule (5101)
+2026-04-06 14:55:59,321 - INFO -   [5101] Pass 0 complete (3153 chars)
+2026-04-06 14:56:12,977 - INFO -   [5101] Pass 1 complete
+2026-04-06 14:56:19,662 - INFO -   [5101] Pass 2 complete. Found: ['gruendungsjahr', 'lehrer_2023_24', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:56:19,663 - INFO - [40/73] Elisabethenschule (5102)
+2026-04-06 14:56:29,581 - INFO -   [5102] Pass 0 complete (3013 chars)
+2026-04-06 14:56:45,398 - WARNING -   [5102] Pass 1 failed: Expecting ',' delimiter: line 1 column 2301 (char 2300)
+2026-04-06 14:56:52,874 - INFO -   [5102] Pass 2 complete. Found: ['besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:56:52,878 - INFO - Cache saved (40/73)
+2026-04-06 14:56:52,880 - INFO - [41/73] Carl-Schurz-Schule (5104)
+2026-04-06 14:57:04,491 - INFO -   [5104] Pass 0 complete (4426 chars)
+2026-04-06 14:57:16,419 - INFO -   [5104] Pass 1 complete
+2026-04-06 14:57:23,809 - INFO -   [5104] Pass 2 complete. Found: ['gruendungsjahr', 'lehrer_2024_25', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web', 'nachfrage_plaetze_2024_25']
+2026-04-06 14:57:23,823 - INFO - [42/73] Ziehenschule (5105)
+2026-04-06 14:57:36,382 - INFO -   [5105] Pass 0 complete (4345 chars)
+2026-04-06 14:58:07,306 - INFO -   [5105] Pass 1 complete
+2026-04-06 14:58:14,429 - INFO -   [5105] Pass 2 complete. Found: ['schueler_gesamt_web']
+2026-04-06 14:58:14,430 - INFO - [43/73] Bettinaschule (5106)
+2026-04-06 14:58:29,240 - INFO -   [5106] Pass 0 complete (3901 chars)
+2026-04-06 14:58:42,475 - INFO -   [5106] Pass 1 complete
+2026-04-06 14:58:48,525 - INFO -   [5106] Pass 2 complete. Found: ['gruendungsjahr', 'lehrer_2023_24', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:58:48,525 - INFO - [44/73] Helene-Lange-Schule (5107)
+2026-04-06 14:58:59,139 - INFO -   [5107] Pass 0 complete (4275 chars)
+2026-04-06 14:59:13,057 - INFO -   [5107] Pass 1 complete
+2026-04-06 14:59:19,927 - INFO -   [5107] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 14:59:19,927 - INFO - [45/73] Helmholtzschule (5108)
+2026-04-06 14:59:31,471 - INFO -   [5108] Pass 0 complete (4418 chars)
+2026-04-06 14:59:44,719 - INFO -   [5108] Pass 1 complete
+2026-04-06 14:59:52,314 - INFO -   [5108] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'lehrer_2024_25', 'lehrer_2023_24', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 14:59:52,315 - INFO - [46/73] Schillerschule (5109)
+2026-04-06 15:00:07,566 - INFO -   [5109] Pass 0 complete (4531 chars)
+2026-04-06 15:00:27,923 - INFO -   [5109] Pass 1 complete
+2026-04-06 15:00:44,724 - INFO -   [5109] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'lehrer_2023_24', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 15:00:44,725 - INFO - [47/73] Heinrich-von-Gagern-Gymnasium (5110)
+2026-04-06 15:00:55,824 - INFO -   [5110] Pass 0 complete (3211 chars)
+2026-04-06 15:01:09,381 - INFO -   [5110] Pass 1 complete
+2026-04-06 15:01:18,666 - INFO -   [5110] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 15:01:18,667 - INFO - [48/73] Lessing-Gymnasium (5111)
+2026-04-06 15:01:29,621 - INFO -   [5111] Pass 0 complete (2823 chars)
+2026-04-06 15:01:43,021 - INFO -   [5111] Pass 1 complete
+2026-04-06 15:01:50,439 - INFO -   [5111] Pass 2 complete. Found: ['gruendungsjahr', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 15:01:50,440 - INFO - [49/73] Freiherr-vom-Stein-Schule (5112)
+2026-04-06 15:02:04,399 - INFO -   [5112] Pass 0 complete (4413 chars)
+2026-04-06 15:02:26,619 - INFO -   [5112] Pass 1 complete
+2026-04-06 15:02:32,437 - INFO -   [5112] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:02:32,437 - INFO - [50/73] Liebigschule (5113)
+2026-04-06 15:02:46,671 - INFO -   [5113] Pass 0 complete (4109 chars)
+2026-04-06 15:03:06,111 - INFO -   [5113] Pass 1 complete
+2026-04-06 15:03:13,299 - INFO -   [5113] Pass 2 complete. Found: ['website', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:03:13,304 - INFO - Cache saved (50/73)
+2026-04-06 15:03:13,305 - INFO - [51/73] Leibnizschule (5114)
+2026-04-06 15:03:25,998 - INFO -   [5114] Pass 0 complete (4465 chars)
+2026-04-06 15:03:46,542 - INFO -   [5114] Pass 1 complete
+2026-04-06 15:03:53,871 - INFO -   [5114] Pass 2 complete. Found: ['website', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 15:03:53,871 - INFO - [52/73] Musterschule (5115)
+2026-04-06 15:04:10,951 - INFO -   [5115] Pass 0 complete (4406 chars)
+2026-04-06 15:04:27,616 - WARNING -   [5115] Pass 1 failed: Expecting ',' delimiter: line 1 column 2112 (char 2111)
+2026-04-06 15:04:35,912 - INFO -   [5115] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'lehrer_2024_25', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:04:35,915 - INFO - [53/73] Goethe-Gymnasium (5116)
+2026-04-06 15:04:49,308 - INFO -   [5116] Pass 0 complete (3960 chars)
+2026-04-06 15:05:06,392 - INFO -   [5116] Pass 1 complete
+2026-04-06 15:05:18,601 - INFO -   [5116] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:05:18,601 - INFO - [54/73] Anna-Schmidt-Schule (5117)
+2026-04-06 15:05:29,734 - INFO -   [5117] Pass 0 complete (3980 chars)
+2026-04-06 15:05:46,783 - WARNING -   [5117] Pass 1 failed: Expecting ',' delimiter: line 1 column 2112 (char 2111)
+2026-04-06 15:05:54,379 - INFO -   [5117] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'lehrer_2024_25', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:05:54,382 - INFO - [55/73] Freie Waldorfschule Frankfurt (5118)
+2026-04-06 15:06:12,038 - INFO -   [5118] Pass 0 complete (4237 chars)
+2026-04-06 15:06:29,091 - INFO -   [5118] Pass 1 complete
+2026-04-06 15:06:39,533 - INFO -   [5118] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:06:39,538 - INFO - [56/73] Private Kant-Schule (5119)
+2026-04-06 15:06:51,207 - INFO -   [5119] Pass 0 complete (4602 chars)
+2026-04-06 15:07:05,197 - INFO -   [5119] Pass 1 complete
+2026-04-06 15:07:16,219 - INFO -   [5119] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:07:16,221 - INFO - [57/73] Max-Beckmann-Schule (5213)
+2026-04-06 15:07:29,955 - INFO -   [5213] Pass 0 complete (3758 chars)
+2026-04-06 15:07:42,734 - INFO -   [5213] Pass 1 complete
+2026-04-06 15:07:49,873 - INFO -   [5213] Pass 2 complete. Found: ['gruendungsjahr', 'lehrer_2023_24', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 15:07:49,874 - INFO - [58/73] Friedrich-Dessauer-Gymnasium (5218)
+2026-04-06 15:08:03,201 - INFO -   [5218] Pass 0 complete (5339 chars)
+2026-04-06 15:08:22,124 - INFO -   [5218] Pass 1 complete
+2026-04-06 15:08:29,391 - INFO -   [5218] Pass 2 complete. Found: ['website', 'sprachen', 'besonderheiten', 'schueler_gesamt_web', 'nachfrage_plaetze_2024_25']
+2026-04-06 15:08:29,392 - INFO - [59/73] Abendgymnasium Frankfurt am Main (5502)
+2026-04-06 15:08:43,341 - INFO -   [5502] Pass 0 complete (4343 chars)
+2026-04-06 15:08:57,230 - INFO -   [5502] Pass 1 complete
+2026-04-06 15:09:05,123 - INFO -   [5502] Pass 2 complete. Found: ['website', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 15:09:05,123 - INFO - [60/73] Hessenkolleg Frankfurt (5507)
+2026-04-06 15:09:17,966 - INFO -   [5507] Pass 0 complete (3791 chars)
+2026-04-06 15:09:30,646 - INFO -   [5507] Pass 1 complete
+2026-04-06 15:09:39,461 - INFO -   [5507] Pass 2 complete. Found: ['besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:09:39,471 - INFO - Cache saved (60/73)
+2026-04-06 15:09:39,471 - INFO - [61/73] Abendhaupt- u. Abendrealschule Frankfurt (5512)
+2026-04-06 15:10:07,032 - INFO -   [5512] Pass 0 complete (2406 chars)
+2026-04-06 15:10:28,300 - INFO -   [5512] Pass 1 complete
+2026-04-06 15:10:34,691 - INFO -   [5512] Pass 2 complete. Found: ['schueler_gesamt_web']
+2026-04-06 15:10:34,692 - INFO - [62/73] Ernst-Reuter-Schule I (6001)
+2026-04-06 15:10:48,175 - INFO -   [6001] Pass 0 complete (4113 chars)
+2026-04-06 15:11:05,373 - INFO -   [6001] Pass 1 complete
+2026-04-06 15:11:11,393 - INFO -   [6001] Pass 2 complete. Found: ['gruendungsjahr', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 15:11:11,394 - INFO - [63/73] Schule am Ried (6055)
+2026-04-06 15:11:26,009 - INFO -   [6055] Pass 0 complete (4876 chars)
+2026-04-06 15:12:01,600 - INFO -   [6055] Pass 1 complete
+2026-04-06 15:12:09,161 - INFO -   [6055] Pass 2 complete. Found: ['website', 'gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:12:09,161 - INFO - [64/73] Ernst-Reuter-Schule II (6059)
+2026-04-06 15:12:23,144 - INFO -   [6059] Pass 0 complete (3899 chars)
+2026-04-06 15:12:40,082 - INFO -   [6059] Pass 1 complete
+2026-04-06 15:12:45,694 - INFO -   [6059] Pass 2 complete. Found: ['gruendungsjahr', 'sprachen', 'besonderheiten', 'schueler_gesamt_web']
+2026-04-06 15:12:45,696 - INFO - [65/73] Otto-Hahn-Schule (6091)
+2026-04-06 15:12:57,374 - INFO -   [6091] Pass 0 complete (4364 chars)
+2026-04-06 15:13:14,861 - WARNING -   [6091] Pass 1 failed: Expecting ',' delimiter: line 1 column 1959 (char 1958)
+2026-04-06 15:13:21,250 - INFO -   [6091] Pass 2 complete. Found: ['website', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:13:21,250 - INFO - [66/73] Friedrich-Ebert-Schule (6097)
+2026-04-06 15:13:32,009 - INFO -   [6097] Pass 0 complete (4355 chars)
+2026-04-06 15:13:49,781 - WARNING -   [6097] Pass 1 failed: Expecting ',' delimiter: line 1 column 2173 (char 2172)
+2026-04-06 15:14:00,653 - INFO -   [6097] Pass 2 complete. Found: ['gruendungsjahr', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:14:00,654 - INFO - [67/73] Carl-von-Weinberg-Schule (6107)
+2026-04-06 15:14:10,589 - INFO -   [6107] Pass 0 complete (2700 chars)
+2026-04-06 15:14:21,054 - INFO -   [6107] Pass 1 complete
+2026-04-06 15:14:28,030 - INFO -   [6107] Pass 2 complete. Found: ['besonderheiten', 'schueler_gesamt_web']
+2026-04-06 15:14:28,031 - INFO - [68/73] Georg-August-Zinn-Schule (6108)
+2026-04-06 15:14:37,287 - INFO -   [6108] Pass 0 complete (3907 chars)
+2026-04-06 15:14:52,393 - INFO -   [6108] Pass 1 complete
+2026-04-06 15:14:58,216 - INFO -   [6108] Pass 2 complete. Found: ['website', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web', 'migration_2024_25']
+2026-04-06 15:14:58,216 - INFO - [69/73] Schule am Mainbogen (6109)
+2026-04-06 15:15:09,343 - INFO -   [6109] Pass 0 complete (4775 chars)
+2026-04-06 15:15:21,596 - INFO -   [6109] Pass 1 complete
+2026-04-06 15:15:27,514 - INFO -   [6109] Pass 2 complete. Found: ['website', 'sprachen', 'besonderheiten', 'schueler_gesamt_web', 'nachfrage_plaetze_2024_25']
+2026-04-06 15:15:27,514 - INFO - [70/73] Paul-Hindemith-Schule (6121)
+2026-04-06 15:15:44,426 - INFO -   [6121] Pass 0 complete (4245 chars)
+2026-04-06 15:15:56,493 - INFO -   [6121] Pass 1 complete
+2026-04-06 15:16:02,980 - INFO -   [6121] Pass 2 complete. Found: ['gruendungsjahr', 'sprachen', 'besonderheiten', 'ganztagsform', 'schueler_gesamt_web']
+2026-04-06 15:16:02,988 - INFO - Cache saved (70/73)
+2026-04-06 15:16:02,988 - INFO - [71/73] IGS-Nordend (6135)
+2026-04-06 15:16:15,648 - INFO -   [6135] Pass 0 complete (3871 chars)
+2026-04-06 15:16:31,491 - INFO -   [6135] Pass 1 complete
+2026-04-06 15:16:37,583 - INFO -   [6135] Pass 2 complete. Found: ['besonderheiten', 'schueler_gesamt_web']
+2026-04-06 15:16:37,583 - INFO - [72/73] Wilhelm-Merton-Schule (6266)
+2026-04-06 15:16:52,894 - INFO -   [6266] Pass 0 complete (3829 chars)
+2026-04-06 15:17:04,976 - INFO -   [6266] Pass 1 complete
+2026-04-06 15:17:11,143 - INFO -   [6266] Pass 2 complete. Found: ['sprachen', 'besonderheiten']
+2026-04-06 15:17:11,145 - INFO - [73/73] Freie Schule für Erwachsene Frankfurt (6365)
+2026-04-06 15:17:24,329 - INFO -   [6365] Pass 0 complete (3175 chars)
+2026-04-06 15:17:35,352 - INFO -   [6365] Pass 1 complete
+2026-04-06 15:17:41,352 - INFO -   [6365] Pass 2 complete. Found: ['sprachen', 'besonderheiten']
+2026-04-06 15:17:41,360 - INFO - Cache saved.
+/Users/josevonroth/Documents/schoolnossa/scripts_shared/generation/school_description_pipeline.py:523: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value 'all-day school, no traditional homework, youth welfare program' has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+  df.at[idx, col_name] = val
+/Users/josevonroth/Documents/schoolnossa/scripts_shared/generation/school_description_pipeline.py:523: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value 'walter-kolb-schule.de' has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+  df.at[idx, col_name] = val
+/Users/josevonroth/Documents/schoolnossa/scripts_shared/generation/school_description_pipeline.py:523: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value 'Englisch ab Klasse 1, Französisch oder Spanisch als 2. FS' has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+  df.at[idx, col_name] = val
+2026-04-06 15:17:41,398 - INFO - Applied: 67 description updates, 320 structured field fills
+2026-04-06 15:17:41,416 - INFO - Saved CSV: /Users/josevonroth/Documents/schoolnossa/data_frankfurt/final/frankfurt_secondary_school_master_table_final.csv
+2026-04-06 15:17:41,416 - INFO - Skipping parquet save (no embeddings). Re-run the embeddings generator after this.
+
+=================================================================
+DESCRIPTION PIPELINE SUMMARY — SECONDARY
+=================================================================
+  Schools processed: 73
+  Schools in cache:  73
+  Pass 0 (research): 73/73 complete
+  Pass 1 (descriptions): 67/73 complete
+    description_en filled: 67/73
+  Pass 2 (structured): 73/73 complete
+    lehrer_2024_25: 8/73 filled (11%)
+    schueler_2024_25: 0/73 filled (0%)
+    schueler_2023_24: 0/73 filled (0%)
+    schueler_gesamt_web: 70/73 filled (96%)
+    website: 36/73 filled (49%)
+    gruendungsjahr: 40/73 filled (55%)
+    sprachen: 44/73 filled (60%)
+    besonderheiten: 65/73 filled (89%)
+=================================================================
+NOTE: Run the embeddings generator to regenerate embeddings with new descriptions.
+=================================================================
+

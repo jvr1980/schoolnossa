@@ -1,0 +1,793 @@
+/Users/josevonroth/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+2026-01-19 20:57:38,923 - INFO - Using perplexity provider with model sonar
+2026-01-19 20:57:38,924 - INFO - Loading schools from combined_schools_with_metadata_msa.csv
+2026-01-19 20:57:38,946 - INFO - Processing 259 schools starting from index 0
+2026-01-19 20:57:38,949 - INFO - Processing [0]: 15. Schule (Integrierte Sekundarschule)
+2026-01-19 20:57:38,949 - INFO - Generating description for 15. Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 20:57:51,191 - INFO - Successfully generated description for 15. Schule (Integrierte Sekundarschule)
+2026-01-19 20:57:53,195 - INFO - Processing [1]: 16. Schule (Integrierte Sekundarschule)
+2026-01-19 20:57:53,195 - INFO - Generating description for 16. Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 20:58:06,299 - INFO - Successfully generated description for 16. Schule (Integrierte Sekundarschule)
+2026-01-19 20:58:08,305 - INFO - Processing [2]: 17. Schule (Integrierte Sekundarschule) Neugründung zum 01.08.2026
+2026-01-19 20:58:10,310 - INFO - Processing [3]: Albert-Gutzmann-Schule
+2026-01-19 20:58:10,311 - INFO - Generating description for Albert-Gutzmann-Schule (attempt 1)
+2026-01-19 20:58:23,344 - INFO - Successfully generated description for Albert-Gutzmann-Schule
+2026-01-19 20:58:25,346 - INFO - Processing [4]: Albrecht-Haushofer-Schule
+2026-01-19 20:58:25,346 - INFO - Generating description for Albrecht-Haushofer-Schule (attempt 1)
+2026-01-19 20:58:39,014 - INFO - Successfully generated description for Albrecht-Haushofer-Schule
+2026-01-19 20:58:41,020 - INFO - Processing [5]: Albrecht-von-Graefe-Schule (Integrierte Sekundarschule)
+2026-01-19 20:58:41,020 - INFO - Generating description for Albrecht-von-Graefe-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 20:58:54,542 - INFO - Successfully generated description for Albrecht-von-Graefe-Schule (Integrierte Sekundarschule)
+2026-01-19 20:58:56,546 - INFO - Processing [6]: Alexander-Puschkin-Schule
+2026-01-19 20:58:56,546 - INFO - Generating description for Alexander-Puschkin-Schule (attempt 1)
+2026-01-19 20:59:08,015 - INFO - Successfully generated description for Alexander-Puschkin-Schule
+2026-01-19 20:59:10,022 - INFO - Processing [7]: Alfred-Nobel-Schule
+2026-01-19 20:59:10,022 - INFO - Generating description for Alfred-Nobel-Schule (attempt 1)
+2026-01-19 20:59:27,614 - INFO - Successfully generated description for Alfred-Nobel-Schule
+2026-01-19 20:59:29,617 - INFO - Processing [8]: Benjamin-Franklin-Schule (Integrierte Sekundarschule)
+2026-01-19 20:59:29,617 - INFO - Generating description for Benjamin-Franklin-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 20:59:38,068 - INFO - Successfully generated description for Benjamin-Franklin-Schule (Integrierte Sekundarschule)
+2026-01-19 20:59:40,074 - INFO - Processing [9]: Berlin Bilingual School (Integrierte Sekundarschule)
+2026-01-19 20:59:40,074 - INFO - Skipping Berlin Bilingual School (Integrierte Sekundarschule) - already processed
+2026-01-19 20:59:40,075 - INFO - Processing [10]: Berlin British School (Integrierte Sekundarschule)
+2026-01-19 20:59:40,075 - INFO - Skipping Berlin British School (Integrierte Sekundarschule) - already processed
+2026-01-19 20:59:40,076 - INFO - Processing [11]: Berlin Metropolitan School (Integrierte Sekundarschule)
+2026-01-19 20:59:40,076 - INFO - Generating description for Berlin Metropolitan School (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 20:59:54,556 - INFO - Successfully generated description for Berlin Metropolitan School (Integrierte Sekundarschule)
+2026-01-19 20:59:56,564 - INFO - Processing [12]: Bertolt-Brecht-Oberschule (Integrierte Sekundarschule)
+2026-01-19 20:59:56,565 - INFO - Generating description for Bertolt-Brecht-Oberschule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:00:18,006 - INFO - Successfully generated description for Bertolt-Brecht-Oberschule (Integrierte Sekundarschule)
+2026-01-19 21:00:20,012 - INFO - Processing [13]: BEST-Sabel-Oberschule
+2026-01-19 21:00:20,012 - INFO - Generating description for BEST-Sabel-Oberschule (attempt 1)
+2026-01-19 21:00:32,133 - INFO - Successfully generated description for BEST-Sabel-Oberschule
+2026-01-19 21:00:34,141 - INFO - Processing [14]: Bettina-von-Arnim-Schule
+2026-01-19 21:00:34,141 - INFO - Generating description for Bettina-von-Arnim-Schule (attempt 1)
+2026-01-19 21:00:50,362 - INFO - Successfully generated description for Bettina-von-Arnim-Schule
+2026-01-19 21:00:52,367 - INFO - Processing [15]: Bröndby-Schule (Integrierte Sekundarschule)
+2026-01-19 21:00:52,368 - INFO - Generating description for Bröndby-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:01:14,736 - INFO - Successfully generated description for Bröndby-Schule (Integrierte Sekundarschule)
+2026-01-19 21:01:16,743 - INFO - Processing [16]: Canisius-Kolleg
+2026-01-19 21:01:16,743 - INFO - Generating description for Canisius-Kolleg (attempt 1)
+2026-01-19 21:01:30,325 - INFO - Successfully generated description for Canisius-Kolleg
+2026-01-19 21:01:32,331 - INFO - Processing [17]: Carl-Benz-Schule (Integrierte Sekundarschule)
+2026-01-19 21:01:32,332 - INFO - Generating description for Carl-Benz-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:01:46,134 - INFO - Successfully generated description for Carl-Benz-Schule (Integrierte Sekundarschule)
+2026-01-19 21:01:48,140 - INFO - Processing [18]: Carl-Bosch-Schule
+2026-01-19 21:01:48,140 - INFO - Generating description for Carl-Bosch-Schule (attempt 1)
+2026-01-19 21:01:58,257 - INFO - Successfully generated description for Carl-Bosch-Schule
+2026-01-19 21:02:00,264 - INFO - Processing [19]: Carlo-Schmid-Oberschule (Integrierte Sekundarschule)
+2026-01-19 21:02:00,264 - INFO - Generating description for Carlo-Schmid-Oberschule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:02:12,193 - INFO - Successfully generated description for Carlo-Schmid-Oberschule (Integrierte Sekundarschule)
+2026-01-19 21:02:14,198 - INFO - Processing [20]: Carl-Zeiss-Schule
+2026-01-19 21:02:14,198 - INFO - Generating description for Carl-Zeiss-Schule (attempt 1)
+2026-01-19 21:02:36,814 - INFO - Successfully generated description for Carl-Zeiss-Schule
+2026-01-19 21:02:38,818 - INFO - Processing [21]: Caspar-David-Friedrich-Schule
+2026-01-19 21:02:38,819 - INFO - Generating description for Caspar-David-Friedrich-Schule (attempt 1)
+2026-01-19 21:02:56,693 - INFO - Successfully generated description for Caspar-David-Friedrich-Schule
+2026-01-19 21:02:58,705 - INFO - Processing [22]: Clay-Schule
+2026-01-19 21:02:58,705 - INFO - Generating description for Clay-Schule (attempt 1)
+2026-01-19 21:03:18,741 - INFO - Successfully generated description for Clay-Schule
+2026-01-19 21:03:20,748 - INFO - Processing [23]: Ellen-Key-Schule
+2026-01-19 21:03:20,748 - INFO - Generating description for Ellen-Key-Schule (attempt 1)
+2026-01-19 21:03:38,273 - INFO - Successfully generated description for Ellen-Key-Schule
+2026-01-19 21:03:40,280 - INFO - Processing [24]: Elsa-Neumann-Schule (Integrierte Sekundarschule)
+2026-01-19 21:03:40,281 - INFO - Generating description for Elsa-Neumann-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:03:58,278 - INFO - Successfully generated description for Elsa-Neumann-Schule (Integrierte Sekundarschule)
+2026-01-19 21:04:00,289 - INFO - Processing [25]: Ernst-Adolf-Eschke-Schule für Gehörlose
+2026-01-19 21:04:00,289 - INFO - Generating description for Ernst-Adolf-Eschke-Schule für Gehörlose (attempt 1)
+2026-01-19 21:04:11,379 - INFO - Successfully generated description for Ernst-Adolf-Eschke-Schule für Gehörlose
+2026-01-19 21:04:13,391 - INFO - Processing [26]: Ernst-Haeckel-Schule
+2026-01-19 21:04:13,391 - INFO - Generating description for Ernst-Haeckel-Schule (attempt 1)
+2026-01-19 21:04:26,287 - INFO - Successfully generated description for Ernst-Haeckel-Schule
+2026-01-19 21:04:28,293 - INFO - Processing [27]: Ernst-Reuter-Schule
+2026-01-19 21:04:28,293 - INFO - Generating description for Ernst-Reuter-Schule (attempt 1)
+2026-01-19 21:04:37,955 - INFO - Successfully generated description for Ernst-Reuter-Schule
+2026-01-19 21:04:39,961 - INFO - Processing [28]: Ernst-Schering-Schule
+2026-01-19 21:04:39,961 - INFO - Generating description for Ernst-Schering-Schule (attempt 1)
+2026-01-19 21:04:58,481 - INFO - Successfully generated description for Ernst-Schering-Schule
+2026-01-19 21:05:00,491 - INFO - Processing [29]: Evangelische Schule Charlottenburg (Integrierte Sekundarschule)
+2026-01-19 21:05:00,491 - INFO - Generating description for Evangelische Schule Charlottenburg (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:05:09,986 - INFO - Successfully generated description for Evangelische Schule Charlottenburg (Integrierte Sekundarschule)
+2026-01-19 21:05:11,995 - INFO - Processing [30]: Evangelische Schule Neukölln (Integrierte Sekundarschule)
+2026-01-19 21:05:11,996 - INFO - Generating description for Evangelische Schule Neukölln (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:05:26,845 - INFO - Successfully generated description for Evangelische Schule Neukölln (Integrierte Sekundarschule)
+2026-01-19 21:05:28,856 - INFO - Processing [31]: Evangelische Schule Spandau im Johannesstift
+2026-01-19 21:05:28,856 - INFO - Generating description for Evangelische Schule Spandau im Johannesstift (attempt 1)
+2026-01-19 21:05:41,224 - INFO - Successfully generated description for Evangelische Schule Spandau im Johannesstift
+2026-01-19 21:05:43,232 - INFO - Processing [32]: Evangelische Schule Steglitz (Integrierte Sekundarschule)
+2026-01-19 21:05:43,232 - INFO - Generating description for Evangelische Schule Steglitz (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:05:57,779 - INFO - Successfully generated description for Evangelische Schule Steglitz (Integrierte Sekundarschule)
+2026-01-19 21:05:59,789 - INFO - Processing [33]: Ferdinand-Freiligrath-Schule (Integrierte Sekundarschule)
+2026-01-19 21:05:59,790 - INFO - Generating description for Ferdinand-Freiligrath-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:06:17,136 - INFO - Successfully generated description for Ferdinand-Freiligrath-Schule (Integrierte Sekundarschule)
+2026-01-19 21:06:19,141 - INFO - Processing [34]: Flatow-Oberschule
+2026-01-19 21:06:19,141 - INFO - Generating description for Flatow-Oberschule (attempt 1)
+2026-01-19 21:06:39,190 - INFO - Successfully generated description for Flatow-Oberschule
+2026-01-19 21:06:41,193 - INFO - Processing [35]: Freie Schule Berlin Mahlsdorf
+2026-01-19 21:06:41,193 - INFO - Generating description for Freie Schule Berlin Mahlsdorf (attempt 1)
+2026-01-19 21:06:50,996 - INFO - Successfully generated description for Freie Schule Berlin Mahlsdorf
+2026-01-19 21:06:53,005 - INFO - Processing [36]: Freie Schule Charlottenburg
+2026-01-19 21:06:53,005 - INFO - Generating description for Freie Schule Charlottenburg (attempt 1)
+2026-01-19 21:07:00,237 - INFO - Successfully generated description for Freie Schule Charlottenburg
+2026-01-19 21:07:02,242 - INFO - Processing [37]: Freie Schule Pankow (Integrierte Sekundarschule)
+2026-01-19 21:07:02,243 - INFO - Generating description for Freie Schule Pankow (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:07:13,447 - INFO - Successfully generated description for Freie Schule Pankow (Integrierte Sekundarschule)
+2026-01-19 21:07:15,455 - INFO - Processing [38]: Friedensburg-Schule
+2026-01-19 21:07:15,455 - INFO - Generating description for Friedensburg-Schule (attempt 1)
+2026-01-19 21:07:25,224 - INFO - Successfully generated description for Friedensburg-Schule
+2026-01-19 21:07:27,234 - INFO - Processing [39]: Friedrich-Bergius-Schule
+2026-01-19 21:07:27,234 - INFO - Generating description for Friedrich-Bergius-Schule (attempt 1)
+2026-01-19 21:07:48,381 - INFO - Successfully generated description for Friedrich-Bergius-Schule
+2026-01-19 21:07:50,390 - INFO - Processing [40]: Fritz-Kühn-Schule (Integrierte Sekundarschule)
+2026-01-19 21:07:50,390 - INFO - Generating description for Fritz-Kühn-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:08:05,173 - INFO - Successfully generated description for Fritz-Kühn-Schule (Integrierte Sekundarschule)
+2026-01-19 21:08:07,186 - INFO - Processing [41]: Fritz-Reuter-Schule
+2026-01-19 21:08:07,186 - INFO - Generating description for Fritz-Reuter-Schule (attempt 1)
+2026-01-19 21:28:56,688 - ERROR - Error generating description for Fritz-Reuter-Schule: HTTPSConnectionPool(host='api.perplexity.ai', port=443): Read timed out. (read timeout=180)
+2026-01-19 21:29:01,693 - INFO - Generating description for Fritz-Reuter-Schule (attempt 2)
+2026-01-19 21:29:11,486 - INFO - Successfully generated description for Fritz-Reuter-Schule
+2026-01-19 21:29:13,500 - INFO - Processing [42]: Gail-S.-Halvorsen-Integrierte Sekundarschule
+2026-01-19 21:29:13,500 - INFO - Generating description for Gail-S.-Halvorsen-Integrierte Sekundarschule (attempt 1)
+2026-01-19 21:29:32,297 - INFO - Successfully generated description for Gail-S.-Halvorsen-Integrierte Sekundarschule
+2026-01-19 21:29:34,301 - INFO - Processing [43]: Georg-Klingenberg-Schule
+2026-01-19 21:29:34,301 - INFO - Generating description for Georg-Klingenberg-Schule (attempt 1)
+2026-01-19 21:29:51,144 - INFO - Successfully generated description for Georg-Klingenberg-Schule
+2026-01-19 21:29:53,156 - INFO - Processing [44]: Georg-von-Giesche-Schule
+2026-01-19 21:29:53,156 - INFO - Generating description for Georg-von-Giesche-Schule (attempt 1)
+2026-01-19 21:30:01,592 - INFO - Successfully generated description for Georg-von-Giesche-Schule
+2026-01-19 21:30:03,604 - INFO - Processing [45]: Georg-Weerth-Schule
+2026-01-19 21:30:03,604 - INFO - Generating description for Georg-Weerth-Schule (attempt 1)
+2026-01-19 21:30:22,785 - INFO - Successfully generated description for Georg-Weerth-Schule
+2026-01-19 21:30:24,796 - INFO - Processing [46]: Gustave-Eiffel-Schule
+2026-01-19 21:30:24,796 - INFO - Generating description for Gustave-Eiffel-Schule (attempt 1)
+2026-01-19 21:30:44,495 - INFO - Successfully generated description for Gustave-Eiffel-Schule
+2026-01-19 21:30:46,508 - INFO - Processing [47]: Gustav-Freytag-Schule (Integrierte Sekundarschule)
+2026-01-19 21:30:46,509 - INFO - Generating description for Gustav-Freytag-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:31:01,185 - INFO - Successfully generated description for Gustav-Freytag-Schule (Integrierte Sekundarschule)
+2026-01-19 21:31:03,190 - INFO - Processing [48]: Gustav-Heinemann-Oberschule
+2026-01-19 21:31:03,190 - INFO - Generating description for Gustav-Heinemann-Oberschule (attempt 1)
+2026-01-19 21:31:22,431 - INFO - Successfully generated description for Gustav-Heinemann-Oberschule
+2026-01-19 21:31:24,441 - INFO - Processing [49]: Gustav-Langenscheidt-Schule
+2026-01-19 21:31:24,441 - INFO - Generating description for Gustav-Langenscheidt-Schule (attempt 1)
+2026-01-19 21:31:39,277 - INFO - Successfully generated description for Gustav-Langenscheidt-Schule
+2026-01-19 21:31:41,284 - INFO - Processing [50]: Gutenberg-Schule
+2026-01-19 21:31:41,285 - INFO - Generating description for Gutenberg-Schule (attempt 1)
+2026-01-19 21:31:51,993 - INFO - Successfully generated description for Gutenberg-Schule
+2026-01-19 21:31:54,002 - INFO - Processing [51]: Hagenbeck-Schule
+2026-01-19 21:31:54,002 - INFO - Generating description for Hagenbeck-Schule (attempt 1)
+2026-01-19 21:32:00,985 - INFO - Successfully generated description for Hagenbeck-Schule
+2026-01-19 21:32:02,992 - INFO - Processing [52]: Hans-Grade-Schule (Integrierte Sekundarschule)
+2026-01-19 21:32:02,993 - INFO - Generating description for Hans-Grade-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:32:16,994 - INFO - Successfully generated description for Hans-Grade-Schule (Integrierte Sekundarschule)
+2026-01-19 21:32:19,006 - INFO - Processing [53]: Hector-Peterson-Schule
+2026-01-19 21:32:19,006 - INFO - Generating description for Hector-Peterson-Schule (attempt 1)
+2026-01-19 21:32:35,787 - INFO - Successfully generated description for Hector-Peterson-Schule
+2026-01-19 21:32:37,790 - INFO - Processing [54]: Hedwig-Dohm-Schule (Integrierte Sekundarschule)
+2026-01-19 21:32:37,790 - INFO - Generating description for Hedwig-Dohm-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:32:52,845 - INFO - Successfully generated description for Hedwig-Dohm-Schule (Integrierte Sekundarschule)
+2026-01-19 21:32:54,851 - INFO - Processing [55]: Heinrich-Böll-Oberschule (Integrierte Sekundarschule)
+2026-01-19 21:32:54,851 - INFO - Generating description for Heinrich-Böll-Oberschule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:33:08,670 - INFO - Successfully generated description for Heinrich-Böll-Oberschule (Integrierte Sekundarschule)
+2026-01-19 21:33:10,672 - INFO - Processing [56]: Heinrich-Mann-Schule
+2026-01-19 21:33:10,673 - INFO - Generating description for Heinrich-Mann-Schule (attempt 1)
+2026-01-19 21:33:19,936 - INFO - Successfully generated description for Heinrich-Mann-Schule
+2026-01-19 21:33:21,940 - INFO - Processing [57]: Heinz-Brandt-Schule
+2026-01-19 21:33:21,941 - INFO - Generating description for Heinz-Brandt-Schule (attempt 1)
+2026-01-19 21:33:34,446 - INFO - Successfully generated description for Heinz-Brandt-Schule
+2026-01-19 21:33:36,458 - INFO - Processing [58]: Helene-Lange-Schule (Integrierte Sekundarschule)
+2026-01-19 21:33:36,459 - INFO - Generating description for Helene-Lange-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:33:45,127 - INFO - Successfully generated description for Helene-Lange-Schule (Integrierte Sekundarschule)
+2026-01-19 21:33:47,142 - INFO - Processing [59]: Hemingway-Schule
+2026-01-19 21:33:47,143 - INFO - Generating description for Hemingway-Schule (attempt 1)
+2026-01-19 21:34:00,696 - INFO - Successfully generated description for Hemingway-Schule
+2026-01-19 21:34:02,704 - INFO - Processing [60]: Herbert-Hoover-Schule (Integrierte Sekundarschule)
+2026-01-19 21:34:02,705 - INFO - Generating description for Herbert-Hoover-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:34:16,072 - INFO - Successfully generated description for Herbert-Hoover-Schule (Integrierte Sekundarschule)
+2026-01-19 21:34:18,077 - INFO - Processing [61]: Hermann-von-Helmholtz-Schule
+2026-01-19 21:34:18,078 - INFO - Generating description for Hermann-von-Helmholtz-Schule (attempt 1)
+2026-01-19 21:34:31,106 - INFO - Successfully generated description for Hermann-von-Helmholtz-Schule
+2026-01-19 21:34:33,110 - INFO - Processing [62]: Hufeland-Schule (Integrierte Sekundarschule)
+2026-01-19 21:34:33,111 - INFO - Generating description for Hufeland-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:34:48,208 - INFO - Successfully generated description for Hufeland-Schule (Integrierte Sekundarschule)
+2026-01-19 21:34:50,216 - INFO - Processing [63]: Hugo-Gaudig-Schule
+2026-01-19 21:34:50,217 - INFO - Generating description for Hugo-Gaudig-Schule (attempt 1)
+2026-01-19 21:34:59,309 - INFO - Successfully generated description for Hugo-Gaudig-Schule
+2026-01-19 21:35:01,321 - INFO - Processing [64]: Integrierte Sekundarschule Mahlsdorf
+2026-01-19 21:35:01,322 - INFO - Generating description for Integrierte Sekundarschule Mahlsdorf (attempt 1)
+2026-01-19 21:35:10,737 - INFO - Successfully generated description for Integrierte Sekundarschule Mahlsdorf
+2026-01-19 21:35:12,740 - INFO - Processing [65]: Integrierte Sekundarschule Wilmersdorf
+2026-01-19 21:35:12,741 - INFO - Generating description for Integrierte Sekundarschule Wilmersdorf (attempt 1)
+2026-01-19 21:35:24,253 - INFO - Successfully generated description for Integrierte Sekundarschule Wilmersdorf
+2026-01-19 21:35:26,263 - INFO - Processing [66]: Isaac-Newton-Schule (Integrierte Sekundarschule)
+2026-01-19 21:35:26,263 - INFO - Generating description for Isaac-Newton-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:35:42,691 - INFO - Successfully generated description for Isaac-Newton-Schule (Integrierte Sekundarschule)
+2026-01-19 21:35:44,700 - INFO - Processing [67]: Janusz-Korczak-Schule (Integrierte Sekundarschule)
+2026-01-19 21:35:44,700 - INFO - Generating description for Janusz-Korczak-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:35:59,184 - INFO - Successfully generated description for Janusz-Korczak-Schule (Integrierte Sekundarschule)
+2026-01-19 21:36:01,190 - INFO - Processing [68]: Jean-Krämer-Schule (Integrierte Sekundarschule) Wittenau
+2026-01-19 21:36:01,190 - INFO - Generating description for Jean-Krämer-Schule (Integrierte Sekundarschule) Wittenau (attempt 1)
+2026-01-19 21:36:15,966 - INFO - Successfully generated description for Jean-Krämer-Schule (Integrierte Sekundarschule) Wittenau
+2026-01-19 21:36:17,979 - INFO - Processing [69]: Jean-Piaget-Schule
+2026-01-19 21:36:17,980 - INFO - Generating description for Jean-Piaget-Schule (attempt 1)
+2026-01-19 21:36:29,788 - INFO - Successfully generated description for Jean-Piaget-Schule
+2026-01-19 21:36:31,794 - INFO - Processing [70]: Johanna-Eck-Schule (Integrierte Sekundarschule)
+2026-01-19 21:36:31,794 - INFO - Generating description for Johanna-Eck-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:36:47,197 - INFO - Successfully generated description for Johanna-Eck-Schule (Integrierte Sekundarschule)
+2026-01-19 21:36:49,204 - INFO - Processing [71]: Johann-Julius-Hecker-Schule
+2026-01-19 21:36:49,204 - INFO - Generating description for Johann-Julius-Hecker-Schule (attempt 1)
+2026-01-19 21:37:07,570 - INFO - Successfully generated description for Johann-Julius-Hecker-Schule
+2026-01-19 21:37:09,578 - INFO - Processing [72]: John-F.-Kennedy-Schule
+2026-01-19 21:37:09,578 - INFO - Generating description for John-F.-Kennedy-Schule (attempt 1)
+2026-01-19 21:38:22,642 - INFO - Successfully generated description for John-F.-Kennedy-Schule
+2026-01-19 21:38:24,649 - INFO - Processing [73]: Jüdische Traditionsschule
+2026-01-19 21:38:24,649 - INFO - Generating description for Jüdische Traditionsschule (attempt 1)
+2026-01-19 21:38:39,934 - INFO - Successfully generated description for Jüdische Traditionsschule
+2026-01-19 21:38:41,939 - INFO - Processing [74]: Jüdisches Gymnasium Moses Mendelssohn
+2026-01-19 21:38:41,939 - INFO - Generating description for Jüdisches Gymnasium Moses Mendelssohn (attempt 1)
+2026-01-19 21:56:50,272 - ERROR - Error generating description for Jüdisches Gymnasium Moses Mendelssohn: HTTPSConnectionPool(host='api.perplexity.ai', port=443): Read timed out. (read timeout=180)
+2026-01-19 21:56:55,276 - INFO - Generating description for Jüdisches Gymnasium Moses Mendelssohn (attempt 2)
+2026-01-19 21:57:08,566 - INFO - Successfully generated description for Jüdisches Gymnasium Moses Mendelssohn
+2026-01-19 21:57:10,574 - INFO - Processing [75]: Julius-Leber-Schule
+2026-01-19 21:57:10,574 - INFO - Generating description for Julius-Leber-Schule (attempt 1)
+2026-01-19 21:57:31,510 - INFO - Successfully generated description for Julius-Leber-Schule
+2026-01-19 21:57:33,513 - INFO - Processing [76]: Katholische Schule Salvator
+2026-01-19 21:57:33,513 - INFO - Generating description for Katholische Schule Salvator (attempt 1)
+2026-01-19 21:57:57,025 - INFO - Successfully generated description for Katholische Schule Salvator
+2026-01-19 21:57:59,034 - INFO - Processing [77]: Katholische Schule Sankt Franziskus (Integrierte Sekundarschule)
+2026-01-19 21:57:59,035 - INFO - Generating description for Katholische Schule Sankt Franziskus (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:58:12,770 - INFO - Successfully generated description for Katholische Schule Sankt Franziskus (Integrierte Sekundarschule)
+2026-01-19 21:58:14,773 - INFO - Processing [78]: Katholische Schule Sankt Marien
+2026-01-19 21:58:14,774 - INFO - Generating description for Katholische Schule Sankt Marien (attempt 1)
+2026-01-19 21:58:35,196 - INFO - Successfully generated description for Katholische Schule Sankt Marien
+2026-01-19 21:58:37,205 - INFO - Processing [79]: Kepler-Schule
+2026-01-19 21:58:37,205 - INFO - Generating description for Kepler-Schule (attempt 1)
+2026-01-19 21:58:49,739 - INFO - Successfully generated description for Kepler-Schule
+2026-01-19 21:58:51,744 - INFO - Processing [80]: Kerschensteiner-Schule
+2026-01-19 21:58:51,744 - INFO - Generating description for Kerschensteiner-Schule (attempt 1)
+2026-01-19 21:59:05,670 - INFO - Successfully generated description for Kerschensteiner-Schule
+2026-01-19 21:59:07,674 - INFO - Processing [81]: Königin-Luise-Stiftung
+2026-01-19 21:59:07,674 - INFO - Generating description for Königin-Luise-Stiftung (attempt 1)
+2026-01-19 21:59:19,330 - INFO - Successfully generated description for Königin-Luise-Stiftung
+2026-01-19 21:59:21,334 - INFO - Processing [82]: Konrad-Duden-Schule (Integrierte Sekundarschule)
+2026-01-19 21:59:21,334 - INFO - Generating description for Konrad-Duden-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 21:59:41,859 - INFO - Successfully generated description for Konrad-Duden-Schule (Integrierte Sekundarschule)
+2026-01-19 21:59:43,868 - INFO - Processing [83]: Konrad-Wachsmann-Schule
+2026-01-19 21:59:43,869 - INFO - Generating description for Konrad-Wachsmann-Schule (attempt 1)
+2026-01-19 21:59:54,146 - INFO - Successfully generated description for Konrad-Wachsmann-Schule
+2026-01-19 21:59:56,155 - INFO - Processing [84]: Kopernikus-Schule (Integrierte Sekundarschule)
+2026-01-19 21:59:56,155 - INFO - Generating description for Kopernikus-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:00:22,291 - INFO - Successfully generated description for Kopernikus-Schule (Integrierte Sekundarschule)
+2026-01-19 22:00:24,296 - INFO - Processing [85]: Kosmos-Schule (Integrierte Sekundarschule)
+2026-01-19 22:00:24,296 - INFO - Generating description for Kosmos-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:00:37,463 - INFO - Successfully generated description for Kosmos-Schule (Integrierte Sekundarschule)
+2026-01-19 22:00:39,469 - INFO - Processing [86]: Kurt-Schwitters-Schule
+2026-01-19 22:00:39,469 - INFO - Generating description for Kurt-Schwitters-Schule (attempt 1)
+2026-01-19 22:00:50,777 - INFO - Successfully generated description for Kurt-Schwitters-Schule
+2026-01-19 22:00:52,787 - INFO - Processing [87]: Kurt-Tucholsky-Schule (Integrierte Sekundarschule)
+2026-01-19 22:00:52,787 - INFO - Generating description for Kurt-Tucholsky-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:01:10,240 - INFO - Successfully generated description for Kurt-Tucholsky-Schule (Integrierte Sekundarschule)
+2026-01-19 22:01:12,250 - INFO - Processing [88]: Martin-Buber-Oberschule (Integrierte Sekundarschule)
+2026-01-19 22:01:12,251 - INFO - Generating description for Martin-Buber-Oberschule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:01:31,795 - INFO - Successfully generated description for Martin-Buber-Oberschule (Integrierte Sekundarschule)
+2026-01-19 22:01:33,805 - INFO - Processing [89]: Max-Beckmann-Schule (Integrierte Sekundarschule)
+2026-01-19 22:01:33,807 - INFO - Generating description for Max-Beckmann-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:01:56,218 - INFO - Successfully generated description for Max-Beckmann-Schule (Integrierte Sekundarschule)
+2026-01-19 22:01:58,223 - INFO - Processing [90]: Max-von-Laue-Schule
+2026-01-19 22:01:58,224 - INFO - Generating description for Max-von-Laue-Schule (attempt 1)
+2026-01-19 22:02:09,428 - INFO - Successfully generated description for Max-von-Laue-Schule
+2026-01-19 22:02:11,441 - INFO - Processing [91]: May-Ayim-Schule (Integrierte Sekundarschule)
+2026-01-19 22:02:11,442 - INFO - Generating description for May-Ayim-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:02:32,881 - INFO - Successfully generated description for May-Ayim-Schule (Integrierte Sekundarschule)
+2026-01-19 22:02:34,889 - INFO - Processing [92]: Merian-Schule (Integrierte Sekundarschule)
+2026-01-19 22:02:34,890 - INFO - Generating description for Merian-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:02:52,538 - INFO - Successfully generated description for Merian-Schule (Integrierte Sekundarschule)
+2026-01-19 22:02:54,542 - INFO - Processing [93]: Mildred-Harnack-Schule
+2026-01-19 22:02:54,542 - INFO - Generating description for Mildred-Harnack-Schule (attempt 1)
+2026-01-19 22:03:04,686 - INFO - Successfully generated description for Mildred-Harnack-Schule
+2026-01-19 22:03:06,697 - INFO - Processing [94]: Montessori Campus am Tegeler Forst
+2026-01-19 22:03:06,698 - INFO - Generating description for Montessori Campus am Tegeler Forst (attempt 1)
+2026-01-19 22:03:14,041 - INFO - Successfully generated description for Montessori Campus am Tegeler Forst
+2026-01-19 22:03:16,046 - INFO - Processing [95]: Nelson-Mandela-Schule
+2026-01-19 22:03:16,046 - INFO - Generating description for Nelson-Mandela-Schule (attempt 1)
+2026-01-19 22:03:32,267 - INFO - Successfully generated description for Nelson-Mandela-Schule
+2026-01-19 22:03:34,279 - INFO - Processing [96]: NEWSchool (Integrierte Sekundarschule) (KEIN Schulbetrieb)
+2026-01-19 22:03:34,280 - INFO - Generating description for NEWSchool (Integrierte Sekundarschule) (KEIN Schulbetrieb) (attempt 1)
+2026-01-19 22:03:46,503 - INFO - Successfully generated description for NEWSchool (Integrierte Sekundarschule) (KEIN Schulbetrieb)
+2026-01-19 22:03:48,507 - INFO - Processing [97]: Otto-Hahn-Schule
+2026-01-19 22:03:48,507 - INFO - Generating description for Otto-Hahn-Schule (attempt 1)
+2026-01-19 22:04:01,557 - INFO - Successfully generated description for Otto-Hahn-Schule
+2026-01-19 22:04:03,573 - INFO - Processing [98]: Otto-von-Guericke-Schule (Integrierte Sekundarschule)
+2026-01-19 22:04:03,574 - INFO - Generating description for Otto-von-Guericke-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:04:13,122 - INFO - Successfully generated description for Otto-von-Guericke-Schule (Integrierte Sekundarschule)
+2026-01-19 22:04:15,133 - INFO - Processing [99]: Paul-Löbe-Schule
+2026-01-19 22:04:15,133 - INFO - Generating description for Paul-Löbe-Schule (attempt 1)
+2026-01-19 22:24:03,908 - ERROR - Error generating description for Paul-Löbe-Schule: HTTPSConnectionPool(host='api.perplexity.ai', port=443): Read timed out. (read timeout=180)
+2026-01-19 22:24:08,917 - INFO - Generating description for Paul-Löbe-Schule (attempt 2)
+2026-01-19 22:24:21,932 - INFO - Successfully generated description for Paul-Löbe-Schule
+2026-01-19 22:24:23,946 - INFO - Processing [100]: Paul-Schmidt-Schule (Integrierte Sekundarschule)
+2026-01-19 22:24:23,947 - INFO - Generating description for Paul-Schmidt-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:24:34,212 - INFO - Successfully generated description for Paul-Schmidt-Schule (Integrierte Sekundarschule)
+2026-01-19 22:24:36,223 - INFO - Processing [101]: PepperMont Freie Sekundarschule für ganzheitliches Lernen
+2026-01-19 22:24:36,224 - INFO - Generating description for PepperMont Freie Sekundarschule für ganzheitliches Lernen (attempt 1)
+2026-01-19 22:24:45,125 - INFO - Successfully generated description for PepperMont Freie Sekundarschule für ganzheitliches Lernen
+2026-01-19 22:24:47,129 - INFO - Processing [102]: Pestalozzi-Schule
+2026-01-19 22:24:47,130 - INFO - Generating description for Pestalozzi-Schule (attempt 1)
+2026-01-19 22:24:57,075 - INFO - Successfully generated description for Pestalozzi-Schule
+2026-01-19 22:24:59,081 - INFO - Processing [103]: Peter-Ustinov-Schule
+2026-01-19 22:24:59,081 - INFO - Generating description for Peter-Ustinov-Schule (attempt 1)
+2026-01-19 22:25:11,109 - INFO - Successfully generated description for Peter-Ustinov-Schule
+2026-01-19 22:25:13,117 - INFO - Processing [104]: Philipp-Reis-Schule (Integrierte Sekundarschule)
+2026-01-19 22:25:13,117 - INFO - Generating description for Philipp-Reis-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:25:32,642 - INFO - Successfully generated description for Philipp-Reis-Schule (Integrierte Sekundarschule)
+2026-01-19 22:25:34,648 - INFO - Processing [105]: Private Goethe-Schulen
+2026-01-19 22:25:34,648 - INFO - Generating description for Private Goethe-Schulen (attempt 1)
+2026-01-19 22:25:43,902 - INFO - Successfully generated description for Private Goethe-Schulen
+2026-01-19 22:25:45,909 - INFO - Processing [106]: Private Kant-Schule
+2026-01-19 22:25:45,909 - INFO - Generating description for Private Kant-Schule (attempt 1)
+2026-01-19 22:25:57,628 - INFO - Successfully generated description for Private Kant-Schule
+2026-01-19 22:25:59,629 - INFO - Processing [107]: Private Kant-Schule - Berlin International School
+2026-01-19 22:25:59,630 - INFO - Generating description for Private Kant-Schule - Berlin International School (attempt 1)
+2026-01-19 22:26:12,881 - INFO - Successfully generated description for Private Kant-Schule - Berlin International School
+2026-01-19 22:26:14,887 - INFO - Processing [108]: Quinoa-Schule Freie Sekundarschule Berlin Wedding
+2026-01-19 22:26:14,888 - INFO - Generating description for Quinoa-Schule Freie Sekundarschule Berlin Wedding (attempt 1)
+2026-01-19 22:26:21,996 - INFO - Successfully generated description for Quinoa-Schule Freie Sekundarschule Berlin Wedding
+2026-01-19 22:26:24,001 - INFO - Processing [109]: Refik-Veseli-Schule (Integrierte Sekundarschule)
+2026-01-19 22:26:24,002 - INFO - Generating description for Refik-Veseli-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:26:36,338 - INFO - Successfully generated description for Refik-Veseli-Schule (Integrierte Sekundarschule)
+2026-01-19 22:26:38,340 - INFO - Processing [110]: Reinhold-Burger-Schule
+2026-01-19 22:26:38,340 - INFO - Generating description for Reinhold-Burger-Schule (attempt 1)
+2026-01-19 22:26:51,077 - INFO - Successfully generated description for Reinhold-Burger-Schule
+2026-01-19 22:26:53,089 - INFO - Processing [111]: Robert-Jungk-Schule
+2026-01-19 22:26:53,089 - INFO - Generating description for Robert-Jungk-Schule (attempt 1)
+2026-01-19 22:27:02,038 - INFO - Successfully generated description for Robert-Jungk-Schule
+2026-01-19 22:27:04,044 - INFO - Processing [112]: Röntgen-Schule
+2026-01-19 22:27:04,044 - INFO - Generating description for Röntgen-Schule (attempt 1)
+2026-01-19 22:27:16,884 - INFO - Successfully generated description for Röntgen-Schule
+2026-01-19 22:27:18,895 - INFO - Processing [113]: Rudolf-Virchow-Schule
+2026-01-19 22:27:18,895 - INFO - Generating description for Rudolf-Virchow-Schule (attempt 1)
+2026-01-19 22:27:26,510 - INFO - Successfully generated description for Rudolf-Virchow-Schule
+2026-01-19 22:27:28,519 - INFO - Processing [114]: Schilling-Schule
+2026-01-19 22:27:28,520 - INFO - Generating description for Schilling-Schule (attempt 1)
+2026-01-19 22:27:35,836 - INFO - Successfully generated description for Schilling-Schule
+2026-01-19 22:27:37,841 - INFO - Processing [115]: Schul- und Leistungssportzentrum Berlin (Sportforum)
+2026-01-19 22:27:37,841 - INFO - Generating description for Schul- und Leistungssportzentrum Berlin (Sportforum) (attempt 1)
+2026-01-19 22:28:00,000 - INFO - Successfully generated description for Schul- und Leistungssportzentrum Berlin (Sportforum)
+2026-01-19 22:28:02,011 - INFO - Processing [116]: Schule am Berlinickeplatz (Integrierte Sekundarschule)
+2026-01-19 22:28:02,012 - INFO - Generating description for Schule am Berlinickeplatz (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:28:13,412 - INFO - Successfully generated description for Schule am Berlinickeplatz (Integrierte Sekundarschule)
+2026-01-19 22:28:15,424 - INFO - Processing [117]: Schule am grünen Grund
+2026-01-19 22:28:17,436 - INFO - Processing [118]: Schule am Grüngürtel
+2026-01-19 22:28:17,436 - INFO - Generating description for Schule am Grüngürtel (attempt 1)
+2026-01-19 22:28:27,542 - INFO - Successfully generated description for Schule am Grüngürtel
+2026-01-19 22:28:29,545 - INFO - Processing [119]: Schule am Königstor (Integrierte Sekundarschule)
+2026-01-19 22:28:29,546 - INFO - Generating description for Schule am Königstor (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:28:48,847 - INFO - Successfully generated description for Schule am Königstor (Integrierte Sekundarschule)
+2026-01-19 22:28:50,853 - INFO - Processing [120]: Schule am Rathaus
+2026-01-19 22:28:50,853 - INFO - Generating description for Schule am Rathaus (attempt 1)
+2026-01-19 22:28:58,374 - INFO - Successfully generated description for Schule am Rathaus
+2026-01-19 22:29:00,387 - INFO - Processing [121]: Schule am Rosenhain
+2026-01-19 22:29:00,388 - INFO - Generating description for Schule am Rosenhain (attempt 1)
+2026-01-19 22:29:12,346 - INFO - Successfully generated description for Schule am Rosenhain
+2026-01-19 22:29:14,356 - INFO - Processing [122]: Schule am Schillerpark (Integrierte Sekundarschule)
+2026-01-19 22:29:14,356 - INFO - Generating description for Schule am Schillerpark (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:29:28,784 - INFO - Successfully generated description for Schule am Schillerpark (Integrierte Sekundarschule)
+2026-01-19 22:29:30,796 - INFO - Processing [123]: Schule am Schloss (Integrierte Sekundarschule)
+2026-01-19 22:29:30,796 - INFO - Generating description for Schule am Schloss (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:29:43,186 - INFO - Successfully generated description for Schule am Schloss (Integrierte Sekundarschule)
+2026-01-19 22:29:45,194 - INFO - Processing [124]: Schule am Staakener Kleeblatt (Integrierte Sekundarschule)
+2026-01-19 22:29:45,195 - INFO - Generating description for Schule am Staakener Kleeblatt (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:30:01,345 - INFO - Successfully generated description for Schule am Staakener Kleeblatt (Integrierte Sekundarschule)
+2026-01-19 22:30:03,356 - INFO - Processing [125]: Schule am Wildgarten
+2026-01-19 22:30:03,357 - INFO - Generating description for Schule am Wildgarten (attempt 1)
+2026-01-19 22:30:19,987 - INFO - Successfully generated description for Schule am Wildgarten
+2026-01-19 22:30:21,994 - INFO - Processing [126]: Schule am Zille-Park
+2026-01-19 22:30:21,995 - INFO - Generating description for Schule am Zille-Park (attempt 1)
+2026-01-19 22:30:29,304 - INFO - Successfully generated description for Schule am Zille-Park
+2026-01-19 22:30:31,317 - INFO - Processing [127]: Schule am Zwickauer Damm
+2026-01-19 22:30:33,326 - INFO - Processing [128]: Schule an der Dahme (Integrierte Sekundarschule)
+2026-01-19 22:30:33,327 - INFO - Generating description for Schule an der Dahme (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:30:44,462 - INFO - Successfully generated description for Schule an der Dahme (Integrierte Sekundarschule)
+2026-01-19 22:30:46,466 - INFO - Processing [129]: Schule an der Haveldüne (Integrierte Sekundarschule)
+2026-01-19 22:30:46,466 - INFO - Generating description for Schule an der Haveldüne (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:31:00,536 - INFO - Successfully generated description for Schule an der Haveldüne (Integrierte Sekundarschule)
+2026-01-19 22:31:02,548 - INFO - Processing [130]: Schule an der Jungfernheide (Integrierte Sekundarschule)
+2026-01-19 22:31:02,549 - INFO - Generating description for Schule an der Jungfernheide (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:31:11,467 - INFO - Successfully generated description for Schule an der Jungfernheide (Integrierte Sekundarschule)
+2026-01-19 22:31:13,518 - INFO - Processing [131]: Schule an der Windmühle
+2026-01-19 22:31:13,519 - INFO - Generating description for Schule an der Windmühle (attempt 1)
+2026-01-19 22:31:24,022 - INFO - Successfully generated description for Schule an der Windmühle
+2026-01-19 22:31:26,033 - INFO - Processing [132]: Schule-am-Tierpark (Integrierte Sekundarschule)
+2026-01-19 22:31:26,033 - INFO - Generating description for Schule-am-Tierpark (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:31:39,752 - INFO - Successfully generated description for Schule-am-Tierpark (Integrierte Sekundarschule)
+2026-01-19 22:31:41,765 - INFO - Processing [133]: Schulen Christburg Campus Prenzlauer Berg
+2026-01-19 22:31:41,766 - INFO - Generating description for Schulen Christburg Campus Prenzlauer Berg (attempt 1)
+2026-01-19 22:32:05,460 - INFO - Successfully generated description for Schulen Christburg Campus Prenzlauer Berg
+2026-01-19 22:32:07,474 - INFO - Processing [134]: SIS Swiss International School Berlin
+2026-01-19 22:32:07,474 - INFO - Generating description for SIS Swiss International School Berlin (attempt 1)
+2026-01-19 22:32:14,573 - INFO - Successfully generated description for SIS Swiss International School Berlin
+2026-01-19 22:32:16,578 - INFO - Processing [135]: Solling-Schule
+2026-01-19 22:32:16,579 - INFO - Generating description for Solling-Schule (attempt 1)
+2026-01-19 22:52:33,569 - ERROR - Error generating description for Solling-Schule: HTTPSConnectionPool(host='api.perplexity.ai', port=443): Read timed out. (read timeout=180)
+2026-01-19 22:52:38,579 - INFO - Generating description for Solling-Schule (attempt 2)
+2026-01-19 22:52:54,140 - INFO - Successfully generated description for Solling-Schule
+2026-01-19 22:52:56,144 - INFO - Processing [136]: Sophie-Scholl-Schule
+2026-01-19 22:52:56,145 - INFO - Generating description for Sophie-Scholl-Schule (attempt 1)
+2026-01-19 22:53:13,908 - INFO - Successfully generated description for Sophie-Scholl-Schule
+2026-01-19 22:53:15,916 - INFO - Processing [137]: Sportschule im Olympiapark - Poelchau-Schule
+2026-01-19 22:53:15,916 - INFO - Generating description for Sportschule im Olympiapark - Poelchau-Schule (attempt 1)
+2026-01-19 22:53:28,598 - INFO - Successfully generated description for Sportschule im Olympiapark - Poelchau-Schule
+2026-01-19 22:53:30,600 - INFO - Processing [138]: Staatliche Ballett- und Artistikschule Berlin
+2026-01-19 22:53:30,600 - INFO - Generating description for Staatliche Ballett- und Artistikschule Berlin (attempt 1)
+2026-01-19 22:53:45,750 - INFO - Successfully generated description for Staatliche Ballett- und Artistikschule Berlin
+2026-01-19 22:53:47,761 - INFO - Processing [139]: Theodor-Haubach-Schule
+2026-01-19 22:53:47,761 - INFO - Generating description for Theodor-Haubach-Schule (attempt 1)
+2026-01-19 22:53:58,447 - INFO - Successfully generated description for Theodor-Haubach-Schule
+2026-01-19 22:54:00,459 - INFO - Processing [140]: Ting-Schule (Integrierte Sekundarschule)
+2026-01-19 22:54:00,459 - INFO - Generating description for Ting-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:54:15,730 - INFO - Successfully generated description for Ting-Schule (Integrierte Sekundarschule)
+2026-01-19 22:54:17,739 - INFO - Processing [141]: Vincent-van-Gogh-Schule (Integrierte Sekundarschule)
+2026-01-19 22:54:17,739 - INFO - Generating description for Vincent-van-Gogh-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:54:28,142 - INFO - Successfully generated description for Vincent-van-Gogh-Schule (Integrierte Sekundarschule)
+2026-01-19 22:54:30,147 - INFO - Processing [142]: Waldseeschule
+2026-01-19 22:54:30,147 - INFO - Generating description for Waldseeschule (attempt 1)
+2026-01-19 22:54:37,460 - INFO - Successfully generated description for Waldseeschule
+2026-01-19 22:54:39,471 - INFO - Processing [143]: Wangari-Maathai-Internationale-Schule
+2026-01-19 22:54:39,471 - INFO - Generating description for Wangari-Maathai-Internationale-Schule (attempt 1)
+2026-01-19 22:54:48,255 - INFO - Successfully generated description for Wangari-Maathai-Internationale-Schule
+2026-01-19 22:54:50,260 - INFO - Processing [144]: Wilhelm-Bölsche-Schule (Integrierte Sekundarschule)
+2026-01-19 22:54:50,261 - INFO - Generating description for Wilhelm-Bölsche-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:55:13,616 - INFO - Successfully generated description for Wilhelm-Bölsche-Schule (Integrierte Sekundarschule)
+2026-01-19 22:55:15,619 - INFO - Processing [145]: Wilhelmstadt Schulen
+2026-01-19 22:55:15,620 - INFO - Generating description for Wilhelmstadt Schulen (attempt 1)
+2026-01-19 22:55:35,731 - INFO - Successfully generated description for Wilhelmstadt Schulen
+2026-01-19 22:55:37,739 - INFO - Processing [146]: Willkommensschule THF
+2026-01-19 22:55:39,746 - INFO - Processing [147]: Willkommensschule TXL
+2026-01-19 22:55:39,746 - INFO - Generating description for Willkommensschule TXL (attempt 1)
+2026-01-19 22:55:59,933 - INFO - Successfully generated description for Willkommensschule TXL
+2026-01-19 22:56:01,939 - INFO - Processing [148]: Willy-Brandt-Schule
+2026-01-19 22:56:01,939 - INFO - Generating description for Willy-Brandt-Schule (attempt 1)
+2026-01-19 22:56:19,658 - INFO - Successfully generated description for Willy-Brandt-Schule
+2026-01-19 22:56:21,669 - INFO - Processing [149]: Wilma-Rudolph-Schule (Integrierte Sekundarschule)
+2026-01-19 22:56:21,669 - INFO - Generating description for Wilma-Rudolph-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:56:34,097 - INFO - Successfully generated description for Wilma-Rudolph-Schule (Integrierte Sekundarschule)
+2026-01-19 22:56:36,108 - INFO - Processing [150]: Wolfgang-Borchert-Schule (Integrierte Sekundarschule)
+2026-01-19 22:56:36,108 - INFO - Generating description for Wolfgang-Borchert-Schule (Integrierte Sekundarschule) (attempt 1)
+2026-01-19 22:56:54,066 - INFO - Successfully generated description for Wolfgang-Borchert-Schule (Integrierte Sekundarschule)
+2026-01-19 22:56:56,079 - INFO - Processing [151]: Zuckmayer-Schule
+2026-01-19 22:56:56,080 - INFO - Generating description for Zuckmayer-Schule (attempt 1)
+2026-01-19 22:57:13,528 - INFO - Successfully generated description for Zuckmayer-Schule
+2026-01-19 22:57:15,530 - INFO - Processing [152]: 12. Schule (Gymnasium)
+2026-01-19 22:57:15,531 - INFO - Generating description for 12. Schule (Gymnasium) (attempt 1)
+2026-01-19 22:57:32,576 - INFO - Successfully generated description for 12. Schule (Gymnasium)
+2026-01-19 22:57:34,580 - INFO - Processing [153]: 12. Schule (Gymnasium)
+2026-01-19 22:57:34,581 - INFO - Skipping 12. Schule (Gymnasium) - already processed
+2026-01-19 22:57:34,583 - INFO - Processing [154]: 12. Schule (Gymnasium)
+2026-01-19 22:57:34,583 - INFO - Skipping 12. Schule (Gymnasium) - already processed
+2026-01-19 22:57:34,584 - INFO - Processing [155]: Albert-Einstein-Gymnasium
+2026-01-19 22:57:34,584 - INFO - Generating description for Albert-Einstein-Gymnasium (attempt 1)
+2026-01-19 22:57:42,712 - INFO - Successfully generated description for Albert-Einstein-Gymnasium
+2026-01-19 22:57:44,721 - INFO - Processing [156]: Albert-Schweitzer-Gymnasium
+2026-01-19 22:57:44,722 - INFO - Generating description for Albert-Schweitzer-Gymnasium (attempt 1)
+2026-01-19 22:58:02,360 - INFO - Successfully generated description for Albert-Schweitzer-Gymnasium
+2026-01-19 22:58:04,372 - INFO - Processing [157]: Albrecht-Dürer-Gymnasium
+2026-01-19 22:58:04,373 - INFO - Generating description for Albrecht-Dürer-Gymnasium (attempt 1)
+2026-01-19 22:58:27,466 - INFO - Successfully generated description for Albrecht-Dürer-Gymnasium
+2026-01-19 22:58:29,475 - INFO - Processing [158]: Alexander-von-Humboldt-Gymnasium
+2026-01-19 22:58:29,476 - INFO - Generating description for Alexander-von-Humboldt-Gymnasium (attempt 1)
+2026-01-19 22:58:37,291 - INFO - Successfully generated description for Alexander-von-Humboldt-Gymnasium
+2026-01-19 22:58:39,304 - INFO - Processing [159]: Andreas-Gymnasium
+2026-01-19 22:58:39,304 - INFO - Generating description for Andreas-Gymnasium (attempt 1)
+2026-01-19 22:58:50,808 - INFO - Successfully generated description for Andreas-Gymnasium
+2026-01-19 22:58:52,812 - INFO - Processing [160]: Anne-Frank-Gymnasium
+2026-01-19 22:58:52,812 - INFO - Generating description for Anne-Frank-Gymnasium (attempt 1)
+2026-01-19 22:59:04,224 - INFO - Successfully generated description for Anne-Frank-Gymnasium
+2026-01-19 22:59:06,228 - INFO - Processing [161]: Archenhold-Gymnasium
+2026-01-19 22:59:06,228 - INFO - Generating description for Archenhold-Gymnasium (attempt 1)
+2026-01-19 22:59:14,669 - INFO - Successfully generated description for Archenhold-Gymnasium
+2026-01-19 22:59:16,682 - INFO - Processing [162]: Arndt-Gymnasium Dahlem
+2026-01-19 22:59:16,683 - INFO - Generating description for Arndt-Gymnasium Dahlem (attempt 1)
+2026-01-19 22:59:31,978 - INFO - Successfully generated description for Arndt-Gymnasium Dahlem
+2026-01-19 22:59:33,990 - INFO - Processing [163]: Askanisches Gymnasium
+2026-01-19 22:59:33,991 - INFO - Generating description for Askanisches Gymnasium (attempt 1)
+2026-01-19 22:59:52,513 - INFO - Successfully generated description for Askanisches Gymnasium
+2026-01-19 22:59:54,524 - INFO - Processing [164]: Barnim-Gymnasium
+2026-01-19 22:59:54,525 - INFO - Generating description for Barnim-Gymnasium (attempt 1)
+2026-01-19 23:00:23,994 - INFO - Successfully generated description for Barnim-Gymnasium
+2026-01-19 23:00:26,004 - INFO - Processing [165]: Beethoven-Gymnasium
+2026-01-19 23:00:26,005 - INFO - Generating description for Beethoven-Gymnasium (attempt 1)
+2026-01-19 23:00:48,767 - INFO - Successfully generated description for Beethoven-Gymnasium
+2026-01-19 23:00:50,773 - INFO - Processing [166]: Berlin Cosmopolitan School
+2026-01-19 23:00:50,773 - INFO - Generating description for Berlin Cosmopolitan School (attempt 1)
+2026-01-19 23:01:05,405 - INFO - Successfully generated description for Berlin Cosmopolitan School
+2026-01-19 23:02:41,834 - INFO - Processing [167]: Bilinguale Schule Phorms Berlin Mitte
+2026-01-19 23:02:41,842 - INFO - Generating description for Bilinguale Schule Phorms Berlin Mitte (attempt 1)
+2026-01-19 23:03:01,476 - INFO - Successfully generated description for Bilinguale Schule Phorms Berlin Mitte
+2026-01-19 23:03:03,484 - INFO - Processing [168]: Bilinguale Schule Phorms Berlin Süd
+2026-01-19 23:03:03,485 - INFO - Generating description for Bilinguale Schule Phorms Berlin Süd (attempt 1)
+2026-01-19 23:03:15,884 - INFO - Successfully generated description for Bilinguale Schule Phorms Berlin Süd
+2026-01-19 23:03:17,888 - INFO - Processing [169]: Carl-Friedrich-von-Siemens-Gymnasium
+2026-01-19 23:03:17,889 - INFO - Generating description for Carl-Friedrich-von-Siemens-Gymnasium (attempt 1)
+2026-01-19 23:03:39,166 - INFO - Successfully generated description for Carl-Friedrich-von-Siemens-Gymnasium
+2026-01-19 23:03:41,172 - INFO - Processing [170]: Carl-von-Ossietzky-Gymnasium
+2026-01-19 23:03:41,173 - INFO - Generating description for Carl-von-Ossietzky-Gymnasium (attempt 1)
+2026-01-19 23:03:52,395 - INFO - Successfully generated description for Carl-von-Ossietzky-Gymnasium
+2026-01-19 23:03:54,398 - INFO - Processing [171]: Dathe-Gymnasium
+2026-01-19 23:03:54,398 - INFO - Generating description for Dathe-Gymnasium (attempt 1)
+2026-01-19 23:04:07,025 - INFO - Successfully generated description for Dathe-Gymnasium
+2026-01-19 23:04:09,034 - INFO - Processing [172]: Diesterweg-Gymnasium
+2026-01-19 23:04:09,034 - INFO - Generating description for Diesterweg-Gymnasium (attempt 1)
+2026-01-19 23:04:27,837 - INFO - Successfully generated description for Diesterweg-Gymnasium
+2026-01-19 23:04:29,842 - INFO - Processing [173]: Dreilinden-Gymnasium
+2026-01-19 23:04:29,843 - INFO - Generating description for Dreilinden-Gymnasium (attempt 1)
+2026-01-19 23:04:44,769 - INFO - Successfully generated description for Dreilinden-Gymnasium
+2026-01-19 23:04:46,777 - INFO - Processing [174]: Droste-Hülshoff-Gymnasium
+2026-01-19 23:04:46,777 - INFO - Generating description for Droste-Hülshoff-Gymnasium (attempt 1)
+2026-01-19 23:05:08,083 - INFO - Successfully generated description for Droste-Hülshoff-Gymnasium
+2026-01-19 23:05:10,084 - INFO - Processing [175]: Eckener-Gymnasium
+2026-01-19 23:05:10,084 - INFO - Generating description for Eckener-Gymnasium (attempt 1)
+2026-01-19 23:05:20,649 - INFO - Successfully generated description for Eckener-Gymnasium
+2026-01-19 23:05:22,654 - INFO - Processing [176]: Emmy-Noether-Gymnasium
+2026-01-19 23:05:22,655 - INFO - Generating description for Emmy-Noether-Gymnasium (attempt 1)
+2026-01-19 23:05:37,744 - INFO - Successfully generated description for Emmy-Noether-Gymnasium
+2026-01-19 23:05:39,747 - INFO - Processing [177]: Ernst-Abbe-Gymnasium
+2026-01-19 23:05:39,747 - INFO - Generating description for Ernst-Abbe-Gymnasium (attempt 1)
+2026-01-19 23:05:54,026 - INFO - Successfully generated description for Ernst-Abbe-Gymnasium
+2026-01-19 23:05:56,027 - INFO - Processing [178]: Europäisches Gymnasium Bertha-von-Suttner
+2026-01-19 23:05:56,027 - INFO - Generating description for Europäisches Gymnasium Bertha-von-Suttner (attempt 1)
+2026-01-19 23:06:20,535 - INFO - Successfully generated description for Europäisches Gymnasium Bertha-von-Suttner
+2026-01-19 23:06:22,539 - INFO - Processing [179]: Evangelische Schule Frohnau
+2026-01-19 23:06:22,539 - INFO - Generating description for Evangelische Schule Frohnau (attempt 1)
+2026-01-19 23:06:35,186 - INFO - Successfully generated description for Evangelische Schule Frohnau
+2026-01-19 23:06:37,189 - INFO - Processing [180]: Evangelische Schule Köpenick (Gymnasium)
+2026-01-19 23:06:37,190 - INFO - Generating description for Evangelische Schule Köpenick (Gymnasium) (attempt 1)
+2026-01-19 23:06:58,166 - INFO - Successfully generated description for Evangelische Schule Köpenick (Gymnasium)
+2026-01-19 23:07:00,171 - INFO - Processing [181]: Evangelisches Gymnasium zum Grauen Kloster
+2026-01-19 23:07:00,171 - INFO - Generating description for Evangelisches Gymnasium zum Grauen Kloster (attempt 1)
+2026-01-19 23:07:14,316 - INFO - Successfully generated description for Evangelisches Gymnasium zum Grauen Kloster
+2026-01-19 23:07:16,323 - INFO - Processing [182]: Felix-Mendelssohn-Bartholdy-Gymnasium
+2026-01-19 23:07:16,323 - INFO - Generating description for Felix-Mendelssohn-Bartholdy-Gymnasium (attempt 1)
+2026-01-19 23:07:25,067 - INFO - Successfully generated description for Felix-Mendelssohn-Bartholdy-Gymnasium
+2026-01-19 23:07:27,074 - INFO - Processing [183]: Fichtenberg-Oberschule
+2026-01-19 23:07:27,075 - INFO - Generating description for Fichtenberg-Oberschule (attempt 1)
+2026-01-19 23:07:40,596 - INFO - Successfully generated description for Fichtenberg-Oberschule
+2026-01-19 23:07:42,597 - INFO - Processing [184]: Französisches Gymnasium
+2026-01-19 23:07:42,597 - INFO - Generating description for Französisches Gymnasium (attempt 1)
+2026-01-19 23:07:52,541 - INFO - Successfully generated description for Französisches Gymnasium
+2026-01-19 23:07:54,544 - INFO - Processing [185]: Freie Schule Anne-Sophie Berlin
+2026-01-19 23:07:54,545 - INFO - Generating description for Freie Schule Anne-Sophie Berlin (attempt 1)
+2026-01-19 23:08:12,598 - INFO - Successfully generated description for Freie Schule Anne-Sophie Berlin
+2026-01-19 23:08:14,603 - INFO - Processing [186]: Freiherr-vom-Stein-Gymnasium
+2026-01-19 23:08:14,603 - INFO - Generating description for Freiherr-vom-Stein-Gymnasium (attempt 1)
+2026-01-19 23:08:28,303 - INFO - Successfully generated description for Freiherr-vom-Stein-Gymnasium
+2026-01-19 23:08:30,307 - INFO - Processing [187]: Friedrich-Ebert-Gymnasium
+2026-01-19 23:08:30,307 - INFO - Generating description for Friedrich-Ebert-Gymnasium (attempt 1)
+2026-01-19 23:08:44,431 - INFO - Successfully generated description for Friedrich-Ebert-Gymnasium
+2026-01-19 23:08:46,435 - INFO - Processing [188]: Friedrich-Engels-Gymnasium
+2026-01-19 23:08:46,435 - INFO - Generating description for Friedrich-Engels-Gymnasium (attempt 1)
+2026-01-19 23:09:00,268 - INFO - Successfully generated description for Friedrich-Engels-Gymnasium
+2026-01-19 23:09:02,273 - INFO - Processing [189]: Gabriele-von-Bülow-Gymnasium
+2026-01-19 23:09:02,273 - INFO - Generating description for Gabriele-von-Bülow-Gymnasium (attempt 1)
+2026-01-19 23:09:16,374 - INFO - Successfully generated description for Gabriele-von-Bülow-Gymnasium
+2026-01-19 23:09:18,375 - INFO - Processing [190]: Gebrüder-Montgolfier-Gymnasium
+2026-01-19 23:09:18,375 - INFO - Generating description for Gebrüder-Montgolfier-Gymnasium (attempt 1)
+2026-01-19 23:09:35,120 - INFO - Successfully generated description for Gebrüder-Montgolfier-Gymnasium
+2026-01-19 23:09:37,123 - INFO - Processing [191]: Georg-Büchner-Gymnasium
+2026-01-19 23:09:37,123 - INFO - Generating description for Georg-Büchner-Gymnasium (attempt 1)
+2026-01-19 23:09:49,041 - INFO - Successfully generated description for Georg-Büchner-Gymnasium
+2026-01-19 23:09:51,047 - INFO - Processing [192]: Georg-Friedrich-Händel-Gymnasium
+2026-01-19 23:09:51,047 - INFO - Generating description for Georg-Friedrich-Händel-Gymnasium (attempt 1)
+2026-01-19 23:10:00,918 - INFO - Successfully generated description for Georg-Friedrich-Händel-Gymnasium
+2026-01-19 23:10:02,923 - INFO - Processing [193]: Georg-Herwegh-Gymnasium
+2026-01-19 23:10:02,924 - INFO - Generating description for Georg-Herwegh-Gymnasium (attempt 1)
+2026-01-19 23:10:18,433 - INFO - Successfully generated description for Georg-Herwegh-Gymnasium
+2026-01-19 23:10:20,435 - INFO - Processing [194]: Gerhart-Hauptmann-Gymnasium
+2026-01-19 23:10:20,435 - INFO - Generating description for Gerhart-Hauptmann-Gymnasium (attempt 1)
+2026-01-19 23:10:41,167 - INFO - Successfully generated description for Gerhart-Hauptmann-Gymnasium
+2026-01-19 23:10:43,173 - INFO - Processing [195]: Goethe-Gymnasium
+2026-01-19 23:10:43,173 - INFO - Generating description for Goethe-Gymnasium (attempt 1)
+2026-01-19 23:10:56,217 - INFO - Successfully generated description for Goethe-Gymnasium
+2026-01-19 23:10:58,223 - INFO - Processing [196]: Goethe-Gymnasium Lichterfelde
+2026-01-19 23:10:58,223 - INFO - Generating description for Goethe-Gymnasium Lichterfelde (attempt 1)
+2026-01-19 23:11:14,446 - INFO - Successfully generated description for Goethe-Gymnasium Lichterfelde
+2026-01-19 23:11:16,449 - INFO - Processing [197]: Gottfried-Keller-Gymnasium
+2026-01-19 23:11:16,450 - INFO - Generating description for Gottfried-Keller-Gymnasium (attempt 1)
+2026-01-19 23:11:39,122 - INFO - Successfully generated description for Gottfried-Keller-Gymnasium
+2026-01-19 23:11:41,127 - INFO - Processing [198]: Gymnasium Steglitz
+2026-01-19 23:11:41,127 - INFO - Generating description for Gymnasium Steglitz (attempt 1)
+2026-01-19 23:12:02,781 - INFO - Successfully generated description for Gymnasium Steglitz
+2026-01-19 23:12:04,784 - INFO - Processing [199]: Gymnasium Tiergarten
+2026-01-19 23:12:04,785 - INFO - Generating description for Gymnasium Tiergarten (attempt 1)
+2026-01-19 23:12:17,642 - INFO - Successfully generated description for Gymnasium Tiergarten
+2026-01-19 23:12:19,646 - INFO - Processing [200]: Hannah-Arendt-Gymnasium
+2026-01-19 23:12:19,646 - INFO - Generating description for Hannah-Arendt-Gymnasium (attempt 1)
+2026-01-19 23:12:34,227 - INFO - Successfully generated description for Hannah-Arendt-Gymnasium
+2026-01-19 23:12:36,229 - INFO - Processing [201]: Hans-Carossa-Gymnasium
+2026-01-19 23:12:36,230 - INFO - Generating description for Hans-Carossa-Gymnasium (attempt 1)
+2026-01-19 23:12:52,882 - INFO - Successfully generated description for Hans-Carossa-Gymnasium
+2026-01-19 23:12:54,886 - INFO - Processing [202]: Hans-und-Hilde-Coppi-Gymnasium
+2026-01-19 23:12:54,887 - INFO - Generating description for Hans-und-Hilde-Coppi-Gymnasium (attempt 1)
+2026-01-19 23:13:06,478 - INFO - Successfully generated description for Hans-und-Hilde-Coppi-Gymnasium
+2026-01-19 23:13:08,479 - INFO - Processing [203]: Heinrich-Hertz-Gymnasium
+2026-01-19 23:13:08,479 - INFO - Generating description for Heinrich-Hertz-Gymnasium (attempt 1)
+2026-01-19 23:13:23,970 - INFO - Successfully generated description for Heinrich-Hertz-Gymnasium
+2026-01-19 23:13:25,972 - INFO - Processing [204]: Heinrich-Schliemann-Gymnasium
+2026-01-19 23:13:25,972 - INFO - Generating description for Heinrich-Schliemann-Gymnasium (attempt 1)
+2026-01-19 23:13:39,038 - INFO - Successfully generated description for Heinrich-Schliemann-Gymnasium
+2026-01-19 23:13:41,040 - INFO - Processing [205]: Heinz-Berggruen-Gymnasium
+2026-01-19 23:13:41,041 - INFO - Generating description for Heinz-Berggruen-Gymnasium (attempt 1)
+2026-01-19 23:13:57,681 - INFO - Successfully generated description for Heinz-Berggruen-Gymnasium
+2026-01-19 23:13:59,686 - INFO - Processing [206]: Herder-Gymnasium
+2026-01-19 23:13:59,686 - INFO - Generating description for Herder-Gymnasium (attempt 1)
+2026-01-19 23:14:16,931 - INFO - Successfully generated description for Herder-Gymnasium
+2026-01-19 23:14:18,938 - INFO - Processing [207]: Hermann-Ehlers-Gymnasium
+2026-01-19 23:14:18,938 - INFO - Generating description for Hermann-Ehlers-Gymnasium (attempt 1)
+2026-01-19 23:14:32,085 - INFO - Successfully generated description for Hermann-Ehlers-Gymnasium
+2026-01-19 23:14:34,091 - INFO - Processing [208]: Hermann-Hesse-Gymnasium
+2026-01-19 23:14:34,091 - INFO - Generating description for Hermann-Hesse-Gymnasium (attempt 1)
+2026-01-19 23:14:44,597 - INFO - Successfully generated description for Hermann-Hesse-Gymnasium
+2026-01-19 23:14:46,603 - INFO - Processing [209]: Hildegard-Wegscheider-Gymnasium
+2026-01-19 23:14:46,603 - INFO - Generating description for Hildegard-Wegscheider-Gymnasium (attempt 1)
+2026-01-19 23:14:55,122 - INFO - Successfully generated description for Hildegard-Wegscheider-Gymnasium
+2026-01-19 23:14:57,123 - INFO - Processing [210]: Humboldt-Gymnasium
+2026-01-19 23:14:57,124 - INFO - Generating description for Humboldt-Gymnasium (attempt 1)
+2026-01-19 23:15:09,052 - INFO - Successfully generated description for Humboldt-Gymnasium
+2026-01-19 23:15:11,058 - INFO - Processing [211]: Immanuel-Kant-Gymnasium
+2026-01-19 23:15:11,058 - INFO - Generating description for Immanuel-Kant-Gymnasium (attempt 1)
+2026-01-19 23:15:24,229 - INFO - Successfully generated description for Immanuel-Kant-Gymnasium
+2026-01-19 23:15:26,232 - INFO - Processing [212]: Inge-Deutschkron-Gymnasium
+2026-01-19 23:15:26,233 - INFO - Generating description for Inge-Deutschkron-Gymnasium (attempt 1)
+2026-01-19 23:15:41,292 - INFO - Successfully generated description for Inge-Deutschkron-Gymnasium
+2026-01-19 23:15:43,298 - INFO - Processing [213]: Johann-Gottfried-Herder-Gymnasium
+2026-01-19 23:15:43,298 - INFO - Generating description for Johann-Gottfried-Herder-Gymnasium (attempt 1)
+2026-01-19 23:15:59,432 - INFO - Successfully generated description for Johann-Gottfried-Herder-Gymnasium
+2026-01-19 23:16:01,433 - INFO - Processing [214]: John-Lennon-Gymnasium
+2026-01-19 23:16:01,434 - INFO - Generating description for John-Lennon-Gymnasium (attempt 1)
+2026-01-19 23:16:23,054 - INFO - Successfully generated description for John-Lennon-Gymnasium
+2026-01-19 23:16:25,060 - INFO - Processing [215]: Kant-Gymnasium
+2026-01-19 23:16:25,061 - INFO - Generating description for Kant-Gymnasium (attempt 1)
+2026-01-19 23:16:43,093 - INFO - Successfully generated description for Kant-Gymnasium
+2026-01-19 23:16:45,097 - INFO - Processing [216]: Käthe-Kollwitz-Gymnasium
+2026-01-19 23:16:45,098 - INFO - Generating description for Käthe-Kollwitz-Gymnasium (attempt 1)
+2026-01-19 23:16:57,085 - INFO - Successfully generated description for Käthe-Kollwitz-Gymnasium
+2026-01-19 23:16:59,087 - INFO - Processing [217]: Katholische Schule Liebfrauen (Gymnasium)
+2026-01-19 23:16:59,087 - INFO - Generating description for Katholische Schule Liebfrauen (Gymnasium) (attempt 1)
+2026-01-19 23:17:11,887 - INFO - Successfully generated description for Katholische Schule Liebfrauen (Gymnasium)
+2026-01-19 23:17:13,890 - INFO - Processing [218]: Katholische Theresienschule (Gymnasium)
+2026-01-19 23:17:13,891 - INFO - Generating description for Katholische Theresienschule (Gymnasium) (attempt 1)
+2026-01-19 23:17:27,401 - INFO - Successfully generated description for Katholische Theresienschule (Gymnasium)
+2026-01-19 23:17:29,404 - INFO - Processing [219]: Leibniz-Gymnasium
+2026-01-19 23:17:29,404 - INFO - Generating description for Leibniz-Gymnasium (attempt 1)
+2026-01-19 23:17:41,579 - INFO - Successfully generated description for Leibniz-Gymnasium
+2026-01-19 23:17:43,584 - INFO - Processing [220]: Leonardo-da-Vinci-Gymnasium
+2026-01-19 23:17:43,584 - INFO - Generating description for Leonardo-da-Vinci-Gymnasium (attempt 1)
+2026-01-19 23:17:57,401 - INFO - Successfully generated description for Leonardo-da-Vinci-Gymnasium
+2026-01-19 23:17:59,405 - INFO - Processing [221]: Lessing-Gymnasium
+2026-01-19 23:17:59,405 - INFO - Generating description for Lessing-Gymnasium (attempt 1)
+2026-01-19 23:18:14,240 - INFO - Successfully generated description for Lessing-Gymnasium
+2026-01-19 23:18:16,243 - INFO - Processing [222]: Lilienthal-Gymnasium
+2026-01-19 23:18:16,243 - INFO - Generating description for Lilienthal-Gymnasium (attempt 1)
+2026-01-19 23:18:26,490 - INFO - Successfully generated description for Lilienthal-Gymnasium
+2026-01-19 23:18:28,497 - INFO - Processing [223]: Lily-Braun-Gymnasium
+2026-01-19 23:18:28,497 - INFO - Generating description for Lily-Braun-Gymnasium (attempt 1)
+2026-01-19 23:18:38,260 - INFO - Successfully generated description for Lily-Braun-Gymnasium
+2026-01-19 23:18:40,271 - INFO - Processing [224]: Luise-Henriette-Gymnasium
+2026-01-19 23:18:40,272 - INFO - Generating description for Luise-Henriette-Gymnasium (attempt 1)
+2026-01-19 23:18:57,549 - INFO - Successfully generated description for Luise-Henriette-Gymnasium
+2026-01-19 23:18:59,553 - INFO - Processing [225]: Manfred-von-Ardenne-Gymnasium
+2026-01-19 23:18:59,554 - INFO - Generating description for Manfred-von-Ardenne-Gymnasium (attempt 1)
+2026-01-19 23:19:12,884 - INFO - Successfully generated description for Manfred-von-Ardenne-Gymnasium
+2026-01-19 23:19:14,890 - INFO - Processing [226]: Marie-Curie-Gymnasium
+2026-01-19 23:19:14,890 - INFO - Generating description for Marie-Curie-Gymnasium (attempt 1)
+2026-01-19 23:19:28,412 - INFO - Successfully generated description for Marie-Curie-Gymnasium
+2026-01-19 23:19:30,417 - INFO - Processing [227]: Max-Delbrück-Gymnasium
+2026-01-19 23:19:30,417 - INFO - Generating description for Max-Delbrück-Gymnasium (attempt 1)
+2026-01-19 23:19:53,941 - INFO - Successfully generated description for Max-Delbrück-Gymnasium
+2026-01-19 23:19:55,947 - INFO - Processing [228]: Max-Planck-Gymnasium
+2026-01-19 23:19:55,948 - INFO - Generating description for Max-Planck-Gymnasium (attempt 1)
+2026-01-19 23:20:09,426 - INFO - Successfully generated description for Max-Planck-Gymnasium
+2026-01-19 23:20:11,428 - INFO - Processing [229]: Melanchthon-Gymnasium
+2026-01-19 23:20:11,429 - INFO - Generating description for Melanchthon-Gymnasium (attempt 1)
+2026-01-19 23:20:26,698 - INFO - Successfully generated description for Melanchthon-Gymnasium
+2026-01-19 23:20:28,704 - INFO - Processing [230]: Mentora Gymnasium (KEIN Schulbetrieb)
+2026-01-19 23:20:28,704 - INFO - Generating description for Mentora Gymnasium (KEIN Schulbetrieb) (attempt 1)
+2026-01-19 23:20:39,228 - INFO - Successfully generated description for Mentora Gymnasium (KEIN Schulbetrieb)
+2026-01-19 23:20:41,233 - INFO - Processing [231]: Moser-Schule - Schweizer Gymnasium
+2026-01-19 23:20:41,233 - INFO - Generating description for Moser-Schule - Schweizer Gymnasium (attempt 1)
+2026-01-19 23:20:54,762 - INFO - Successfully generated description for Moser-Schule - Schweizer Gymnasium
+2026-01-19 23:20:56,763 - INFO - Processing [232]: Musikgymnasium Carl Philipp Emanuel Bach
+2026-01-19 23:20:56,764 - INFO - Generating description for Musikgymnasium Carl Philipp Emanuel Bach (attempt 1)
+2026-01-19 23:21:07,461 - INFO - Successfully generated description for Musikgymnasium Carl Philipp Emanuel Bach
+2026-01-19 23:21:09,467 - INFO - Processing [233]: Otto-Nagel-Gymnasium
+2026-01-19 23:21:09,468 - INFO - Generating description for Otto-Nagel-Gymnasium (attempt 1)
+2026-01-19 23:21:24,346 - INFO - Successfully generated description for Otto-Nagel-Gymnasium
+2026-01-19 23:21:26,352 - INFO - Processing [234]: Paul-Natorp-Gymnasium
+2026-01-19 23:21:26,352 - INFO - Generating description for Paul-Natorp-Gymnasium (attempt 1)
+2026-01-19 23:21:43,945 - INFO - Successfully generated description for Paul-Natorp-Gymnasium
+2026-01-19 23:21:45,948 - INFO - Processing [235]: Paulsen-Gymnasium
+2026-01-19 23:21:45,948 - INFO - Generating description for Paulsen-Gymnasium (attempt 1)
+2026-01-19 23:22:01,909 - INFO - Successfully generated description for Paulsen-Gymnasium
+2026-01-19 23:22:03,913 - INFO - Processing [236]: Primo-Levi-Gymnasium
+2026-01-19 23:22:03,914 - INFO - Generating description for Primo-Levi-Gymnasium (attempt 1)
+2026-01-19 23:22:23,882 - INFO - Successfully generated description for Primo-Levi-Gymnasium
+2026-01-19 23:22:25,886 - INFO - Processing [237]: Privates Europa-Gymnasium Berlin
+2026-01-19 23:22:25,886 - INFO - Generating description for Privates Europa-Gymnasium Berlin (attempt 1)
+2026-01-19 23:22:36,242 - INFO - Successfully generated description for Privates Europa-Gymnasium Berlin
+2026-01-19 23:22:38,243 - INFO - Processing [238]: Rheingau-Gymnasium
+2026-01-19 23:22:38,244 - INFO - Generating description for Rheingau-Gymnasium (attempt 1)
+2026-01-19 23:22:46,892 - INFO - Successfully generated description for Rheingau-Gymnasium
+2026-01-19 23:22:48,894 - INFO - Processing [239]: Robert-Blum-Gymnasium
+2026-01-19 23:22:48,895 - INFO - Generating description for Robert-Blum-Gymnasium (attempt 1)
+2026-01-19 23:22:57,059 - INFO - Successfully generated description for Robert-Blum-Gymnasium
+2026-01-19 23:22:59,064 - INFO - Processing [240]: Robert-Havemann-Gymnasium
+2026-01-19 23:22:59,064 - INFO - Generating description for Robert-Havemann-Gymnasium (attempt 1)
+2026-01-19 23:23:08,907 - INFO - Successfully generated description for Robert-Havemann-Gymnasium
+2026-01-19 23:23:10,910 - INFO - Processing [241]: Robert-Koch-Gymnasium
+2026-01-19 23:23:10,910 - INFO - Generating description for Robert-Koch-Gymnasium (attempt 1)
+2026-01-19 23:23:27,956 - INFO - Successfully generated description for Robert-Koch-Gymnasium
+2026-01-19 23:23:29,959 - INFO - Processing [242]: Romain-Rolland-Gymnasium
+2026-01-19 23:23:29,959 - INFO - Generating description for Romain-Rolland-Gymnasium (attempt 1)
+2026-01-19 23:23:47,762 - INFO - Successfully generated description for Romain-Rolland-Gymnasium
+2026-01-19 23:23:49,766 - INFO - Processing [243]: Rosalind-Franklin-Gymnasium
+2026-01-19 23:23:49,767 - INFO - Generating description for Rosalind-Franklin-Gymnasium (attempt 1)
+2026-01-19 23:24:05,273 - INFO - Successfully generated description for Rosalind-Franklin-Gymnasium
+2026-01-19 23:24:07,276 - INFO - Processing [244]: Rosa-Luxemburg-Gymnasium
+2026-01-19 23:24:07,276 - INFO - Generating description for Rosa-Luxemburg-Gymnasium (attempt 1)
+2026-01-19 23:24:31,262 - INFO - Successfully generated description for Rosa-Luxemburg-Gymnasium
+2026-01-19 23:24:33,272 - INFO - Processing [245]: Rückert-Gymnasium
+2026-01-19 23:24:33,272 - INFO - Generating description for Rückert-Gymnasium (attempt 1)
+2026-01-19 23:24:50,287 - INFO - Successfully generated description for Rückert-Gymnasium
+2026-01-19 23:24:52,292 - INFO - Processing [246]: Sartre-Gymnasium
+2026-01-19 23:24:52,292 - INFO - Generating description for Sartre-Gymnasium (attempt 1)
+2026-01-19 23:25:12,215 - INFO - Successfully generated description for Sartre-Gymnasium
+2026-01-19 23:25:14,222 - INFO - Processing [247]: Schadow-Gymnasium
+2026-01-19 23:25:14,223 - INFO - Generating description for Schadow-Gymnasium (attempt 1)
+2026-01-19 23:25:28,787 - INFO - Successfully generated description for Schadow-Gymnasium
+2026-01-19 23:25:30,789 - INFO - Processing [248]: Schiller-Gymnasium
+2026-01-19 23:25:30,789 - INFO - Generating description for Schiller-Gymnasium (attempt 1)
+2026-01-19 23:25:44,379 - INFO - Successfully generated description for Schiller-Gymnasium
+2026-01-19 23:25:46,382 - INFO - Processing [249]: Schulfarm Insel Scharfenberg
+2026-01-19 23:25:46,382 - INFO - Generating description for Schulfarm Insel Scharfenberg (attempt 1)
+2026-01-19 23:25:56,595 - INFO - Successfully generated description for Schulfarm Insel Scharfenberg
+2026-01-19 23:25:58,601 - INFO - Processing [250]: Sophie-Charlotte-Gymnasium
+2026-01-19 23:25:58,601 - INFO - Generating description for Sophie-Charlotte-Gymnasium (attempt 1)
+2026-01-19 23:26:15,642 - INFO - Successfully generated description for Sophie-Charlotte-Gymnasium
+2026-01-19 23:26:17,650 - INFO - Processing [251]: Tagore-Gymnasium
+2026-01-19 23:26:17,651 - INFO - Generating description for Tagore-Gymnasium (attempt 1)
+2026-01-19 23:26:31,055 - INFO - Successfully generated description for Tagore-Gymnasium
+2026-01-19 23:26:33,061 - INFO - Processing [252]: Thomas-Mann-Gymnasium
+2026-01-19 23:26:33,061 - INFO - Generating description for Thomas-Mann-Gymnasium (attempt 1)
+2026-01-19 23:26:41,269 - INFO - Successfully generated description for Thomas-Mann-Gymnasium
+2026-01-19 23:26:43,274 - INFO - Processing [253]: Ulrich-von-Hutten-Gymnasium
+2026-01-19 23:26:43,275 - INFO - Generating description for Ulrich-von-Hutten-Gymnasium (attempt 1)
+2026-01-19 23:27:02,282 - INFO - Successfully generated description for Ulrich-von-Hutten-Gymnasium
+2026-01-19 23:27:04,283 - INFO - Processing [254]: Wald-Gymnasium
+2026-01-19 23:27:04,283 - INFO - Generating description for Wald-Gymnasium (attempt 1)
+2026-01-19 23:27:17,142 - INFO - Successfully generated description for Wald-Gymnasium
+2026-01-19 23:27:19,147 - INFO - Processing [255]: Walther-Rathenau-Gymnasium
+2026-01-19 23:27:19,148 - INFO - Generating description for Walther-Rathenau-Gymnasium (attempt 1)
+2026-01-19 23:27:33,481 - INFO - Successfully generated description for Walther-Rathenau-Gymnasium
+2026-01-19 23:27:35,484 - INFO - Processing [256]: Werner-von-Siemens-Gymnasium
+2026-01-19 23:27:35,484 - INFO - Generating description for Werner-von-Siemens-Gymnasium (attempt 1)
+2026-01-19 23:27:45,198 - INFO - Successfully generated description for Werner-von-Siemens-Gymnasium
+2026-01-19 23:27:47,203 - INFO - Processing [257]: Wilhelm-von-Siemens-Gymnasium
+2026-01-19 23:27:47,203 - INFO - Generating description for Wilhelm-von-Siemens-Gymnasium (attempt 1)
+2026-01-19 23:28:00,592 - INFO - Successfully generated description for Wilhelm-von-Siemens-Gymnasium
+2026-01-19 23:28:02,594 - INFO - Processing [258]: Willi-Graf-Gymnasium
+2026-01-19 23:28:02,595 - INFO - Generating description for Willi-Graf-Gymnasium (attempt 1)
+2026-01-19 23:28:17,750 - INFO - Successfully generated description for Willi-Graf-Gymnasium
+2026-01-19 23:28:19,780 - INFO - Saved summary to school_descriptions/descriptions_summary.csv
+
+======================================================================
+SCHOOL DESCRIPTION GENERATION SUMMARY
+======================================================================
+Total schools processed: 259
+Successfully generated: 255
+Errors: 4
+Private schools with tuition data: 2
+
+Output directory: school_descriptions
+
+To merge results into master table, run:
+  python generate_school_descriptions.py --merge
+======================================================================

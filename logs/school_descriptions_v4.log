@@ -1,0 +1,271 @@
+2026-01-20 15:36:58,347 - INFO - Crawled 20 pages, found 0 PDFs (0 fee-related)
+2026-01-20 15:37:35,606 - INFO - Crawled 20 pages, found 0 PDFs (0 fee-related)
+2026-01-20 15:38:31,147 - INFO - Crawled 20 pages, found 25 PDFs (3 fee-related)
+2026-01-20 15:38:41,817 - INFO - Crawled 20 pages, found 14 PDFs (3 fee-related)
+2026-01-20 15:38:54,910 - INFO - Crawled 20 pages, found 0 PDFs (0 fee-related)
+2026-01-20 15:45:18,992 - INFO - Loading schools from combined_schools_with_metadata_msa_with_descriptions_v2_v3.csv
+2026-01-20 15:45:19,033 - INFO - Filtered to 41 private schools
+2026-01-20 15:45:19,037 - INFO - Schools needing description: 0
+2026-01-20 15:45:19,037 - INFO - Private schools needing tuition: 41
+2026-01-20 15:45:19,039 - INFO - Thoroughly crawling https://www.berlin-bilingual-school.de (private)
+2026-01-20 15:45:19,668 - INFO - Crawled 1 pages, found 0 PDFs (0 fee-related)
+2026-01-20 15:45:21,675 - INFO - Thoroughly crawling https://www.berlinbritishschool.de (private)
+2026-01-20 15:46:03,774 - INFO - Crawled 25 pages, found 0 PDFs (0 fee-related)
+2026-01-20 15:46:03,774 - INFO - Extracting tuition for Berlin British School (Integrierte Sekundarschule)
+2026-01-20 15:46:14,442 - INFO - Thoroughly crawling https://www.metropolitanschool.com (private)
+2026-01-20 15:46:42,270 - INFO - Crawled 25 pages, found 32 PDFs (8 fee-related)
+2026-01-20 15:46:42,271 - INFO - Downloading PDF: https://www.metropolitanschool.com/fileadmin/user_upload/pdf/tuition/BMS_Tuition_2026_ENG.pdf
+2026-01-20 15:46:42,503 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/17702921_BMS_Tuition_2026_ENG.pdf
+2026-01-20 15:46:43,215 - INFO - Downloading PDF: https://www.metropolitanschool.com/fileadmin/user_upload/pdf/tuition/bms_calculating_school_tuition_rate_01.pdf
+2026-01-20 15:46:43,312 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/58269137_bms_calculating_school_tuition_rate_01.pdf
+2026-01-20 15:46:43,992 - INFO - Downloading PDF: https://www.metropolitanschool.com/fileadmin/user_upload/pdf/tuition/bms_sepa_direkt_debit_mandate_2017.pdf
+2026-01-20 15:46:44,140 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/66903354_bms_sepa_direkt_debit_mandate_2017.pdf
+2026-01-20 15:46:44,481 - INFO - Downloading PDF: https://www.metropolitanschool.com/fileadmin/user_upload/pdf/tuition/bms_application_for_financial_aid.pdf
+2026-01-20 15:46:44,539 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/69558135_bms_application_for_financial_aid.pdf
+2026-01-20 15:46:45,965 - INFO - Extracting tuition for Berlin Metropolitan School (Integrierte Sekundarschule)
+2026-01-20 15:46:53,360 - INFO - Thoroughly crawling https://best-sabel.de (private)
+2026-01-20 15:47:52,821 - INFO - Crawled 25 pages, found 42 PDFs (7 fee-related)
+2026-01-20 15:47:52,823 - INFO - Downloading PDF: https://best-sabel.de/wp-content/uploads/2025/04/250408_Gebuehren_Ermaessigungen_BA_25-26.pdf
+2026-01-20 15:47:52,932 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/36464765_250408_Gebuehren_Ermaessigungen_BA_25-26.pdf
+2026-01-20 15:47:53,867 - INFO - Downloading PDF: https://best-sabel.de/wp-content/uploads/2025/04/250408_Gebuehren_Ermaessigungen_GS_25-26.pdf
+2026-01-20 15:47:53,927 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/37799310_250408_Gebuehren_Ermaessigungen_GS_25-26.pdf
+2026-01-20 15:47:54,994 - INFO - Downloading PDF: https://best-sabel.de/wp-content/uploads/2024/10/241009_Best-Sabel_Antragsformular_Einkommensabhaengiges_Schulgeld_.pdf
+2026-01-20 15:47:55,054 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/88075356_241009_Best-Sabel_Antragsformular_Einkommensabhaengiges_Schulgeld_.pdf
+2026-01-20 15:47:56,541 - INFO - Downloading PDF: https://best-sabel.de/wp-content/uploads/2025/04/250408_Gebuehren_Ermaessigungen_OSK_FO_25-26.pdf
+2026-01-20 15:47:56,598 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/88653342_250408_Gebuehren_Ermaessigungen_OSK_FO_25-26.pdf
+2026-01-20 15:47:59,232 - INFO - Extracting tuition for BEST-Sabel-Oberschule
+2026-01-20 15:48:08,584 - INFO - Thoroughly crawling https://canisius.de (private)
+2026-01-20 15:48:19,225 - INFO - Crawled 25 pages, found 19 PDFs (3 fee-related)
+2026-01-20 15:48:19,226 - INFO - Downloading PDF: https://canisius.de/wp-content/uploads/2025/07/Canisius-Kolleg_Schulgeldinormationen_2025-2027.pdf
+2026-01-20 15:48:19,415 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/41032337_Canisius-Kolleg_Schulgeldinormationen_2025-2027.pdf
+2026-01-20 15:48:21,621 - INFO - Downloading PDF: https://canisius.de/wp-content/uploads/2024/09/sepa-lastschriftmandat_schulgeld.pdf
+2026-01-20 15:48:21,750 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/32095669_sepa-lastschriftmandat_schulgeld.pdf
+2026-01-20 15:48:22,037 - INFO - Downloading PDF: https://canisius.de/wp-content/uploads/2024/09/sepa-lastschriftmandat_nachmittagsbetreuung.pdf
+2026-01-20 15:48:22,129 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/1372623_sepa-lastschriftmandat_nachmittagsbetreuung.pdf
+2026-01-20 15:48:22,566 - INFO - Extracting tuition for Canisius-Kolleg
+2026-01-20 15:48:31,812 - INFO - Thoroughly crawling https://www.ev-schule-charlottenburg.de (private)
+2026-01-20 15:49:13,029 - INFO - Crawled 25 pages, found 18 PDFs (11 fee-related)
+2026-01-20 15:49:13,035 - INFO - Downloading PDF: https://www.ev-schule-charlottenburg.de/wp-content/uploads/sites/5/2026/01/SJ-25-26-ESC-SCHORTBRIEF_15-1.pdf
+2026-01-20 15:49:13,355 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/69421986_SJ-25-26-ESC-SCHORTBRIEF_15-1.pdf
+2026-01-20 15:49:13,892 - INFO - Downloading PDF: https://www.ev-schule-charlottenburg.de/wp-content/uploads/sites/5/2025/11/SJ-25-26-ESC-SCHORTBRIEF_07-2.pdf
+2026-01-20 15:49:14,181 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/93578993_SJ-25-26-ESC-SCHORTBRIEF_07-2.pdf
+2026-01-20 15:49:14,647 - INFO - Downloading PDF: https://www.ev-schule-charlottenburg.de/wp-content/uploads/sites/5/2025/11/SJ-25-26-ESC-SCHORTBRIEF_08.pdf
+2026-01-20 15:49:14,921 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/55978845_SJ-25-26-ESC-SCHORTBRIEF_08.pdf
+2026-01-20 15:49:15,251 - INFO - Downloading PDF: https://www.ev-schule-charlottenburg.de/wp-content/uploads/sites/5/2025/11/SJ-25-26-ESC-SCHORTBRIEF_09-2.pdf
+2026-01-20 15:49:15,444 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/62854766_SJ-25-26-ESC-SCHORTBRIEF_09-2.pdf
+2026-01-20 15:49:15,822 - INFO - Downloading PDF: https://www.ev-schule-charlottenburg.de/wp-content/uploads/sites/5/2025/11/SJ-25-26-ESC-SCHORTBRIEF_10-1.pdf
+2026-01-20 15:49:16,021 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/11915274_SJ-25-26-ESC-SCHORTBRIEF_10-1.pdf
+2026-01-20 15:49:16,545 - INFO - Extracting tuition for Evangelische Schule Charlottenburg (Integrierte Sekundarschule)
+2026-01-20 15:49:25,221 - INFO - Thoroughly crawling https://evangelische-schule-neukoelln.de (private)
+2026-01-20 15:50:01,355 - INFO - Crawled 25 pages, found 14 PDFs (5 fee-related)
+2026-01-20 15:50:01,357 - INFO - Downloading PDF: https://evangelische-schule-neukoelln.de/wp-content/uploads/2022/03/antrag-efoeb-ogb.pdf
+2026-01-20 15:50:01,602 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/3095797_antrag-efoeb-ogb.pdf
+2026-01-20 15:50:02,259 - INFO - Downloading PDF: https://evangelische-schule-neukoelln.de/wp-content/uploads/2018/12/Unterlagen-Hort.pdf
+2026-01-20 15:50:02,335 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/20588745_Unterlagen-Hort.pdf
+2026-01-20 15:50:02,966 - INFO - Downloading PDF: https://evangelische-schule-neukoelln.de/wp-content/uploads/2022/03/erlaeuterungen-zur-kostenfestsetzung-2018-hort.pdf
+2026-01-20 15:50:03,015 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/97829240_erlaeuterungen-zur-kostenfestsetzung-2018-hort.pdf
+2026-01-20 15:50:03,821 - INFO - Downloading PDF: https://evangelische-schule-neukoelln.de/wp-content/uploads/2022/03/erklaerung-fuer-die-festsetzung-der-hortkosten.pdf
+2026-01-20 15:50:03,937 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/44094401_erklaerung-fuer-die-festsetzung-der-hortkosten.pdf
+2026-01-20 15:50:05,682 - INFO - Downloading PDF: https://evangelische-schule-neukoelln.de/wp-content/uploads/2021/03/Hortkonzeption.pdf
+2026-01-20 15:50:05,783 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/37392100_Hortkonzeption.pdf
+2026-01-20 15:50:07,197 - INFO - Extracting tuition for Evangelische Schule Neukölln (Integrierte Sekundarschule)
+2026-01-20 15:50:15,768 - INFO - Thoroughly crawling https://www.ev-schule-spandau.de (private)
+2026-01-20 15:51:14,374 - WARNING - Error fetching webcal://www.ev-schule-spandau.de/termin/klausurtage-hort/?ical=1: No connection adapters were found for 'webcal://www.ev-schule-spandau.de/termin/klausurtage-hort/?ical=1'
+2026-01-20 15:51:28,073 - INFO - Crawled 25 pages, found 1 PDFs (1 fee-related)
+2026-01-20 15:51:28,074 - INFO - Downloading PDF: https://www.ev-schule-spandau.de/wp-content/uploads/sites/16/2025/10/SGE-1-Hort-EJS-Flyer2024-1.pdf
+2026-01-20 15:51:28,666 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/92862595_SGE-1-Hort-EJS-Flyer2024-1.pdf
+2026-01-20 15:51:28,842 - INFO - Extracting tuition for Evangelische Schule Spandau im Johannesstift
+2026-01-20 15:51:35,365 - INFO - Thoroughly crawling https://www.ev-schule-steglitz.de (private)
+2026-01-20 15:52:10,439 - INFO - Crawled 25 pages, found 14 PDFs (0 fee-related)
+2026-01-20 15:52:10,441 - INFO - Downloading PDF: https://www.ev-schule-steglitz.de/wp-content/uploads/sites/15/2024/09/Zeittafel-HOMEPAGE.pdf
+2026-01-20 15:52:10,660 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/59167164_Zeittafel-HOMEPAGE.pdf
+2026-01-20 15:52:11,747 - INFO - Downloading PDF: https://www.ev-schule-steglitz.de/wp-content/uploads/sites/15/2025/09/Allgemeine-Informationen.pdf
+2026-01-20 15:52:11,838 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/36843763_Allgemeine-Informationen.pdf
+2026-01-20 15:52:12,200 - INFO - Extracting tuition for Evangelische Schule Steglitz (Integrierte Sekundarschule)
+2026-01-20 15:52:20,852 - INFO - Thoroughly crawling https://freieschule-mahlsdorf.de (private)
+2026-01-20 15:54:07,335 - INFO - Crawled 25 pages, found 26 PDFs (1 fee-related)
+2026-01-20 15:54:07,336 - INFO - Downloading PDF: https://freieschule-mahlsdorf.de/wp-content/uploads/2023/08/Schulgeldregelung_freie-Schule-Berlin-Mahlsdorf.pdf
+2026-01-20 15:54:07,998 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/58917987_Schulgeldregelung_freie-Schule-Berlin-Mahlsdorf.pdf
+2026-01-20 15:54:08,010 - INFO - Extracting tuition for Freie Schule Berlin Mahlsdorf
+2026-01-20 15:54:15,368 - INFO - Thoroughly crawling https://www.freie-schule-charlottenburg.de (private)
+2026-01-20 15:54:28,281 - INFO - Crawled 16 pages, found 4 PDFs (0 fee-related)
+2026-01-20 15:54:28,283 - INFO - Downloading PDF: https://www.freie-schule-charlottenburg.de/docs/SEK-Konzept (eingereicht zur SEK Genehmigung 2013).pdf
+2026-01-20 15:54:28,458 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/80794628_SEK-Konzept__eingereicht_zur_SEK_Genehmigung_2013_.pdf
+2026-01-20 15:54:33,447 - INFO - Downloading PDF: https://www.freie-schule-charlottenburg.de/docs/Anmeldung.pdf
+2026-01-20 15:54:33,617 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/85340294_Anmeldung.pdf
+2026-01-20 15:54:34,294 - INFO - Downloading PDF: https://www.freie-schule-charlottenburg.de/docs/Schuluebergang.pdf
+2026-01-20 15:54:34,337 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/13841303_Schuluebergang.pdf
+2026-01-20 15:54:35,058 - INFO - Extracting tuition for Freie Schule Charlottenburg
+2026-01-20 15:54:45,042 - INFO - Thoroughly crawling https://www.freie-schule-pankow.de (private)
+2026-01-20 15:54:54,642 - INFO - Crawled 25 pages, found 2 PDFs (0 fee-related)
+2026-01-20 15:54:54,643 - INFO - Downloading PDF: https://www.freie-schule-pankow.de/wp-content/uploads/Grundschule_Konzept-der-Freien-Schule-Pankow-2012.pdf
+2026-01-20 15:54:54,756 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/25902354_Grundschule_Konzept-der-Freien-Schule-Pankow-2012.pdf
+2026-01-20 15:55:02,429 - INFO - Downloading PDF: https://www.freie-schule-pankow.de/wp-content/uploads/SEK1_Konzept-der-Freien-Schule-Pankow-2012.pdf
+2026-01-20 15:55:02,575 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/6157885_SEK1_Konzept-der-Freien-Schule-Pankow-2012.pdf
+2026-01-20 15:55:08,755 - INFO - Extracting tuition for Freie Schule Pankow (Integrierte Sekundarschule)
+2026-01-20 15:55:16,252 - INFO - Thoroughly crawling https://www.jschule.de (private)
+2026-01-20 15:55:27,608 - INFO - Crawled 11 pages, found 0 PDFs (0 fee-related)
+2026-01-20 15:55:29,616 - INFO - Thoroughly crawling https://jgmm.de (private)
+2026-01-20 15:55:47,510 - INFO - Crawled 25 pages, found 8 PDFs (0 fee-related)
+2026-01-20 15:55:47,511 - INFO - Downloading PDF: https://jgmm.de/wp-content/uploads/2022/03/Entschuldigungsvordruck-JGMM.pdf
+2026-01-20 15:55:47,645 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/26319424_Entschuldigungsvordruck-JGMM.pdf
+2026-01-20 15:55:47,982 - INFO - Downloading PDF: https://jgmm.de/wp-content/uploads/2020/09/Schulprogramm.pdf
+2026-01-20 15:55:48,107 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/24586956_Schulprogramm.pdf
+2026-01-20 15:56:00,785 - INFO - Downloading PDF: http://jgmm.de/wp-content/uploads/2019/08/JGMMFoerderverein.pdf
+2026-01-20 15:56:01,163 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/79994513_JGMMFoerderverein.pdf
+2026-01-20 15:56:01,269 - INFO - Extracting tuition for Jüdisches Gymnasium Moses Mendelssohn
+2026-01-20 15:56:07,970 - INFO - Thoroughly crawling https://salvator.net;%20https://salvator-grundschule.de (private)
+2026-01-20 15:56:07,981 - WARNING - Error fetching https://salvator.net;%20https://salvator-grundschule.de: HTTPSConnectionPool(host='salvator.net;%20https', port=443): Max retries exceeded with url: /salvator-grundschule.de (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x105ee2730>: Failed to resolve 'salvator.net;%20https' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-01-20 15:56:07,981 - INFO - Crawled 1 pages, found 0 PDFs (0 fee-related)
+2026-01-20 15:56:09,985 - INFO - Thoroughly crawling https://kssf-berlin.de (private)
+2026-01-20 15:56:39,469 - INFO - Crawled 25 pages, found 14 PDFs (1 fee-related)
+2026-01-20 15:56:39,471 - INFO - Downloading PDF: https://kssf-berlin.de/images/EBO_FORMULAR_Kuendigung_Schulvertrag_2024-05-01.pdf
+2026-01-20 15:56:39,991 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/95092795_EBO_FORMULAR_Kuendigung_Schulvertrag_2024-05-01.pdf
+2026-01-20 15:56:40,380 - INFO - Extracting tuition for Katholische Schule Sankt Franziskus (Integrierte Sekundarschule)
+2026-01-20 15:56:46,119 - INFO - Thoroughly crawling https://marienschule-berlin.de (private)
+2026-01-20 15:57:03,244 - INFO - Crawled 25 pages, found 0 PDFs (0 fee-related)
+2026-01-20 15:57:03,246 - INFO - Extracting tuition for Katholische Schule Sankt Marien
+2026-01-20 15:57:10,367 - INFO - Thoroughly crawling https://www.koenigin-luise-stiftung.de (private)
+2026-01-20 15:57:21,875 - INFO - Crawled 25 pages, found 2 PDFs (0 fee-related)
+2026-01-20 15:57:21,876 - INFO - Downloading PDF: https://www.koenigin-luise-stiftung.de/files/dokumente/Schulordnung der KLS_2025.pdf
+2026-01-20 15:57:22,016 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/77424460_Schulordnung_der_KLS_2025.pdf
+2026-01-20 15:57:22,625 - INFO - Downloading PDF: https://www.koenigin-luise-stiftung.de/files/dokumente/Schutzkonzept Schulen der KLS.pdf
+2026-01-20 15:57:22,709 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/98426152_Schutzkonzept_Schulen_der_KLS.pdf
+2026-01-20 15:57:23,216 - INFO - Extracting tuition for Königin-Luise-Stiftung
+2026-01-20 15:57:29,236 - INFO - Thoroughly crawling https://montessori-tegel.de (private)
+2026-01-20 15:58:26,093 - INFO - Crawled 25 pages, found 9 PDFs (1 fee-related)
+2026-01-20 15:58:26,096 - INFO - Downloading PDF: https://montessori-tegel.de/wp-content/uploads/Beitragsordnung-gueltig-ab-240801.pdf
+2026-01-20 15:58:26,299 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/28910661_Beitragsordnung-gueltig-ab-240801.pdf
+2026-01-20 15:58:27,003 - INFO - Extracting tuition for Montessori Campus am Tegeler Forst
+2026-01-20 15:58:34,585 - INFO - Thoroughly crawling https://www.newschool.de (private)
+2026-01-20 15:58:41,652 - INFO - Crawled 16 pages, found 0 PDFs (0 fee-related)
+2026-01-20 15:58:43,659 - INFO - Thoroughly crawling https://www.pfefferwerk.de (private)
+2026-01-20 15:58:59,049 - WARNING - Error fetching https://www.pfefferwerk.de/nominiert-fuer-den-deutschen-kita-preis-2021-unsere-kita-berlin-kids-international/: 404 Client Error: Not Found for url: https://www.pfefferwerk.de/nominiert-fuer-den-deutschen-kita-preis-2021-unsere-kita-berlin-kids-international/
+2026-01-20 15:59:15,975 - INFO - Crawled 25 pages, found 27 PDFs (2 fee-related)
+2026-01-20 15:59:15,976 - INFO - Downloading PDF: https://www.pfefferwerk.de/wp-content/uploads/2018/12/FinanzierungsformenGanztagsbetreuung_161018.pdf
+2026-01-20 15:59:16,076 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/49431407_FinanzierungsformenGanztagsbetreuung_161018.pdf
+2026-01-20 15:59:16,400 - INFO - Extracting tuition for PepperMont Freie Sekundarschule für ganzheitliches Lernen
+2026-01-20 15:59:26,059 - INFO - Thoroughly crawling https://goethe-grundschule.bifiz.de (private)
+2026-01-20 16:00:01,858 - INFO - Crawled 25 pages, found 2 PDFs (1 fee-related)
+2026-01-20 16:00:01,859 - INFO - Downloading PDF: https://goethe-grundschule.bifiz.de/wp-content/uploads/2024/06/Anlage_3_Schulgeldregelung-Goethe-Schulen_ab-dem-01.12.2023_GS.pdf
+2026-01-20 16:00:02,074 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/14397396_Anlage_3_Schulgeldregelung-Goethe-Schulen_ab-dem-01.12.2023_GS.pdf
+2026-01-20 16:00:03,610 - INFO - Extracting tuition for Private Goethe-Schulen
+2026-01-20 16:00:13,969 - INFO - Thoroughly crawling https://www.kant-oberschule.de (private)
+2026-01-20 16:01:29,816 - INFO - Crawled 25 pages, found 42 PDFs (0 fee-related)
+2026-01-20 16:01:29,818 - INFO - Downloading PDF: https://www.kant-oberschule.de/wp-content/uploads/sites/5/2023/01/Aufmahmeantrag-KOS-Stand-01-2023_V.1.0.pdf
+2026-01-20 16:01:30,026 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/41881209_Aufmahmeantrag-KOS-Stand-01-2023_V.1.0.pdf
+2026-01-20 16:01:32,453 - INFO - Downloading PDF: https://www.kant-oberschule.de/wp-content/uploads/sites/5/2023/01/Aufmahmeantrag-SEKII-Stand-01-2023_V.1.0.pdf
+2026-01-20 16:01:32,515 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/12185066_Aufmahmeantrag-SEKII-Stand-01-2023_V.1.0.pdf
+2026-01-20 16:01:36,902 - INFO - Extracting tuition for Private Kant-Schule
+2026-01-20 16:01:43,176 - INFO - Thoroughly crawling https://www.berlin-international-school.de (private)
+2026-01-20 16:04:18,794 - INFO - Crawled 25 pages, found 9 PDFs (0 fee-related)
+2026-01-20 16:04:18,797 - INFO - Downloading PDF: https://www.berlin-international-school.de/wp-content/uploads/sites/8/2024/01/Calandar_BIS_2024-2025_20240122-1.pdf
+2026-01-20 16:04:18,960 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/24722388_Calandar_BIS_2024-2025_20240122-1.pdf
+2026-01-20 16:04:19,714 - INFO - Downloading PDF: https://www.berlin-international-school.de/wp-content/uploads/sites/8/2022/09/Primary-Parents-Handbook-2022-2023.pdf
+2026-01-20 16:04:19,849 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/46913421_Primary-Parents-Handbook-2022-2023.pdf
+2026-01-20 16:04:27,316 - INFO - Downloading PDF: https://www.berlin-international-school.de/wp-content/uploads/sites/8/2022/09/Secondary-Parent-Handbook-2022_2023.pdf
+2026-01-20 16:04:27,412 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/14368571_Secondary-Parent-Handbook-2022_2023.pdf
+2026-01-20 16:04:45,056 - INFO - Extracting tuition for Private Kant-Schule - Berlin International School
+2026-01-20 16:04:51,835 - INFO - Thoroughly crawling https://www.quinoa-bildung.de (private)
+2026-01-20 16:05:52,554 - INFO - Crawled 25 pages, found 4 PDFs (0 fee-related)
+2026-01-20 16:05:52,557 - INFO - Downloading PDF: https://www.quinoa-bildung.de/wp-content/uploads/2025/05/2025_Fact_Sheet_Quinoa_Bildung_Quinoa-Schule.pdf
+2026-01-20 16:05:52,774 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/1476707_2025_Fact_Sheet_Quinoa_Bildung_Quinoa-Schule.pdf
+2026-01-20 16:05:53,473 - INFO - Downloading PDF: https://www.quinoa-bildung.de/wp-content/uploads/2019/10/161101_Vodafone_Stiftung_Algorithmen_und_Aristoteles-1.pdf
+2026-01-20 16:05:53,639 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/30546150_161101_Vodafone_Stiftung_Algorithmen_und_Aristoteles-1.pdf
+2026-01-20 16:06:36,220 - INFO - Extracting tuition for Quinoa-Schule Freie Sekundarschule Berlin Wedding
+2026-01-20 16:06:42,248 - INFO - Thoroughly crawling https://www.christburg-campus.de (private)
+2026-01-20 16:09:58,635 - INFO - Crawled 25 pages, found 3 PDFs (0 fee-related)
+2026-01-20 16:09:58,637 - INFO - Downloading PDF: https://www.christburg-campus.de/fileadmin/Redaktion/Dokumente/Traeger/Christburg_Campus_Kinderschutz_Stand_2025-09-19.pdf
+2026-01-20 16:09:59,739 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/50609692_Christburg_Campus_Kinderschutz_Stand_2025-09-19.pdf
+2026-01-20 16:10:51,958 - INFO - Downloading PDF: https://www.christburg-campus.de/fileadmin/Redaktion/Dokumente/Traeger/DSE_christburg-campus.de_240108.pdf
+2026-01-20 16:10:52,289 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/24136739_DSE_christburg-campus.de_240108.pdf
+2026-01-20 16:10:57,155 - INFO - Extracting tuition for Schulen Christburg Campus Prenzlauer Berg
+2026-01-20 16:11:08,016 - INFO - Thoroughly crawling https://www.swissinternationalschool.de (private)
+2026-01-20 16:11:22,805 - INFO - Crawled 25 pages, found 0 PDFs (0 fee-related)
+2026-01-20 16:11:22,806 - INFO - Extracting tuition for SIS Swiss International School Berlin
+2026-01-20 16:11:33,146 - INFO - Thoroughly crawling https://ting-schule.de (private)
+2026-01-20 16:11:36,158 - INFO - Crawled 7 pages, found 0 PDFs (0 fee-related)
+2026-01-20 16:11:38,167 - INFO - Thoroughly crawling https://wilhelmstadtschulen.de (private)
+2026-01-20 16:11:39,645 - INFO - Crawled 1 pages, found 0 PDFs (0 fee-related)
+2026-01-20 16:11:41,655 - INFO - Thoroughly crawling https://www.cosmopolitanschool.de (private)
+2026-01-20 16:12:17,254 - INFO - Crawled 25 pages, found 19 PDFs (3 fee-related)
+2026-01-20 16:12:17,257 - INFO - Downloading PDF: https://www.cosmopolitanschool.de/wp-content/uploads/2024/09/Gebuehrenuebersicht-Schulgebuehren-2024-25-.pdf
+2026-01-20 16:12:17,411 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/36865212_Gebuehrenuebersicht-Schulgebuehren-2024-25-.pdf
+2026-01-20 16:12:18,528 - INFO - Downloading PDF: https://www.cosmopolitanschool.de/wp-content/uploads/2024/09/Stellenausschreibung-state-recognized-educator_09.09.2024_Hort.pdf
+2026-01-20 16:12:18,578 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/34867951_Stellenausschreibung-state-recognized-educator_09.09.2024_Hort.pdf
+2026-01-20 16:12:18,758 - INFO - Extracting tuition for Berlin Cosmopolitan School
+2026-01-20 16:12:31,289 - INFO - Thoroughly crawling https://berlin-mitte.phorms.de (private)
+2026-01-20 16:12:32,999 - WARNING - Error fetching https://berlin-mitte.phorms.de/blog/blogbeitrag/: 404 Client Error: Not Found for url: https://berlin-mitte.phorms.de/blog/blogbeitrag/
+2026-01-20 16:12:52,431 - INFO - Crawled 25 pages, found 12 PDFs (7 fee-related)
+2026-01-20 16:12:52,432 - INFO - Downloading PDF: https://berlin-mitte.phorms.de/fileadmin/Content/Berlin-Mitte/04-Gymnasium/Downloads/Phorms_Berlin_Schulgeldordnung_2025_26_DE.pdf
+2026-01-20 16:12:52,633 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/15322111_Phorms_Berlin_Schulgeldordnung_2025_26_DE.pdf
+2026-01-20 16:12:53,096 - INFO - Downloading PDF: https://berlin-mitte.phorms.de/fileadmin/Content/Berlin-Mitte/01-Campus/Downloads/Phorms_Berlin_Schulgeldordnung_Reduziertes_Schulgeld_2025_26_DE_Jan25.pdf
+2026-01-20 16:12:53,151 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/15021355_Phorms_Berlin_Schulgeldordnung_Reduziertes_Schulgeld_2025_26_DE_Jan25.pdf
+2026-01-20 16:12:53,422 - INFO - Downloading PDF: https://berlin-mitte.phorms.de/fileadmin/Content/Berlin-Mitte/01-Campus/Downloads/Phorms_Berlin_School_Fee_Regulations_2025_26_EN_Jan25.pdf
+2026-01-20 16:12:53,477 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/17992554_Phorms_Berlin_School_Fee_Regulations_2025_26_EN_Jan25.pdf
+2026-01-20 16:12:54,004 - INFO - Downloading PDF: https://berlin-mitte.phorms.de/fileadmin/Content/Berlin-Mitte/01-Campus/Downloads/Phorms_Berlin_School_Fee_Regulations_Reduced_Tuition_Fees_2025_26_EN_Jan25.pdf
+2026-01-20 16:12:54,064 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/46158544_Phorms_Berlin_School_Fee_Regulations_Reduced_Tuition_Fees_2025_26_EN_Jan25.pdf
+2026-01-20 16:12:54,351 - INFO - Downloading PDF: https://berlin-mitte.phorms.de/fileadmin/Content/Berlin-Mitte/01-Campus/Downloads/Phorms_Berlin_Schulgeldordnung_2025_26_DE_Jan25.pdf
+2026-01-20 16:12:54,431 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/25279130_Phorms_Berlin_Schulgeldordnung_2025_26_DE_Jan25.pdf
+2026-01-20 16:12:54,962 - INFO - Extracting tuition for Bilinguale Schule Phorms Berlin Mitte
+2026-01-20 16:13:03,574 - INFO - Thoroughly crawling https://www.berlin-sued.phorms.de (private)
+2026-01-20 16:13:03,632 - WARNING - Error fetching https://www.berlin-sued.phorms.de: HTTPSConnectionPool(host='www.berlin-sued.phorms.de', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x1057d7ee0>: Failed to resolve 'www.berlin-sued.phorms.de' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-01-20 16:13:03,632 - INFO - Crawled 1 pages, found 0 PDFs (0 fee-related)
+2026-01-20 16:13:05,635 - INFO - Thoroughly crawling https://www.ev-frohnau.de (private)
+2026-01-20 16:13:47,623 - INFO - Crawled 25 pages, found 29 PDFs (0 fee-related)
+2026-01-20 16:13:47,624 - INFO - Downloading PDF: https://www.ev-frohnau.de/wp-content/uploads/sites/27/2024/09/Dahms_EvSF-Flyer.pdf
+2026-01-20 16:13:47,795 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/63955394_Dahms_EvSF-Flyer.pdf
+2026-01-20 16:13:48,043 - INFO - Downloading PDF: https://www.ev-frohnau.de/wp-content/uploads/2020/02/Flyer-Berufsberatung-2020.pdf
+2026-01-20 16:13:48,067 - WARNING - Error downloading PDF https://www.ev-frohnau.de/wp-content/uploads/2020/02/Flyer-Berufsberatung-2020.pdf: 500 Server Error: Internal Server Error for url: https://www.ev-frohnau.de/wp-content/uploads/2020/02/Flyer-Berufsberatung-2020.pdf
+2026-01-20 16:13:48,069 - INFO - Downloading PDF: https://www.ev-frohnau.de/wp-content/uploads/sites/27/2024/09/EvF-Aushang-und-Website-Google-Docs.pdf
+2026-01-20 16:13:48,202 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/97554914_EvF-Aushang-und-Website-Google-Docs.pdf
+2026-01-20 16:13:48,432 - INFO - Downloading PDF: https://www.ev-frohnau.de/wp-content/uploads/sites/27/2025/11/Flyer_Index-Team-2025_26-komprimiert.pdf
+2026-01-20 16:13:48,499 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/6094705_Flyer_Index-Team-2025_26-komprimiert.pdf
+2026-01-20 16:13:48,799 - INFO - Downloading PDF: https://www.ev-frohnau.de/wp-content/uploads/sites/27/2022/11/Aufnahmeantrag-Ev-Schule-Frohnau.pdf
+2026-01-20 16:13:48,870 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/59650299_Aufnahmeantrag-Ev-Schule-Frohnau.pdf
+2026-01-20 16:13:49,946 - INFO - Extracting tuition for Evangelische Schule Frohnau
+2026-01-20 16:13:57,303 - INFO - Thoroughly crawling https://www.ev-schule-koepenick.de (private)
+2026-01-20 16:15:06,183 - INFO - Crawled 25 pages, found 77 PDFs (1 fee-related)
+2026-01-20 16:15:06,186 - INFO - Downloading PDF: https://www.ev-schule-koepenick.de/wp-content/uploads/sites/13/2025/12/Vereinbarung_Schuelerpraktikum_2025-08-1.pdf
+2026-01-20 16:15:06,656 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/26763090_Vereinbarung_Schuelerpraktikum_2025-08-1.pdf
+2026-01-20 16:15:08,380 - INFO - Extracting tuition for Evangelische Schule Köpenick (Gymnasium)
+2026-01-20 16:15:14,570 - INFO - Thoroughly crawling https://www.graues-kloster.de (private)
+2026-01-20 16:23:01,757 - WARNING - Error fetching https://www.graues-kloster.de/gottesdienste-und-andachten/: HTTPSConnectionPool(host='www.graues-kloster.de', port=443): Read timed out. (read timeout=30)
+2026-01-20 16:23:03,416 - INFO - Crawled 25 pages, found 18 PDFs (1 fee-related)
+2026-01-20 16:23:03,418 - INFO - Downloading PDF: https://www.graues-kloster.de/wp-content/uploads/Betriebspraktikum_Vertrag_2026.pdf
+2026-01-20 16:23:03,613 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/8009846_Betriebspraktikum_Vertrag_2026.pdf
+2026-01-20 16:23:03,949 - INFO - Extracting tuition for Evangelisches Gymnasium zum Grauen Kloster
+2026-01-20 16:23:10,370 - INFO - Thoroughly crawling https://www.freie-schule-anne-sophie.de (private)
+2026-01-20 16:23:19,922 - INFO - Crawled 25 pages, found 2 PDFs (2 fee-related)
+2026-01-20 16:23:19,922 - INFO - Downloading PDF: https://www.freie-schule-anne-sophie.de/media/downloads/berlin/pdfs_berlin/Elternbeitraege_fuer_die_FSAS-Berlin_11_2023.pdf
+2026-01-20 16:23:20,162 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/47256328_Elternbeitraege_fuer_die_FSAS-Berlin_11_2023.pdf
+2026-01-20 16:23:20,501 - INFO - Downloading PDF: https://www.freie-schule-anne-sophie.de/media/downloads/berlin/pdfs_berlin/Parent_School_Fees_FSAS-Berlin__ab11_2023.pdf
+2026-01-20 16:23:20,659 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/59045385_Parent_School_Fees_FSAS-Berlin__ab11_2023.pdf
+2026-01-20 16:23:20,961 - INFO - Extracting tuition for Freie Schule Anne-Sophie Berlin
+2026-01-20 16:23:32,693 - INFO - Thoroughly crawling https://ksliebfrauen.de (private)
+2026-01-20 16:24:06,883 - INFO - Crawled 25 pages, found 28 PDFs (0 fee-related)
+2026-01-20 16:24:06,885 - INFO - Downloading PDF: https://ksliebfrauen.de/images/cwattachments/Dokumente/25-03-29%20Qualitatseinschtzung%20BERICHT%20Liebfrauen.pdf
+2026-01-20 16:24:07,438 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/91356472_25-03-29_20Qualitatseinschtzung_20BERICHT_20Liebfrauen.pdf
+2026-01-20 16:24:23,324 - INFO - Extracting tuition for Katholische Schule Liebfrauen (Gymnasium)
+2026-01-20 16:24:30,409 - INFO - Thoroughly crawling https://www.Theresienschule.de (private)
+2026-01-20 16:24:44,593 - INFO - Crawled 25 pages, found 1 PDFs (0 fee-related)
+2026-01-20 16:24:44,594 - INFO - Downloading PDF: https://www.Theresienschule.de/images/aktuelles/2025/Weihnachtsbrief_2025.pdf
+2026-01-20 16:24:45,141 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/21662026_Weihnachtsbrief_2025.pdf
+2026-01-20 16:24:45,261 - INFO - Extracting tuition for Katholische Theresienschule (Gymnasium)
+2026-01-20 16:24:51,246 - INFO - Thoroughly crawling https://www.mentora-gymnasium.de (private)
+2026-01-20 16:24:51,640 - INFO - Crawled 1 pages, found 0 PDFs (0 fee-related)
+2026-01-20 16:24:53,647 - INFO - Thoroughly crawling https://www.moserschule.de (private)
+2026-01-20 16:25:05,302 - INFO - Crawled 25 pages, found 3 PDFs (0 fee-related)
+2026-01-20 16:25:05,304 - INFO - Downloading PDF: https://www.moserschule.de/sites/default/files/medias/files/schulinternes-curriculum-studien-und-berufsorientierung-moser-schule-25.11.pdf
+2026-01-20 16:25:05,728 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/71280618_schulinternes-curriculum-studien-und-berufsorientierung-moser-schule-25.11.pdf
+2026-01-20 16:25:07,176 - INFO - Downloading PDF: https://www.moserschule.de/sites/default/files/medias/files/ergebnisse-abitur-2024-moser-schule.pdf
+2026-01-20 16:25:07,225 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/93246149_ergebnisse-abitur-2024-moser-schule.pdf
+2026-01-20 16:25:07,281 - INFO - Downloading PDF: https://www.moserschule.de/sites/default/files/medias/files/2025_ruckmeldung_offentliche-schulruckmeldung-abitur-2025.pdf
+2026-01-20 16:25:07,410 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/97418268_2025_ruckmeldung_offentliche-schulruckmeldung-abitur-2025.pdf
+2026-01-20 16:25:07,602 - INFO - Extracting tuition for Moser-Schule - Schweizer Gymnasium
+2026-01-20 16:25:17,801 - INFO - Thoroughly crawling https://www.europa-gymnasium.eu (private)
+2026-01-20 16:25:31,658 - INFO - Crawled 25 pages, found 0 PDFs (0 fee-related)
+2026-01-20 16:25:31,659 - INFO - Extracting tuition for Privates Europa-Gymnasium Berlin
+2026-01-20 16:25:38,169 - INFO - Saved summary to school_descriptions_v4/descriptions_summary.csv
+2026-01-20 16:26:11,514 - INFO - Merging into master table
+2026-01-20 16:26:12,461 - INFO - Saved to combined_schools_with_metadata_msa_with_descriptions_v2_v3_v4.csv

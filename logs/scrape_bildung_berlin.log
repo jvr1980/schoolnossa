@@ -1,0 +1,6 @@
+2026-01-22 13:58:43,186 - INFO - Loading data from school_master_table_processed.csv
+2026-01-22 13:58:43,267 - INFO - Processing 1 schools
+2026-01-22 13:58:43,267 - INFO - Processing 1/1: 03B08
+2026-01-22 13:58:43,267 - INFO - Scraping school 03B08
+2026-01-22 13:58:43,365 - ERROR - Failed to fetch https://www.bildung.berlin.de/Schulverzeichnis/SchulSteckbrief.aspx?ID=03B08: 404 Client Error: Not Found for url: https://www.bildung.berlin.de/Schulverzeichnis/SchulSteckbrief.aspx?ID=03B08
+2026-01-22 13:58:47,190 - INFO - Saved enriched data to school_master_table_enriched.csv

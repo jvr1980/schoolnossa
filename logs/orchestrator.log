@@ -1,0 +1,11 @@
+2026-01-24 20:54:37,530 - INFO - [Initial Data Scraping] Running: python3 /Users/josevonroth/Documents/schoolnossa/ISS_data_scraper.py
+2026-01-24 20:54:37,530 - INFO - [Initial Data Scraping] Running: python3 /Users/josevonroth/Documents/schoolnossa/bildung_berlin_gymnasien_scraper.py
+2026-01-24 20:54:37,531 - INFO - [Initial Data Scraping] Running: python3 /Users/josevonroth/Documents/schoolnossa/bildung_berlin_iss_scraper.py
+2026-01-24 20:54:37,532 - INFO - [Data Combination & Deduplication] Running: python3 /Users/josevonroth/Documents/schoolnossa/combine_gymnasium_iss_bildung_berlin_and_metadata.py
+2026-01-24 20:54:37,534 - INFO - [MSA Statistics Enrichment] Running: python3 /Users/josevonroth/Documents/schoolnossa/add_msa_to_combined_master.py
+2026-01-24 20:54:37,536 - INFO - [Metadata Enrichment] Running: python3 /Users/josevonroth/Documents/schoolnossa/merge_scraped_metadata.py
+2026-01-24 20:54:37,537 - INFO - [Geospatial & Context Enrichment] Running: python3 /Users/josevonroth/Documents/schoolnossa/enrich_schools_with_traffic.py
+2026-01-24 20:54:37,538 - INFO - [Geospatial & Context Enrichment] Running: python3 /Users/josevonroth/Documents/schoolnossa/enrich_schools_with_transit.py
+2026-01-24 20:54:37,538 - INFO - [Geospatial & Context Enrichment] Running: python3 /Users/josevonroth/Documents/schoolnossa/enrich_schools_with_pois.py
+2026-01-24 20:54:37,540 - INFO - [School Descriptions Generation] Running: python3 /Users/josevonroth/Documents/schoolnossa/generate_school_descriptions_v4.py --input school_master_table_final.csv
+2026-01-24 20:54:37,541 - INFO - [Vision-Based Data Scraping] Running: python3 /Users/josevonroth/Documents/schoolnossa/scrape_bildung_berlin_v2.py --missing-only

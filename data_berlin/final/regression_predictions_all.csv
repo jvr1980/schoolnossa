@@ -1,0 +1,625 @@
+school_id,name,district,city,school_type,actual,predicted,residual,confidence,contrib_belastungsstufe,contrib_nachfrage_prozent,contrib_migration_pct_school,contrib_crime_safety_rank,contrib_catchment_avg_rent,contrib_transit_accessibility,contrib_catchment_foreigner_pct,contrib_student_teacher_ratio
+berlin_04K02,Friedensburg-Schule,Charlottenburg-Wilmersdorf,berlin,ISS,2.24,1.88,0.36,0.717,-0.3135,-0.8894,-0.3263,-0.2309,-0.1324,-0.2139,0.1643,0.3264
+hamburg_5831-0,Gymnasium Blankenese,Altona,hamburg,Gymnasium,2.0,1.938,0.062,0.838,-0.3919,-0.4447,-0.262,-0.2211,-0.2827,-0.2292,0.0371,0.2369
+hamburg_5831-1,Gymnasium Blankenese,Altona,hamburg,Gymnasium,2.0,1.938,0.062,0.838,-0.3919,-0.4447,-0.262,-0.2211,-0.2827,-0.2292,0.0371,0.2369
+hamburg_3233-0,Bugenhagen-Schule im Hessepark (Stadtteilschule),Altona,hamburg,Stadtteilschule,,1.965,,0.85,-0.3919,-0.4447,-0.262,-0.2211,-0.287,-0.1986,0.0378,0.2369
+hamburg_5071-1,Ida Ehre Schule,Hamburg-Nord,hamburg,Stadtteilschule,,1.967,,0.85,-0.3919,-0.4447,-0.262,-0.2297,-0.247,-0.2292,0.0394,0.2369
+hamburg_5090-0,Grund- und Stadtteilschule Eppendorf,Hamburg-Nord,hamburg,Stadtteilschule,,1.967,,0.849,-0.3919,-0.4447,-0.262,-0.2297,-0.2636,-0.1986,0.0256,0.2369
+berlin_04K04,Nelson-Mandela-Schule,Charlottenburg-Wilmersdorf,berlin,ISS,1.93,1.983,-0.053,0.785,-0.627,-0.4447,-0.3893,-0.2309,-0.1264,-0.1955,0.133,0.3686
+hamburg_5891-0,Gymnasium Othmarschen,Altona,hamburg,Gymnasium,2.0,1.987,0.013,0.86,-0.3919,-0.4447,-0.262,-0.2052,-0.2886,-0.1986,0.0458,0.2369
+hamburg_5872-0,Wilhelm-Gymnasium,Eimsbüttel,hamburg,Gymnasium,2.07,1.993,0.077,0.837,-0.3919,-0.4447,-0.262,-0.1735,-0.3443,-0.168,0.045,0.2369
+berlin_04K10,Wangari-Maathai-Internationale-Schule,Charlottenburg-Wilmersdorf,berlin,ISS,,1.994,,0.816,-0.627,-0.4447,-0.3754,-0.2309,-0.1113,-0.1742,0.1048,0.357
+hamburg_5887-0,Gymnasium Hochrad,Altona,hamburg,Gymnasium,2.11,1.994,0.116,0.864,-0.3919,-0.4447,-0.262,-0.2052,-0.3004,-0.1833,0.0498,0.2369
+hamburg_8007-0,Joseph-Carlebach-Schule (Stadtteilschule),Eimsbüttel,hamburg,Stadtteilschule,,1.995,,0.832,-0.3919,-0.4447,-0.262,-0.1576,-0.2696,-0.275,0.0631,0.2369
+hamburg_5844-0,Gymnasium Eppendorf,Hamburg-Nord,hamburg,Gymnasium,2.0,2.004,-0.004,0.825,-0.3919,-0.4447,-0.262,-0.1478,-0.2801,-0.2292,0.0278,0.2369
+hamburg_5077-0,Stadtteilschule Blankenese,Altona,hamburg,Stadtteilschule,,2.012,,0.871,-0.3919,-0.4447,-0.262,-0.2211,-0.2561,-0.1986,0.0546,0.2369
+hamburg_5806-0,Gymnasium Rotherbaum,Eimsbüttel,hamburg,Gymnasium,2.0,2.017,-0.017,0.839,-0.3919,-0.4447,-0.262,-0.1576,-0.2369,-0.275,0.0524,0.2369
+hamburg_5071-0,Ida Ehre Schule,Eimsbüttel,hamburg,Stadtteilschule,,2.023,,0.854,-0.3919,-0.4447,-0.262,-0.1735,-0.247,-0.2292,0.0394,0.2369
+hamburg_5864-0,Helene-Lange-Gymnasium,Eimsbüttel,hamburg,Gymnasium,2.11,2.024,0.086,0.855,-0.3919,-0.4447,-0.262,-0.1735,-0.2481,-0.2292,0.0414,0.2369
+hamburg_5291-0,Campus HafenCity,Hamburg-Mitte,hamburg,Stadtteilschule_Gymnasium,,2.03,,0.838,-0.3919,-0.4447,-0.262,-0.1845,-0.2809,-0.275,0.1372,0.2369
+hamburg_5888-0,Heilwig-Gymnasium,Hamburg-Nord,hamburg,Gymnasium,2.26,2.041,0.219,0.873,-0.3919,-0.4447,-0.262,-0.1918,-0.2195,-0.1986,0.0175,0.2369
+hamburg_5090-2,Grund- und Stadtteilschule Eppendorf,Hamburg-Nord,hamburg,Stadtteilschule,,2.049,,0.844,-0.3919,-0.4447,-0.262,-0.1478,-0.2636,-0.1986,0.0256,0.2369
+hamburg_5813-0,Christianeum,Altona,hamburg,Gymnasium,2.02,2.057,-0.037,0.856,-0.3919,-0.4447,-0.262,-0.2052,-0.2963,-0.1375,0.0622,0.2369
+hamburg_5842-0,Gymnasium Hoheluft,Eimsbüttel,hamburg,Gymnasium,2.38,2.058,0.322,0.865,-0.3919,-0.4447,-0.262,-0.2236,-0.2308,-0.1528,0.032,0.2369
+berlin_06K01,John-F.-Kennedy-Schule,Steglitz-Zehlendorf,berlin,ISS,1.96,2.063,-0.103,0.823,-0.627,-0.4447,-0.2571,-0.2407,-0.1261,-0.1497,0.0542,0.359
+hamburg_5868-0,Gymnasium Lerchenfeld,Hamburg-Nord,hamburg,Gymnasium,2.39,2.067,0.323,0.887,-0.3919,-0.4447,-0.262,-0.1881,-0.2214,-0.2292,0.0722,0.2369
+hamburg_5841-0,Marion Dönhoff Gymnasium,Altona,hamburg,Gymnasium,2.13,2.07,0.06,0.883,-0.3919,-0.4447,-0.262,-0.2211,-0.2148,-0.168,0.04,0.2369
+hamburg_5649-0,Stadtteilschule Rissen,Altona,hamburg,Stadtteilschule,,2.071,,0.893,-0.3919,-0.4447,-0.262,-0.2138,-0.1851,-0.2292,0.0651,0.2369
+hamburg_5809-0,Gymnasium Rissen,Altona,hamburg,Gymnasium,2.0,2.071,-0.071,0.893,-0.3919,-0.4447,-0.262,-0.2138,-0.1851,-0.2292,0.0651,0.2369
+hamburg_5655-0,Stadtteilschule Stellingen,Eimsbüttel,hamburg,Stadtteilschule,,2.082,,0.852,-0.3919,-0.4447,-0.262,-0.1393,-0.2019,-0.275,0.0649,0.2369
+hamburg_5810-0,Albert-Schweitzer-Gymnasium,Hamburg-Nord,hamburg,Gymnasium,2.1,2.086,0.014,0.887,-0.3919,-0.4447,-0.262,-0.1796,-0.1821,-0.275,0.0888,0.2369
+nrw_160570,Max-Planck-Realschule Städt. Realschule Köln-Porz,Porz,nrw,Realschule,,2.087,,0.845,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1986,0.1477,0.1484
+hamburg_3220-0,Sophie-Barat-Schule,Eimsbüttel,hamburg,Gymnasium,1.87,2.089,-0.219,0.786,-0.3919,-0.4447,-0.262,-0.1576,-0.3083,-0.275,0.1959,0.2369
+hamburg_5145-0,Elbschule Bildungszentrum Hören und Kommunikation,Altona,hamburg,Stadtteilschule,,2.09,,0.906,-0.3919,-0.4447,-0.262,-0.2052,-0.2361,-0.1986,0.0962,0.2369
+hamburg_3227-0,Katholische Stadtteilschuloberstufe Nord-West an der Sophie-Barat-Schule,Eimsbüttel,hamburg,Stadtteilschule,,2.09,,0.775,-0.3919,-0.4447,-0.262,-0.1576,-0.3203,-0.275,0.2091,0.2369
+hamburg_3219-0,Sankt-Ansgar-Schule,Hamburg-Mitte,hamburg,Gymnasium,2.27,2.093,0.177,0.872,-0.3919,-0.4447,-0.262,-0.2113,-0.1908,-0.275,0.1367,0.2369
+hamburg_3226-0,Katholische Stadtteilschuloberstufe Nord-Ost an der Sankt-Ansgar-Schule,Hamburg-Mitte,hamburg,Stadtteilschule,,2.093,,0.872,-0.3919,-0.4447,-0.262,-0.2113,-0.1908,-0.275,0.1367,0.2369
+hamburg_5850-0,Gymnasium Oberalster,Wandsbek,hamburg,Gymnasium,1.94,2.1,-0.16,0.895,-0.3919,-0.4447,-0.262,-0.2248,-0.1807,-0.168,0.0398,0.2369
+hamburg_5659-0,Stadtteilschule Flottbek,Altona,hamburg,Stadtteilschule,,2.101,,0.889,-0.3919,-0.4447,-0.262,-0.2309,-0.2284,-0.1986,0.1253,0.2369
+hamburg_5886-0,Gelehrtenschule des Johanneums,Hamburg-Nord,hamburg,Gymnasium,2.06,2.104,-0.044,0.797,-0.3919,-0.4447,-0.262,-0.0599,-0.2719,-0.2292,0.0314,0.2369
+nrw_160568,Städt. Wilhelm-Busch-Realschule - Sekundarstufe I -,Porz,nrw,Realschule,,2.104,,0.858,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2139,0.1477,0.1802
+berlin_01P16,Berlin Metropolitan School (Integrierte Sekundarschule),Mitte,berlin,ISS,,2.107,,0.844,-0.3919,-0.4447,-0.262,-0.2284,-0.1804,-0.2903,0.1728,0.2369
+hamburg_8102-0,Rudolf-Steiner-Schule Nienstedten,Altona,hamburg,Stadtteilschule,,2.107,,0.814,-0.3919,-0.4447,-0.262,-0.237,-0.2783,-0.0642,0.0529,0.2369
+hamburg_5863-0,Emilie-Wüstenfeld-Gymnasium,Eimsbüttel,hamburg,Gymnasium,2.24,2.11,0.13,0.793,-0.3919,-0.4447,-0.262,-0.0525,-0.2412,-0.275,0.0451,0.2369
+hamburg_5863-1,Emilie-Wüstenfeld-Gymnasium,Eimsbüttel,hamburg,Gymnasium,2.24,2.11,0.13,0.793,-0.3919,-0.4447,-0.262,-0.0525,-0.2412,-0.275,0.0451,0.2369
+hamburg_5896-0,Gymnasium Ohlstedt,Wandsbek,hamburg,Gymnasium,2.33,2.111,0.219,0.888,-0.3919,-0.4447,-0.262,-0.2407,-0.221,-0.1467,0.0856,0.2369
+hamburg_5069-0,Irena-Sendler-Schule,Wandsbek,hamburg,Stadtteilschule,,2.114,,0.864,-0.3919,-0.4447,-0.262,-0.2321,-0.2116,-0.1222,0.0464,0.2369
+hamburg_5052-0,Ilse-Löwenstein-Schule,Hamburg-Nord,hamburg,Stadtteilschule,,2.117,,0.852,-0.3919,-0.4447,-0.262,-0.1209,-0.2416,-0.1986,0.0445,0.2369
+hamburg_5052-1,Ilse-Löwenstein-Schule,Hamburg-Nord,hamburg,Stadtteilschule,,2.117,,0.852,-0.3919,-0.4447,-0.262,-0.1209,-0.2416,-0.1986,0.0445,0.2369
+berlin_12P03,Evangelische Schule Frohnau,Reinickendorf,berlin,Gymnasium,,2.119,,0.911,-0.3919,-0.4447,-0.262,-0.2358,-0.1308,-0.1894,0.0418,0.2369
+nrw_158598,Anne-Frank-Realschule Städt. Schule der Sekundarstufe I,Bezirk 2,nrw,Realschule,,2.121,,0.87,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.2292,0.1477,0.2138
+hamburg_8012-0,August-Hermann-Francke-Schule Uhlenhorst,Hamburg-Nord,hamburg,Stadtteilschule,,2.124,,0.855,-0.3919,-0.4447,-0.262,-0.1209,-0.2181,-0.2292,0.0582,0.2369
+hamburg_8502-0,Zukunftsschule Alsterpalais (Stadtteilschule),Hamburg-Nord,hamburg,Stadtteilschule,,2.125,,0.914,-0.3919,-0.4447,-0.262,-0.1918,-0.1626,-0.2444,0.0903,0.2369
+nrw_167058,Städt. Maximilian-Kolbe-Gymnasium,Porz,nrw,Gymnasium,,2.125,,0.868,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1986,0.1477,0.186
+hamburg_5851-0,Gymnasium im Eilbektal,Wandsbek,hamburg,Gymnasium,,2.126,,0.888,-0.3919,-0.4447,-0.262,-0.1613,-0.1718,-0.2444,0.0703,0.2369
+hamburg_8020-0,ahfs Christliches Gymnasium Uhlenhorst,Hamburg-Nord,hamburg,Gymnasium,,2.126,,0.856,-0.3919,-0.4447,-0.262,-0.1209,-0.2168,-0.2292,0.0593,0.2369
+nrw_160090,Stadt Köln Ferdinand-Lassalle-Realschule Sekundarstufe I,Mülheim,nrw,Realschule,,2.127,,0.873,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.2157
+berlin_09P09,BEST-Sabel-Oberschule,Treptow-Köpenick,berlin,ISS-Gymnasium,,2.128,,0.89,-0.3919,-0.4447,-0.262,-0.2394,-0.0902,-0.2353,0.0588,0.2369
+berlin_01P03,Jüdisches Gymnasium Moses Mendelssohn,Mitte,berlin,ISS-Gymnasium,,2.129,,0.857,-0.3919,-0.4447,-0.262,-0.2284,-0.1534,-0.2903,0.1672,0.2369
+berlin_03P45,PepperMont Freie Sekundarschule für ganzheitliches Lernen,Pankow,berlin,ISS,,2.13,,0.885,-0.3919,-0.4447,-0.262,-0.2382,-0.0796,-0.275,0.089,0.2369
+berlin_01P22,Berlin Cosmopolitan School,Mitte,berlin,Gymnasium,,2.13,,0.862,-0.3919,-0.4447,-0.262,-0.2284,-0.148,-0.2903,0.1627,0.2369
+hamburg_8001-0,Internationale Schule,Altona,hamburg,Gymnasium,,2.132,,0.885,-0.3919,-0.4447,-0.262,-0.1515,-0.2225,-0.1986,0.0715,0.2369
+hamburg_5418-0,Bildungszentrum für Blinde und Sehbehinderte,Hamburg-Nord,hamburg,Stadtteilschule,,2.136,,0.809,-0.3919,-0.4447,-0.262,-0.0599,-0.2402,-0.2292,0.0318,0.2369
+hamburg_5418-1,Bildungszentrum für Blinde und Sehbehinderte,Hamburg-Nord,hamburg,Stadtteilschule,,2.136,,0.809,-0.3919,-0.4447,-0.262,-0.0599,-0.2402,-0.2292,0.0318,0.2369
+hamburg_5053-0,Albert-Schweitzer-Schule,Hamburg-Nord,hamburg,Stadtteilschule,,2.137,,0.909,-0.3919,-0.4447,-0.262,-0.1796,-0.1973,-0.1986,0.0785,0.2369
+hamburg_5079-1,Stadtteilschule Poppenbüttel,Wandsbek,hamburg,Stadtteilschule,,2.138,,0.896,-0.3919,-0.4447,-0.262,-0.2089,-0.1631,-0.1528,0.0295,0.2369
+nrw_160430,Johannes-Gutenberg-Schule Städt. Realschule Köln-Godorf,Rodenkirchen,nrw,Realschule,,2.138,,0.874,-0.3919,-0.4447,-0.262,-0.2394,-0.1722,-0.1833,0.1477,0.189
+berlin_12S05,Waldseeschule,Reinickendorf,berlin,ISS,,2.139,,0.913,-0.3919,-0.4447,-0.262,-0.2358,-0.114,-0.1894,0.0445,0.2369
+nrw_160260,Realschule am Rhein Städt. Realschule - Sekundarstufe I -,Innenstadt,nrw,Realschule,,2.139,,0.879,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.2228
+nrw_199916,Städtische Gesamtschule Stettiner Straße -Sekundarstufe I und II-,Bezirk 10,nrw,Gesamtschule,,2.139,,0.882,-0.3919,-0.4447,-0.262,-0.2407,-0.1722,-0.2292,0.1477,0.2369
+hamburg_3223-0,Bugenhagen-Schule Alsterdorf (Stadtteilschule),Hamburg-Nord,hamburg,Stadtteilschule,,2.14,,0.919,-0.3919,-0.4447,-0.262,-0.1918,-0.1598,-0.2444,0.1027,0.2369
+nrw_164495,Städt. Max-Planck-Gymnasium,Bezirk 5,nrw,Gymnasium,,2.14,,0.882,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.2292,0.1477,0.2352
+nrw_164100,Städtische Dieter-Forte-Gesamtschule - Sekundarstufen I und II -,Bezirk 8,nrw,Gesamtschule,,2.141,,0.883,-0.3919,-0.4447,-0.262,-0.2394,-0.1722,-0.2292,0.1477,0.2369
+nrw_158616,Städtische Toni-Turek-Realschule - Sekundarstufe I -,Bezirk 5,nrw,Realschule,,2.142,,0.883,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.2292,0.1477,0.2369
+nrw_164525,Städt. Georg-Büchner-Gymnasium Sekundarstufen I und II,Bezirk 5,nrw,Gymnasium,,2.142,,0.883,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.2292,0.1477,0.2369
+nrw_193770,Städt. Georg-Schulhoff-Realschule - Sekundarstufe I -,Bezirk 7,nrw,Realschule,,2.142,,0.883,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.2292,0.1477,0.2369
+nrw_100185,Élise Freinet Gesamtschule Schule der Sekundarstufe I + II,Bezirk 4,nrw,Gesamtschule,,2.143,,0.884,-0.3919,-0.4447,-0.262,-0.237,-0.1722,-0.2292,0.1477,0.2369
+nrw_136566,Wilhelm-Ferdinand-Schüßler-Tagesschule Städt. Gemeinschaftshauptschule Sekundarstufe I,Bezirk 6,nrw,Hauptschule,,2.143,,0.884,-0.3919,-0.4447,-0.262,-0.237,-0.1722,-0.2292,0.1477,0.2369
+nrw_164537,Städt. Friedrich-Rückert-Gymnasium - Sekundarstufen I und II -,Bezirk 6,nrw,Gymnasium,,2.143,,0.884,-0.3919,-0.4447,-0.262,-0.237,-0.1722,-0.2292,0.1477,0.2369
+nrw_166728,Schiller-Gymnasium Städt. Gymnasium f. Jungen u. Mädchen,Lindenthal,nrw,Gymnasium,,2.143,,0.879,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.1986,0.1477,0.2074
+hamburg_5062-0,Heinrich-Hertz-Schule,Hamburg-Nord,hamburg,Stadtteilschule_Gymnasium,,2.144,,0.812,-0.3919,-0.4447,-0.262,-0.0599,-0.2318,-0.2292,0.0314,0.2369
+nrw_136323,Städtische Katholische Hauptschule,Bezirk 9,nrw,Hauptschule,,2.144,,0.884,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.2292,0.1477,0.2369
+nrw_158550,Städt. Werner-von-Siemens-Realschule,Bezirk 2,nrw,Realschule,,2.144,,0.884,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.2292,0.1477,0.2369
+nrw_158690,Benzenberg-Realschule Städt. Realschule für Jungen und Mädchen,Bezirk 9,nrw,Realschule,,2.144,,0.884,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.2292,0.1477,0.2369
+nrw_192545,Freie Christl. Gesamtschule Düsseldorf Priv.staatl.gen.ev.ErsatzschuleSek Iu.II d.Rhein.-Berg.Verein Fr. Christl.Schulen,Bezirk 9,nrw,Gesamtschule,,2.144,,0.884,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.2292,0.1477,0.2369
+nrw_199606,Städt. Maria-Montessori-Gesamtschule - Schule der Sekundarstufen I und II -,Bezirk 2,nrw,Gesamtschule,,2.144,,0.884,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.2292,0.1477,0.2369
+berlin_03P13,Freie Schule Pankow (Integrierte Sekundarschule),Pankow,berlin,ISS,,2.145,,0.911,-0.3919,-0.4447,-0.262,-0.2382,-0.1132,-0.1742,0.037,0.2369
+nrw_100015,Städt. Wim-Wenders-Gymnasium Sekundarstufe I und II,,nrw,Gymnasium,,2.145,,0.884,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2292,0.1477,0.2369
+nrw_164460,Theodor-Fliedner-Gymnasium Priv. Gymnasium der ev. Kirche im Rheinland,,nrw,Gymnasium,,2.145,,0.884,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2292,0.1477,0.2369
+nrw_164483,Städt. Lessing-Gymnasium und Städt. Lessing-Berufskolleg Schulen der Sekundarstufen I und II,,nrw,Gymnasium,,2.145,,0.884,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2292,0.1477,0.2369
+nrw_166558,Städt. Gymnasium Thusneldastraße,,nrw,Gymnasium,,2.145,,0.884,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2292,0.1477,0.2369
+nrw_990001,International School of Düsseldorf,,nrw,Internationale Schule,,2.145,,0.884,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2292,0.1477,0.2369
+berlin_10P12,Freie Schule Berlin Mahlsdorf,Marzahn-Hellersdorf,berlin,ISS,,2.147,,0.916,-0.3919,-0.4447,-0.262,-0.2345,-0.1234,-0.1711,0.0427,0.2369
+hamburg_5823-0,Gymnasium Corveystraße,Eimsbüttel,hamburg,Gymnasium,2.34,2.147,0.193,0.85,-0.3919,-0.4447,-0.262,-0.1637,-0.2365,-0.1222,0.0363,0.2369
+nrw_160131,Peter-Ustinov-Schule Städt. Realschule - Sekundarstufe I -,Nippes,nrw,Realschule,,2.147,,0.885,-0.3919,-0.4447,-0.262,-0.2333,-0.1722,-0.2292,0.1477,0.2369
+nrw_166546,Städt. Erich Kästner-Gymnasium - Sekundarstufen I und II -,Nippes,nrw,Gymnasium,,2.147,,0.885,-0.3919,-0.4447,-0.262,-0.2333,-0.1722,-0.2292,0.1477,0.2369
+berlin_09Y05,Alexander-von-Humboldt-Gymnasium,Treptow-Köpenick,berlin,Gymnasium,2.21,2.148,0.062,0.896,-0.3919,-0.4447,-0.262,-0.2394,-0.0777,-0.278,0.0727,0.274
+hamburg_5662-0,Emil Krause Schule,Hamburg-Nord,hamburg,Stadtteilschule,,2.148,,0.91,-0.3919,-0.4447,-0.262,-0.1759,-0.1551,-0.2444,0.0895,0.2369
+hamburg_7924-0,OKO Private School Talent-Schule Hamburg,Hamburg-Nord,hamburg,Gymnasium,,2.148,,0.823,-0.3919,-0.4447,-0.262,-0.0733,-0.1771,-0.275,0.0399,0.2369
+nrw_158630,Städt. Freiherr-vom-Stein-Realschule - Schule der Sekundarstufe I - Tagesschule,Bezirk 3,nrw,Realschule,,2.148,,0.885,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.2369
+nrw_160106,Elly-Heuss-Knapp-Realschule Städt. Realschule für Jungen und Mädchen,Mülheim,nrw,Realschule,,2.148,,0.885,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.2369
+nrw_160180,Johann-Bendel-Schule Städt. Realschule - Sekundarstufe I -,Mülheim,nrw,Realschule,,2.148,,0.885,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.2369
+nrw_166583,Genoveva-Gymnasium der Stadt Köln Sekundarstufen I und II,Mülheim,nrw,Gymnasium,,2.148,,0.885,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.2369
+nrw_187604,Freie Waldorfschule in Köln Private Schule eigener Art für Jungen u. Mädchen,Chorweiler,nrw,Waldorfschule,,2.148,,0.885,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.2369
+nrw_195376,Ferdinand Franz Wallraf Gymnasium Staatl. anerkannte Ersatzschule,Mülheim,nrw,Gymnasium,,2.148,,0.885,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.2369
+nrw_197567,Werner Heisenberg Realschule Staatl anerkannte Ersatzschule der Bildung und Perspektive gGmbH,Mülheim,nrw,Realschule,,2.148,,0.885,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.2369
+nrw_160076,Geschwister-Scholl-Schule Städt. Realschule für Jungen und Mädchen,Ehrenfeld,nrw,Realschule,,2.149,,0.886,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.2292,0.1477,0.2369
+nrw_100219,Erzbischöfliche Gesamtschule am Bildungscampus Köln-Kalk in Köln im Aufbau,Kalk,nrw,Gesamtschule,,2.15,,0.886,-0.3919,-0.4447,-0.262,-0.2297,-0.1722,-0.2292,0.1477,0.2369
+nrw_136359,Dumont-Lindemann-Schule Städt. Gem. Hauptschule,Bezirk 1,nrw,Hauptschule,,2.152,,0.887,-0.3919,-0.4447,-0.262,-0.2284,-0.1722,-0.2292,0.1477,0.2369
+nrw_158574,Städtische Flora-Realschule - Sekundarstufe I -,Bezirk 1,nrw,Realschule,,2.152,,0.887,-0.3919,-0.4447,-0.262,-0.2284,-0.1722,-0.2292,0.1477,0.2369
+nrw_164446,Städt. Görres-Gymnasium - Sekundarstufe I und II - Humanistisches Gymnasium seit 1545,Bezirk 1,nrw,Gymnasium,,2.152,,0.887,-0.3919,-0.4447,-0.262,-0.2284,-0.1722,-0.2292,0.1477,0.2369
+nrw_164501,Städtisches Luisen-Gymnasium - Sekundarstufe I und II -,Bezirk 1,nrw,Gymnasium,,2.152,,0.887,-0.3919,-0.4447,-0.262,-0.2284,-0.1722,-0.2292,0.1477,0.2369
+nrw_100231,Gymnasium Neustadt-Nord,Innenstadt,nrw,Gymnasium,,2.153,,0.887,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.2369
+nrw_140909,Städtische Katholische Hauptschule,Innenstadt,nrw,Hauptschule,,2.153,,0.887,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.2369
+nrw_141021,Stadt Köln Städt. Katholische Hauptschule am Rhein Sekundarstufe I,Innenstadt,nrw,Hauptschule,,2.153,,0.887,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.2369
+nrw_166613,Städt. Friedrich-Wilhelm-Gymnasium,Innenstadt,nrw,Gymnasium,,2.153,,0.887,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.2369
+nrw_166637,Städt. Hansa-Gymnasium,Innenstadt,nrw,Gymnasium,,2.153,,0.887,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.2369
+nrw_193021,Freie Schule Köln - Gesamtschule (Ersatzschule) besonderer Prägung-Sek.I- des Vereins Freie Schule Köln e.V.,Innenstadt,nrw,Gesamtschule,,2.153,,0.887,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.2369
+nrw_160155,Ursulinenschule Köln Staatl. genehm. Realschule für Mädchen- u. Jungenklassen d. Erzbistums Köln,Innenstadt,nrw,Realschule,,2.154,,0.888,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.2382
+berlin_01Y04,Musikgymnasium Carl Philipp Emanuel Bach,Mitte,berlin,Gymnasium,,2.156,,0.873,-0.3919,-0.4447,-0.262,-0.2284,-0.1366,-0.275,0.1624,0.2369
+nrw_164161,Gesamtschule Köln-Rodenkirchen - Sekundarstufen I und II -,Rodenkirchen,nrw,Gesamtschule,,2.156,,0.889,-0.3919,-0.4447,-0.262,-0.2394,-0.1722,-0.2139,0.1477,0.2369
+nrw_100068,Gesamtschule Berrenrather Straße der Stadt Köln - Sekundarstufen I und II -,Lindenthal,nrw,Gesamtschule,,2.157,,0.89,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.2139,0.1477,0.2369
+nrw_100147,Stadt Köln Gymnasium Müngersdorf Sekundarstufen I und II,Lindenthal,nrw,Gymnasium,,2.157,,0.89,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.2139,0.1477,0.2369
+nrw_160179,Theodor-Heuss-Schule Städt. Realschule,Lindenthal,nrw,Realschule,,2.157,,0.89,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.2139,0.1477,0.2369
+nrw_166443,Leonardo-da-Vinci-Gymnasium Köln-Nippes der Stadt Köln Sekundarstufen I und II,Nippes,nrw,Gymnasium,,2.157,,0.891,-0.3919,-0.4447,-0.262,-0.2333,-0.1722,-0.2292,0.1477,0.2476
+nrw_166467,"Erzbischöfliche Liebfrauenschule Köln Staatl.genehm.Ersatzschule d.Erzbistums Köln,Gym.f.Jungen u.Mädchen-Sek.I u.II-",Lindenthal,nrw,Gymnasium,,2.157,,0.89,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.2139,0.1477,0.2369
+hamburg_5816-0,Walddörfer-Gymnasium,Wandsbek,hamburg,Gymnasium,2.03,2.159,-0.129,0.923,-0.3919,-0.4447,-0.262,-0.2003,-0.1838,-0.168,0.0778,0.2369
+hamburg_5085-0,Stadtteilschule Walddörfer,Wandsbek,hamburg,Stadtteilschule,,2.16,,0.924,-0.3919,-0.4447,-0.262,-0.2003,-0.1863,-0.168,0.0813,0.2369
+hamburg_5085-1,Stadtteilschule Walddörfer,Wandsbek,hamburg,Stadtteilschule,,2.16,,0.924,-0.3919,-0.4447,-0.262,-0.2003,-0.1863,-0.168,0.0813,0.2369
+nrw_141860,Johann-Amos-Comenius-Schule Städt. Gem. Hauptschule Köln-Porz - Sekundarstufe I -,Porz,nrw,Hauptschule,,2.161,,0.891,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2139,0.1477,0.2369
+nrw_183040,Städt. Lessing-Gymnasium - Sekundarstufen I und II -,Porz,nrw,Gymnasium,,2.161,,0.891,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2139,0.1477,0.2369
+nrw_100071,Gesamtschule Dellbrücker Mauspfad - Sekundarstufe I und II -,Mülheim,nrw,Gesamtschule,,2.163,,0.892,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2139,0.1477,0.2369
+nrw_160210,Bertha-von-Suttner-Schule Städt. Realschule - Sekundarstufe I -,Ehrenfeld,nrw,Realschule,,2.164,,0.893,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.2139,0.1477,0.2369
+nrw_187902,Städt. Max-Ernst-Gesamtschule - Sekundarstufen I und II -,Ehrenfeld,nrw,Gesamtschule,,2.164,,0.893,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.2139,0.1477,0.2369
+berlin_03B08,Staatliche Ballett- und Artistikschule Berlin,Pankow,berlin,ISS,,2.165,,0.911,-0.3919,-0.4447,-0.262,-0.2382,-0.0917,-0.2261,0.0876,0.2369
+hamburg_5812-0,Gymnasium Buckhorn,Wandsbek,hamburg,Gymnasium,2.15,2.165,-0.015,0.893,-0.3919,-0.4447,-0.262,-0.2003,-0.1544,-0.1375,0.0233,0.2369
+nrw_160192,Albert-Schweitzer-Schule Städtische Realschule für Jungen und Mädchen,Kalk,nrw,Realschule,,2.166,,0.893,-0.3919,-0.4447,-0.262,-0.2297,-0.1722,-0.2139,0.1477,0.2369
+nrw_160209,Käthe-Kollwitz-Schule Städt. Realschule für Jungen und Mädchen,Kalk,nrw,Realschule,,2.166,,0.893,-0.3919,-0.4447,-0.262,-0.2297,-0.1722,-0.2139,0.1477,0.2369
+nrw_184858,Städt. Heinrich-Heine-Gymnasium - Sekundarstufen I und II -,Kalk,nrw,Gymnasium,,2.166,,0.893,-0.3919,-0.4447,-0.262,-0.2297,-0.1722,-0.2139,0.1477,0.2369
+nrw_191863,Städt. Joseph-Beuys-Gesamtschule - Sekundarstufen I und II -,Bezirk 9,nrw,Gesamtschule,,2.169,,0.899,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.2292,0.1477,0.2621
+hamburg_5663-1,Stadtteilschule Hamburg-Mitte,Hamburg-Mitte,hamburg,Stadtteilschule,,2.17,,0.828,-0.3919,-0.4447,-0.262,-0.0867,-0.2272,-0.275,0.1257,0.2369
+nrw_136505,Städtische Gemeinschaftshauptschule Benrath - Sekundarstufe I -,Bezirk 10,nrw,Hauptschule,,2.17,,0.895,-0.3919,-0.4447,-0.262,-0.2407,-0.1722,-0.1986,0.1477,0.2369
+nrw_165669,Gymnasium Hochdahl Städt. Gymnasium - Sekundarstufen I und II -,Bezirk 10,nrw,Gymnasium,,2.17,,0.895,-0.3919,-0.4447,-0.262,-0.2407,-0.1722,-0.1986,0.1477,0.2369
+nrw_183246,Städt. Realschule Hochdahl - Sekundarstufe I -,Bezirk 10,nrw,Realschule,,2.17,,0.895,-0.3919,-0.4447,-0.262,-0.2407,-0.1722,-0.1986,0.1477,0.2369
+berlin_03Y04,Heinrich-Schliemann-Gymnasium,Pankow,berlin,Gymnasium,2.1,2.172,-0.072,0.936,-0.3919,-0.4447,-0.262,-0.2382,-0.1252,-0.2444,0.1098,0.2734
+nrw_136384,Schule am Eller Forst Städt. Gemeinschaftshauptschule,Bezirk 7,nrw,Hauptschule,,2.172,,0.896,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.1986,0.1477,0.2369
+nrw_158586,Justus-von-Liebig-Realschule Städt. Realschule - Sekundarstufe I -,Bezirk 5,nrw,Realschule,,2.172,,0.896,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.1986,0.1477,0.2369
+nrw_158641,Städt. Realschule Benrath,Bezirk 10,nrw,Realschule,,2.172,,0.901,-0.3919,-0.4447,-0.262,-0.2407,-0.1722,-0.2292,0.1477,0.2693
+nrw_160222,Eichendorff-Schule Städt. Realschule für Mädchen und Jungen,Ehrenfeld,nrw,Realschule,,2.172,,0.895,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.1986,0.1477,0.2295
+nrw_164379,Städt. Marie-Curie-Gymnasium,Bezirk 7,nrw,Gymnasium,,2.172,,0.896,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.1986,0.1477,0.2369
+nrw_164513,Städt. Gymnasium Gerresheim,Bezirk 7,nrw,Gymnasium,,2.172,,0.896,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.1986,0.1477,0.2369
+nrw_166730,Stadt Köln Elisabeth-Thüringen-Gymnasium Sekundarstufen I und II,Lindenthal,nrw,Gymnasium,,2.172,,0.896,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.1986,0.1477,0.2369
+hamburg_5076-1,Max-Brauer-Schule,Altona,hamburg,Stadtteilschule,,2.174,,0.861,-0.3919,-0.4447,-0.262,-0.1038,-0.1826,-0.2292,0.0561,0.2369
+hamburg_8113-0,Rudolf-Steiner-Schule Altona,Altona,hamburg,Stadtteilschule,,2.174,,0.861,-0.3919,-0.4447,-0.262,-0.1038,-0.1993,-0.1986,0.0419,0.2369
+nrw_100186,Städtische Realschule Borbecker Straße,Bezirk 6,nrw,Realschule,,2.174,,0.897,-0.3919,-0.4447,-0.262,-0.237,-0.1722,-0.1986,0.1477,0.2369
+nrw_164392,"Städtisches Cecilien-Gymnasium - Sek. I und II -  Europaschule Bilingualer Zweig, Montessori-Zweig",Bezirk 4,nrw,Gymnasium,,2.174,,0.897,-0.3919,-0.4447,-0.262,-0.237,-0.1722,-0.1986,0.1477,0.2369
+nrw_166595,Städt. Kaiserin-Augusta-Schule Gymnasium  - Sekundarstufen I und II -,Innenstadt,nrw,Gymnasium,,2.174,,0.9,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.2584
+nrw_198810,Albert-Einstein-Gymnasium Staatl. genehmigte priv.Ersatzschule der Sek.I u.II d. Jüdischen Gemeinde,Bezirk 6,nrw,Gymnasium,,2.174,,0.897,-0.3919,-0.4447,-0.262,-0.237,-0.1722,-0.1986,0.1477,0.2369
+berlin_06P11,Private Kant-Schule,Steglitz-Zehlendorf,berlin,ISS,,2.175,,0.917,-0.3919,-0.4447,-0.262,-0.2407,-0.0952,-0.2017,0.0791,0.2369
+hamburg_5088-0,Stadtteilschule Winterhude,Hamburg-Nord,hamburg,Stadtteilschule,,2.175,,0.824,-0.3919,-0.4447,-0.262,-0.0599,-0.2011,-0.2292,0.0311,0.2369
+hamburg_5830-0,Gymnasium Altona,Altona,hamburg,Gymnasium,2.0,2.175,-0.175,0.863,-0.3919,-0.4447,-0.262,-0.1038,-0.2075,-0.1986,0.0516,0.2369
+hamburg_5830-1,Gymnasium Altona,Altona,hamburg,Gymnasium,2.0,2.175,-0.175,0.863,-0.3919,-0.4447,-0.262,-0.1038,-0.2075,-0.1986,0.0516,0.2369
+nrw_136281,Städt. Gem. Hauptschule,Bezirk 2,nrw,Hauptschule,,2.175,,0.897,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.1986,0.1477,0.2369
+nrw_158604,Städt. Thomas-Edison-Realschule - Schule der Sekundarstufe I -,Bezirk 2,nrw,Realschule,,2.175,,0.897,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.1986,0.1477,0.2369
+nrw_188232,Städt. Heinrich-Heine-Gesamtschule - Sekundarstufe I und II -,Bezirk 2,nrw,Gesamtschule,,2.175,,0.897,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.1986,0.1477,0.2369
+nrw_194955,"Freies Christliches Gymnasium,Pr. Evang. Gymnasium,Staatl.genehm.Ersatzschule des Rhein.-Berg. Verein Fr. Christl. Schulen",Bezirk 9,nrw,Gymnasium,,2.175,,0.897,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.1986,0.1477,0.2369
+nrw_990002,Lycée français international Simone Veil,Bezirk 2,nrw,Internationale Schule,,2.175,,0.897,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.1986,0.1477,0.2369
+berlin_02Y04,Georg-Friedrich-Händel-Gymnasium,Friedrichshain-Kreuzberg,berlin,Gymnasium,1.83,2.176,-0.346,0.907,-0.3919,-0.4447,-0.262,-0.2272,-0.1442,-0.2689,0.1429,0.2765
+nrw_100145,Städt. Gymnasium Zusestraße,,nrw,Gymnasium,,2.176,,0.898,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1986,0.1477,0.2369
+nrw_100208,Sieben Brücken Schule (Gesamtschule) Staatl. genehmigte Ersatzschule i.Aufbau d. Bildungscampus Siebenbrücken gGmbH,,nrw,Gesamtschule,,2.176,,0.898,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1986,0.1477,0.2369
+nrw_141872,Kopernikusschule Städt. Gem. Hauptschule,Porz,nrw,Hauptschule,,2.176,,0.898,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1986,0.1477,0.2369
+nrw_160581,Otto-Lilienthal-Schule Städt. Realschule - Sekundarstufe I -,Porz,nrw,Realschule,,2.176,,0.898,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1986,0.1477,0.2369
+berlin_03P37,Berlin Bilingual School (Integrierte Sekundarschule),Pankow,berlin,ISS,,2.177,,0.903,-0.3919,-0.4447,-0.262,-0.2382,-0.0796,-0.1986,0.0593,0.2369
+nrw_166698,Städt. Dreikönigsgymnasium,Nippes,nrw,Gymnasium,,2.177,,0.898,-0.3919,-0.4447,-0.262,-0.2333,-0.1722,-0.1986,0.1477,0.2369
+nrw_140867,Städt. Gem. Hauptschule Bilderstöckchen,Nippes,nrw,Hauptschule,,2.178,,0.903,-0.3919,-0.4447,-0.262,-0.2333,-0.1722,-0.2292,0.1477,0.2679
+nrw_141082,Stadt Köln Nelson-Mandela-Schule Gemeinschaftshauptschule  -Sek.I-,Mülheim,nrw,Hauptschule,,2.178,,0.899,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1986,0.1477,0.2369
+nrw_164458,Städt. Geschwister-Scholl-Gymnasium - Sekundarstufen I und II -,Bezirk 3,nrw,Gymnasium,,2.178,,0.899,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1986,0.1477,0.2369
+nrw_166455,Rhein-Gymnasium der Stadt Köln - Sekundarstufen I und II -,Mülheim,nrw,Gymnasium,,2.178,,0.899,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1986,0.1477,0.2369
+nrw_166686,Städt. Johann-Gottfried-Herder Gymnasium,Mülheim,nrw,Gymnasium,,2.178,,0.899,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1986,0.1477,0.2369
+hamburg_7921-0,Moderne Schule Hamburg (Gymnasium),Hamburg-Nord,hamburg,Gymnasium,,2.179,,0.853,-0.3919,-0.4447,-0.262,-0.2223,-0.2155,-0.0764,0.06,0.2369
+nrw_164306,Erzbischöfliches Suitbertus-Gymnasium Staatl.gen.priv.Gymnasium d.Erzbistums Köln f.Jungen u. Mädchen  - Sek.I u.II -,,nrw,Gymnasium,,2.179,,0.904,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2292,0.1477,0.2708
+hamburg_5079-0,Stadtteilschule Poppenbüttel,Wandsbek,hamburg,Stadtteilschule,,2.18,,0.89,-0.3919,-0.4447,-0.262,-0.1674,-0.1631,-0.1528,0.0295,0.2369
+nrw_100036,Gesamtschule Helios,Ehrenfeld,nrw,Gesamtschule,,2.18,,0.899,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.1986,0.1477,0.2369
+nrw_166480,Montessori-Gymnasium Städt. Gymnasium für Jungen und Mädchen,Ehrenfeld,nrw,Gymnasium,,2.18,,0.899,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.1986,0.1477,0.2369
+nrw_196459,BilinGO Campus Gesamtschule Sek. I und II DIE Stiftung priv.Schulen gemeinnüt.GmbH,Ehrenfeld,nrw,Gesamtschule,,2.18,,0.899,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.1986,0.1477,0.2369
+nrw_140892,Adolph-Kolping-Schule Städt. Kath. Hauptschule,Kalk,nrw,Hauptschule,,2.181,,0.9,-0.3919,-0.4447,-0.262,-0.2297,-0.1722,-0.1986,0.1477,0.2369
+berlin_04P24,Moser-Schule - Schweizer Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,,2.182,,0.941,-0.3919,-0.4447,-0.262,-0.2309,-0.1202,-0.1955,0.0949,0.2369
+berlin_01Y02,John-Lennon-Gymnasium,Mitte,berlin,Gymnasium,1.96,2.183,-0.223,0.878,-0.3919,-0.4447,-0.262,-0.2284,-0.153,-0.2903,0.1595,0.2986
+berlin_03Y15,Max-Delbrück-Gymnasium,Pankow,berlin,Gymnasium,2.19,2.183,0.007,0.939,-0.3919,-0.4447,-0.262,-0.2382,-0.1191,-0.1742,0.0433,0.2744
+nrw_164320,Städt. Humboldt-Gymnasium,,nrw,Gymnasium,,2.183,,0.907,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2292,0.1477,0.2746
+nrw_164380,St. Ursula-Gymnasium Staatl. genehm. Gymnasium f. Jungen und Mädchen des Erzbistums Köln -Sek.I u.II-,Bezirk 1,nrw,Gymnasium,,2.183,,0.906,-0.3919,-0.4447,-0.262,-0.2284,-0.1722,-0.2292,0.1477,0.2688
+nrw_166601,Städt. Gymnasium Kreuzgasse - Sekundarstufen I und II -,Innenstadt,nrw,Gymnasium,,2.183,,0.901,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.1986,0.1477,0.2369
+nrw_166571,Stadt Köln Deutzer Gymnasium Schaurtestraße Sekundarstufen I und II,,nrw,Gymnasium,,2.184,,0.907,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2292,0.1477,0.2756
+hamburg_5834-0,Margaretha-Rothe-Gymnasium,Hamburg-Nord,hamburg,Gymnasium,2.26,2.186,0.074,0.84,-0.3919,-0.4447,-0.262,-0.0733,-0.1585,-0.275,0.0588,0.2369
+hamburg_7909-0,Christian Morgenstern Schule und Kindergarten e.V.,Eimsbüttel,hamburg,Stadtteilschule,,2.186,,0.826,-0.3919,-0.4447,-0.262,-0.0525,-0.1929,-0.275,0.0726,0.2369
+nrw_100169,Freie Naturschulen Köln - Gesamtschule Staatl. gen. priv. Ersatzschule als Gesamtschule d. Vivimos gUG i. Aufbau,Rodenkirchen,nrw,Gesamtschule,,2.186,,0.903,-0.3919,-0.4447,-0.262,-0.2394,-0.1722,-0.1833,0.1477,0.2369
+nrw_100206,Gymnasium Rondorf,Rodenkirchen,nrw,Gymnasium,,2.186,,0.903,-0.3919,-0.4447,-0.262,-0.2394,-0.1722,-0.1833,0.1477,0.2369
+nrw_166560,Priv. Erzbischöfl. Irmgardis-Gymnasium für Jungen und Mädchen,Rodenkirchen,nrw,Gymnasium,,2.186,,0.903,-0.3919,-0.4447,-0.262,-0.2394,-0.1722,-0.1833,0.1477,0.2369
+nrw_183088,Städt. Carl-Benz-Realschule Oberkassel - Schule der Sekundarstufe I -,Bezirk 4,nrw,Realschule,,2.186,,0.904,-0.3919,-0.4447,-0.262,-0.237,-0.1722,-0.1986,0.1477,0.2494
+hamburg_5846-0,Gymnasium Kaiser-Friedrich-Ufer,Eimsbüttel,hamburg,Gymnasium,2.24,2.187,0.053,0.826,-0.3919,-0.4447,-0.262,-0.0525,-0.2347,-0.1986,0.0389,0.2369
+hamburg_7915-0,Alsterring Gymnasium,Hamburg-Nord,hamburg,Gymnasium,,2.187,,0.841,-0.3919,-0.4447,-0.262,-0.0733,-0.1568,-0.275,0.0588,0.2369
+berlin_06S01,Pestalozzi-Schule,Steglitz-Zehlendorf,berlin,ISS,,2.188,,0.885,-0.3919,-0.4447,-0.262,-0.2407,-0.1373,-0.1131,0.0449,0.2369
+hamburg_5297-0,Campus Hebebrandstraße,Hamburg-Nord,hamburg,Stadtteilschule_Gymnasium,,2.188,,0.831,-0.3919,-0.4447,-0.262,-0.0599,-0.1725,-0.275,0.0616,0.2369
+nrw_187410,Rudolf-Steiner-Schule Priv. Schule eigener Art für Jungen u. Mädchen,Bezirk 7,nrw,Waldorfschule,,2.188,,0.903,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.1833,0.1477,0.2369
+berlin_02Y03,Heinrich-Hertz-Gymnasium,Friedrichshain-Kreuzberg,berlin,Gymnasium,1.78,2.189,-0.409,0.903,-0.3919,-0.4447,-0.262,-0.2272,-0.1419,-0.2414,0.1493,0.2537
+nrw_189819,Hulda-Pankok-Schule Städt. Gesamtschule - Sekundarstufen I und II -,Bezirk 3,nrw,Gesamtschule,,2.189,,0.91,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.2778
+berlin_11K17,17. Schule (Integrierte Sekundarschule) Neugründung zum 01.08.2026,Lichtenberg,berlin,ISS,,2.192,,0.912,-0.3919,-0.4447,-0.262,-0.2333,-0.0784,-0.2261,0.0961,0.2369
+berlin_06P06,Königin-Luise-Stiftung,Steglitz-Zehlendorf,berlin,ISS-Gymnasium,,2.192,,0.914,-0.3919,-0.4447,-0.262,-0.2407,-0.1238,-0.1436,0.0666,0.2369
+berlin_06P20,Freie Schule Anne-Sophie Berlin,Steglitz-Zehlendorf,berlin,Gymnasium,,2.192,,0.919,-0.3919,-0.4447,-0.262,-0.2407,-0.1195,-0.1497,0.0685,0.2369
+berlin_09Y10,Gebrüder-Montgolfier-Gymnasium,Treptow-Köpenick,berlin,Gymnasium,2.2,2.192,0.008,0.916,-0.3919,-0.4447,-0.262,-0.2394,-0.0849,-0.2444,0.0765,0.288
+berlin_09Y06,Gerhart-Hauptmann-Gymnasium,Treptow-Köpenick,berlin,Gymnasium,2.05,2.192,-0.142,0.88,-0.3919,-0.4447,-0.262,-0.2394,-0.0693,-0.1558,0.0,0.2594
+berlin_02Y05,Dathe-Gymnasium,Friedrichshain-Kreuzberg,berlin,Gymnasium,2.11,2.193,-0.083,0.878,-0.3919,-0.4447,-0.262,-0.2272,-0.138,-0.2903,0.1795,0.272
+berlin_12Y05,Georg-Herwegh-Gymnasium,Reinickendorf,berlin,Gymnasium,2.33,2.193,0.137,0.932,-0.3919,-0.4447,-0.262,-0.2358,-0.1261,-0.1894,0.0485,0.299
+hamburg_5076-0,Max-Brauer-Schule,Altona,hamburg,Stadtteilschule,,2.194,,0.854,-0.3919,-0.4447,-0.262,-0.0843,-0.1826,-0.2292,0.0561,0.2369
+berlin_12P14,Montessori Campus am Tegeler Forst,Reinickendorf,berlin,ISS,,2.195,,0.911,-0.3919,-0.4447,-0.262,-0.2358,-0.1105,-0.1497,0.0574,0.2369
+berlin_05Y03,Hans-Carossa-Gymnasium,Spandau,berlin,Gymnasium,2.2,2.195,0.005,0.856,-0.3919,-0.4447,-0.262,-0.2321,-0.2118,-0.0672,0.0299,0.2796
+berlin_03Y03,Käthe-Kollwitz-Gymnasium,Pankow,berlin,Gymnasium,1.64,2.195,-0.555,0.932,-0.3919,-0.4447,-0.262,-0.2382,-0.1255,-0.2444,0.1096,0.297
+nrw_100041,Gesamtschule Wasseramselweg der Stadt Köln - Sekundarstufen I und II -,Ehrenfeld,nrw,Gesamtschule,,2.195,,0.906,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.1833,0.1477,0.2369
+nrw_100210,Gesamtschule Am Wassermann,Ehrenfeld,nrw,Gesamtschule,,2.195,,0.906,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.1833,0.1477,0.2369
+nrw_100212,Gesamtschule Ossendorf,Ehrenfeld,nrw,Gesamtschule,,2.195,,0.906,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.1833,0.1477,0.2369
+nrw_140960,Städt. Gem. Hauptschule Baadenberger Str.,Ehrenfeld,nrw,Hauptschule,,2.195,,0.906,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.1833,0.1477,0.2369
+nrw_198353,Aktive Schule Köln Hauptschule der gemeinnützigen Gesellschaft ASK mbH Staatlich genehmigte Ersatzschule,Ehrenfeld,nrw,Hauptschule,,2.195,,0.906,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.1833,0.1477,0.2369
+nrw_164318,Städt. Goethe-Gymnasium mit ehemaligem Rethel-Gymnasium  -Sekundarst. I und II- Bilingualer deutsch-englischer Zweig,Bezirk 2,nrw,Gymnasium,,2.196,,0.906,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.2292,0.1477,0.2884
+nrw_158665,Städt. Realschule Friedrichstadt - Sekundarstufe I -,Bezirk 1,nrw,Realschule,,2.198,,0.91,-0.3919,-0.4447,-0.262,-0.2284,-0.1722,-0.1986,0.1477,0.253
+berlin_09P07,Evangelische Schule Köpenick (Gymnasium),Treptow-Köpenick,berlin,Gymnasium,,2.2,,0.869,-0.3919,-0.4447,-0.262,-0.2394,-0.0704,-0.1406,0.0167,0.2369
+berlin_06Y03,Arndt-Gymnasium Dahlem,Steglitz-Zehlendorf,berlin,Gymnasium,1.79,2.201,-0.411,0.928,-0.3919,-0.4447,-0.262,-0.2407,-0.1927,-0.1436,0.1038,0.2777
+hamburg_5056-0,Grund- und Stadtteilschule Alter Teichweg,Hamburg-Nord,hamburg,Stadtteilschule,,2.202,,0.933,-0.3919,-0.4447,-0.262,-0.1759,-0.1257,-0.2292,0.0992,0.2369
+nrw_197488,Offene Schule Köln der OSK gGmbH Staatl. genehm. priv. Ersatzschule inkl. Gesamtschule d. Sek I und II,Rodenkirchen,nrw,Gesamtschule,,2.202,,0.9,-0.3919,-0.4447,-0.262,-0.2394,-0.1722,-0.168,0.1477,0.2369
+berlin_06Y02,Droste-Hülshoff-Gymnasium,Steglitz-Zehlendorf,berlin,Gymnasium,2.21,2.203,0.007,0.935,-0.3919,-0.4447,-0.262,-0.2407,-0.1111,-0.1955,0.0595,0.2939
+berlin_07Y03,Rheingau-Gymnasium,Tempelhof-Schöneberg,berlin,Gymnasium,2.17,2.203,-0.033,0.946,-0.3919,-0.4447,-0.262,-0.237,-0.1085,-0.2017,0.0712,0.282
+hamburg_5665-0,Stadtteilschule Niendorf,Eimsbüttel,hamburg,Stadtteilschule,,2.204,,0.872,-0.3919,-0.4447,-0.262,-0.1161,-0.175,-0.168,0.029,0.2369
+hamburg_5665-2,Stadtteilschule Niendorf,Eimsbüttel,hamburg,Stadtteilschule,,2.204,,0.872,-0.3919,-0.4447,-0.262,-0.1161,-0.175,-0.168,0.029,0.2369
+hamburg_5882-0,Gymnasium Bondenwald,Eimsbüttel,hamburg,Gymnasium,2.47,2.204,0.266,0.875,-0.3919,-0.4447,-0.262,-0.1161,-0.194,-0.168,0.0481,0.2369
+nrw_164355,Annette-von-Droste-Hülshoff-Gymnasium - Sekundarstufen I und II-,Bezirk 9,nrw,Gymnasium,,2.204,,0.902,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.2292,0.1477,0.2965
+hamburg_5048-0,Stadtteilschule Bergstedt,Wandsbek,hamburg,Stadtteilschule,,2.205,,0.883,-0.3919,-0.4447,-0.262,-0.2358,-0.1322,-0.1039,0.043,0.2369
+hamburg_8301-0,Jenisch-Gymnasium,Altona,hamburg,Gymnasium,2.33,2.205,0.125,0.856,-0.3919,-0.4447,-0.262,-0.1515,-0.2433,-0.1069,0.0734,0.2369
+berlin_03P03,Schulen Christburg Campus Prenzlauer Berg,Pankow,berlin,ISS,,2.208,,0.935,-0.3919,-0.4447,-0.262,-0.2382,-0.1319,-0.1619,0.1065,0.2369
+berlin_03P10,Katholische Theresienschule (Gymnasium),Pankow,berlin,Gymnasium,,2.208,,0.919,-0.3919,-0.4447,-0.262,-0.2382,-0.0819,-0.1772,0.0714,0.2369
+hamburg_5879-0,Deutsch-Französisches Gymnasium,Eimsbüttel,hamburg,Gymnasium,,2.208,,0.889,-0.3919,-0.4447,-0.262,-0.1637,-0.2065,-0.1986,0.1432,0.2369
+nrw_183726,Gesamtschule Köln-Holweide - Sekundarstufen I und II -,Mülheim,nrw,Gesamtschule,,2.209,,0.918,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2139,0.1477,0.2826
+nrw_136440,St.-Benedikt-Schule Städt. Kath. Hauptschule,Bezirk 1,nrw,Hauptschule,,2.21,,0.905,-0.3919,-0.4447,-0.262,-0.2284,-0.1722,-0.2292,0.1477,0.295
+nrw_166650,Kaiserin-Theophanu-Schule Städt. Gymnasium für Jungen und Mädchen,Kalk,nrw,Gymnasium,,2.21,,0.904,-0.3919,-0.4447,-0.262,-0.2297,-0.1722,-0.2292,0.1477,0.2965
+berlin_04P23,Jüdische Traditionsschule,Charlottenburg-Wilmersdorf,berlin,ISS-Gymnasium,,2.211,,0.924,-0.3919,-0.4447,-0.262,-0.2309,-0.1241,-0.2017,0.1337,0.2369
+nrw_140843,Kurt-Tucholsky-Schule Städt. Gem. Hauptschule,Kalk,nrw,Hauptschule,,2.211,,0.904,-0.3919,-0.4447,-0.262,-0.2297,-0.1722,-0.168,0.1477,0.2369
+nrw_166716,Hildegard-von-Bingen-Gymnasium Sekundarstufe I und II,Lindenthal,nrw,Gymnasium,,2.211,,0.91,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.2139,0.1477,0.2914
+hamburg_5829-0,Gymnasium Ohmoor,Eimsbüttel,hamburg,Gymnasium,2.24,2.212,0.028,0.876,-0.3919,-0.4447,-0.262,-0.1161,-0.1736,-0.168,0.0357,0.2369
+berlin_09Y03,Archenhold-Gymnasium,Treptow-Köpenick,berlin,Gymnasium,2.32,2.213,0.107,0.907,-0.3919,-0.4447,-0.262,-0.2394,-0.0974,-0.2597,0.0957,0.317
+berlin_04P42,Private Kant-Schule - Berlin International School,Charlottenburg-Wilmersdorf,berlin,ISS,,2.214,,0.925,-0.3919,-0.4447,-0.262,-0.2309,-0.1245,-0.1436,0.0798,0.2369
+berlin_04Y11,Goethe-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,,2.215,,0.93,-0.3919,-0.4447,-0.262,-0.2309,-0.1187,-0.1955,0.1269,0.2369
+nrw_183854,Gustav-Heinemann-Schule Städt. Gem. Hauptschule,Chorweiler,nrw,Hauptschule,,2.216,,0.921,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1986,0.1477,0.2744
+berlin_09K08,Schule an der Dahme (Integrierte Sekundarschule),Treptow-Köpenick,berlin,ISS,2.33,2.218,0.112,0.77,-0.4702,-0.5929,-0.0303,-0.2394,-0.0701,-0.2292,0.069,0.2857
+berlin_09Y12,12. Schule (Gymnasium),Treptow-Köpenick,berlin,Gymnasium,,2.218,,0.905,-0.3919,-0.4447,-0.262,-0.2394,-0.0568,-0.2047,0.0851,0.2369
+nrw_184287,Heinrich-Böll-Schule Städt. Gesamtschule Köln-Chorweiler - Sekundarstufen I und II -,Chorweiler,nrw,Gesamtschule,,2.219,,0.896,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.3084
+berlin_04P15,Freie Schule Charlottenburg,Charlottenburg-Wilmersdorf,berlin,ISS,,2.221,,0.945,-0.3919,-0.4447,-0.262,-0.2309,-0.1125,-0.1711,0.1016,0.2369
+nrw_160120,Edith-Stein-Realschule Städt. Realschule,Nippes,nrw,Realschule,,2.221,,0.894,-0.3919,-0.4447,-0.262,-0.2333,-0.1722,-0.2292,0.1477,0.3109
+nrw_164409,Städt. Gymnasium Koblenzer Straße - Sekundarstufe I und II -,Bezirk 9,nrw,Gymnasium,,2.221,,0.895,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.1528,0.1477,0.2369
+hamburg_5832-0,Gymnasium Allermöhe,Bergedorf,hamburg,Gymnasium,2.43,2.222,0.208,0.93,-0.3919,-0.4447,-0.262,-0.1832,-0.1067,-0.2292,0.1074,0.2369
+nrw_100040,Gymnasium Neue Sandkaul,,nrw,Gymnasium,,2.222,,0.895,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1528,0.1477,0.2369
+nrw_185176,Europaschule Köln Gesamtschule Zollstock - Sekundarstufen I und II -,Rodenkirchen,nrw,Gesamtschule,,2.222,,0.903,-0.3919,-0.4447,-0.262,-0.2394,-0.1722,-0.2139,0.1477,0.3035
+berlin_04Y05,Herder-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,1.95,2.223,-0.273,0.959,-0.3919,-0.4447,-0.262,-0.2309,-0.1292,-0.1955,0.0926,0.2895
+nrw_100211,Gesamtschule Weidenpesch,Nippes,nrw,Gesamtschule,,2.223,,0.896,-0.3919,-0.4447,-0.262,-0.2333,-0.1722,-0.1528,0.1477,0.2369
+nrw_164434,Städt. Comenius-Gymnasium,Bezirk 4,nrw,Gymnasium,,2.223,,0.889,-0.3919,-0.4447,-0.262,-0.237,-0.1722,-0.2292,0.1477,0.3174
+nrw_141070,Städt. Gem. Hauptschule Tiefentalstr.,Mülheim,nrw,Hauptschule,,2.224,,0.909,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2139,0.1477,0.2975
+nrw_185437,"Gymnasium, Köln-Pesch der Stadt Köln Sekundarstufen I und II",Chorweiler,nrw,Gymnasium,,2.224,,0.896,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1528,0.1477,0.2369
+berlin_06P18,Bilinguale Schule Phorms Berlin Süd,Steglitz-Zehlendorf,berlin,Gymnasium,,2.225,,0.889,-0.3919,-0.4447,-0.262,-0.2407,-0.1553,-0.0947,0.0818,0.2369
+berlin_06Y01,Schadow-Gymnasium,Steglitz-Zehlendorf,berlin,Gymnasium,2.02,2.225,-0.205,0.946,-0.3919,-0.4447,-0.262,-0.2407,-0.1196,-0.1955,0.0829,0.3009
+nrw_184913,Stadt Köln Lise-Meitner-Gesamtschule - Sekundarstufen I und II -,Porz,nrw,Gesamtschule,,2.225,,0.922,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1986,0.1477,0.2856
+berlin_04P04,Katholische Schule Liebfrauen (Gymnasium),Charlottenburg-Wilmersdorf,berlin,Gymnasium,,2.226,,0.921,-0.3919,-0.4447,-0.262,-0.2309,-0.1028,-0.2017,0.1277,0.2369
+berlin_07Y04,Paul-Natorp-Gymnasium,Tempelhof-Schöneberg,berlin,Gymnasium,1.89,2.226,-0.336,0.927,-0.3919,-0.4447,-0.262,-0.237,-0.1059,-0.2017,0.0669,0.3075
+nrw_164343,Städt. Schloß-Gymnasium Benrath - Sekundarstufe I und II -,Bezirk 10,nrw,Gymnasium,,2.227,,0.883,-0.3919,-0.4447,-0.262,-0.2407,-0.1722,-0.2292,0.1477,0.3249
+hamburg_5294-0,Campus Kieler Straße,Altona,hamburg,Stadtteilschule_Gymnasium,,2.228,,0.837,-0.3919,-0.4447,-0.262,-0.0415,-0.1986,-0.2444,0.0789,0.2369
+berlin_03K05,Heinz-Brandt-Schule,Pankow,berlin,ISS,,2.229,,0.732,-0.3135,-0.7792,-0.0982,-0.2382,-0.08,-0.1772,0.0761,0.3445
+hamburg_5802-0,Matthias-Claudius-Gymnasium,Wandsbek,hamburg,Gymnasium,2.33,2.229,0.101,0.843,-0.3919,-0.4447,-0.262,-0.0476,-0.1821,-0.275,0.0998,0.2369
+nrw_166492,Königin-Luise-Schule Städt. Gymnasium für Mädchen und Jungen,Innenstadt,nrw,Gymnasium,,2.229,,0.895,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.3127
+berlin_06Y05,Werner-von-Siemens-Gymnasium,Steglitz-Zehlendorf,berlin,Gymnasium,1.9,2.23,-0.33,0.929,-0.3919,-0.4447,-0.262,-0.2407,-0.1358,-0.1406,0.1046,0.2454
+nrw_166935,Städt. Gymnasium Rodenkirchen für Jungen und Mädchen - Sekundarstufen I und II -,Rodenkirchen,nrw,Gymnasium,,2.23,,0.928,-0.3919,-0.4447,-0.262,-0.2394,-0.1722,-0.1833,0.1477,0.2801
+nrw_166649,Städt. Humboldt-Gymnasium,Innenstadt,nrw,Gymnasium,,2.232,,0.924,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.1986,0.1477,0.2859
+berlin_07A44,Willkommensschule THF,Tempelhof-Schöneberg,berlin,ISS,,2.234,,0.926,-0.3919,-0.4447,-0.262,-0.237,-0.0828,-0.1894,0.1095,0.2369
+berlin_02Y01,Andreas-Gymnasium,Friedrichshain-Kreuzberg,berlin,Gymnasium,2.13,2.234,-0.104,0.897,-0.3919,-0.4447,-0.262,-0.2272,-0.0914,-0.2597,0.1505,0.2651
+berlin_03Y08,Carl-von-Ossietzky-Gymnasium,Pankow,berlin,Gymnasium,1.93,2.234,-0.304,0.92,-0.3919,-0.4447,-0.262,-0.2382,-0.0865,-0.2292,0.0867,0.3043
+hamburg_5080-0,Stadtteilschule Finkenwerder,Hamburg-Mitte,hamburg,Stadtteilschule,,2.234,,0.934,-0.3919,-0.4447,-0.262,-0.2272,-0.1299,-0.1528,0.1106,0.2369
+berlin_04Y06,Heinz-Berggruen-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,1.89,2.237,-0.347,0.957,-0.3919,-0.4447,-0.262,-0.2309,-0.1135,-0.1955,0.0893,0.2906
+hamburg_5043-0,Stadtteilschule Helmuth Hübener,Hamburg-Nord,hamburg,Stadtteilschule,,2.237,,0.863,-0.3919,-0.4447,-0.262,-0.0733,-0.146,-0.2444,0.0675,0.2369
+hamburg_5043-1,Stadtteilschule Helmuth Hübener,Hamburg-Nord,hamburg,Stadtteilschule,,2.237,,0.863,-0.3919,-0.4447,-0.262,-0.0733,-0.146,-0.2444,0.0675,0.2369
+nrw_100233,Gymnasium Brügelmannstraße,,nrw,Gymnasium,,2.237,,0.889,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1375,0.1477,0.2369
+nrw_100235,Gesamtschule Kalk,,nrw,Gesamtschule,,2.237,,0.889,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1375,0.1477,0.2369
+nrw_164471,Städt. Leibniz-Montessori Gymnasium - Sekundarstufe I und II -,,nrw,Gymnasium,,2.237,,0.915,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1986,0.1477,0.2979
+berlin_12P04,Katholische Schule Salvator,Reinickendorf,berlin,ISS-Gymnasium,,2.238,,0.888,-0.3919,-0.4447,-0.262,-0.2358,-0.0959,-0.1161,0.0523,0.2369
+berlin_04A08,Sportschule im Olympiapark - Poelchau-Schule,Charlottenburg-Wilmersdorf,berlin,ISS,2.19,2.24,-0.05,0.68,-0.7837,-0.4447,-0.0,-0.2309,-0.1324,-0.1589,0.0867,0.4082
+berlin_04S05,Ernst-Adolf-Eschke-Schule für Gehörlose,Charlottenburg-Wilmersdorf,berlin,ISS,,2.241,,0.886,-0.3919,-0.4447,-0.262,-0.2309,-0.1753,-0.1558,0.1691,0.2369
+berlin_06Y11,Goethe-Gymnasium Lichterfelde,Steglitz-Zehlendorf,berlin,Gymnasium,2.19,2.241,-0.051,0.914,-0.3919,-0.4447,-0.262,-0.2407,-0.1096,-0.1894,0.0554,0.329
+berlin_10Y02,Otto-Nagel-Gymnasium,Marzahn-Hellersdorf,berlin,Gymnasium,1.98,2.241,-0.261,0.956,-0.3919,-0.4447,-0.262,-0.2345,-0.1363,-0.1558,0.0934,0.2781
+berlin_01P18,Bilinguale Schule Phorms Berlin Mitte,Mitte,berlin,Gymnasium,,2.242,,0.873,-0.3919,-0.4447,-0.262,-0.2284,-0.1322,-0.2322,0.2016,0.2369
+nrw_166704,Erzbischöfliche Ursulinenschule Köln Gymnasium für Mädchen und Jungen,Innenstadt,nrw,Gymnasium,,2.242,,0.887,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.326
+berlin_03P24,Ting-Schule (Integrierte Sekundarschule),Pankow,berlin,ISS,,2.243,,0.819,-0.3919,-0.4447,-0.262,-0.2382,-0.0781,-0.2719,0.0394,0.3955
+nrw_167060,Stadtgymnasium Köln-Porz - Sekundarstufen I und II -,Porz,nrw,Gymnasium,,2.243,,0.88,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.2292,0.1477,0.3342
+hamburg_5084-0,Gretel-Bergmann-Schule,Bergedorf,hamburg,Stadtteilschule,,2.244,,0.919,-0.3919,-0.4447,-0.262,-0.1832,-0.0741,-0.2292,0.0974,0.2369
+hamburg_5084-1,Gretel-Bergmann-Schule,Bergedorf,hamburg,Stadtteilschule,,2.244,,0.919,-0.3919,-0.4447,-0.262,-0.1832,-0.0741,-0.2292,0.0974,0.2369
+hamburg_8101-0,Rudolf-Steiner-Schule Wandsbek,Wandsbek,hamburg,Stadtteilschule,,2.244,,0.911,-0.3919,-0.4447,-0.262,-0.1295,-0.1269,-0.1986,0.0653,0.2369
+berlin_04P47,Privates Europa-Gymnasium Berlin,Charlottenburg-Wilmersdorf,berlin,Gymnasium,,2.245,,0.922,-0.3919,-0.4447,-0.262,-0.2309,-0.1133,-0.1894,0.1448,0.2369
+hamburg_5296-0,Campus Schnelsen,Eimsbüttel,hamburg,Stadtteilschule_Gymnasium,,2.245,,0.924,-0.3919,-0.4447,-0.262,-0.1698,-0.1476,-0.1528,0.0815,0.2369
+berlin_06Y07,Paulsen-Gymnasium,Steglitz-Zehlendorf,berlin,Gymnasium,2.34,2.246,0.094,0.943,-0.3919,-0.4447,-0.262,-0.2407,-0.1107,-0.1589,0.0708,0.2883
+hamburg_5856-0,Gymnasium Finkenwerder,Hamburg-Mitte,hamburg,Gymnasium,2.0,2.247,-0.247,0.933,-0.3919,-0.4447,-0.262,-0.2272,-0.124,-0.1528,0.1169,0.2369
+nrw_166923,Städt. Georg-Büchner-Gymnasium - Sekundarstufen I und II -,,nrw,Gymnasium,,2.249,,0.908,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1986,0.1477,0.3096
+berlin_04P11,Evangelisches Gymnasium zum Grauen Kloster,Charlottenburg-Wilmersdorf,berlin,Gymnasium,,2.25,,0.926,-0.3919,-0.4447,-0.262,-0.2309,-0.1266,-0.1497,0.1233,0.2369
+berlin_03Y14,Primo-Levi-Gymnasium,Pankow,berlin,Gymnasium,2.07,2.25,-0.18,0.938,-0.3919,-0.4447,-0.262,-0.2382,-0.0757,-0.1772,0.0673,0.2773
+hamburg_5662-2,Emil Krause Schule,Hamburg-Nord,hamburg,Stadtteilschule,,2.25,,0.871,-0.3919,-0.4447,-0.262,-0.0733,-0.1551,-0.2444,0.0895,0.2369
+hamburg_5662-4,Emil Krause Schule,Hamburg-Nord,hamburg,Stadtteilschule,,2.25,,0.871,-0.3919,-0.4447,-0.262,-0.0733,-0.1551,-0.2444,0.0895,0.2369
+berlin_09S06,Schule am Wildgarten,Treptow-Köpenick,berlin,ISS,,2.251,,0.898,-0.3919,-0.4447,-0.262,-0.2394,-0.057,-0.1558,0.07,0.2369
+nrw_158689,Theodor-Litt-Realschule Städt. Realschule - Sekundarstufe I -,Bezirk 9,nrw,Realschule,,2.251,,0.913,-0.3919,-0.4447,-0.262,-0.2358,-0.1722,-0.1528,0.1477,0.2676
+nrw_166625,Städt. Hölderlin-Gymnasium,Mülheim,nrw,Gymnasium,,2.251,,0.877,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.2292,0.1477,0.3397
+berlin_06Y04,Dreilinden-Gymnasium,Steglitz-Zehlendorf,berlin,Gymnasium,2.29,2.252,0.038,0.914,-0.3919,-0.4447,-0.262,-0.2407,-0.1358,-0.1528,0.0623,0.3223
+berlin_03Y13,Felix-Mendelssohn-Bartholdy-Gymnasium,Pankow,berlin,Gymnasium,2.31,2.252,0.058,0.963,-0.3919,-0.4447,-0.262,-0.2382,-0.1212,-0.165,0.1054,0.2739
+berlin_04Y07,Friedrich-Ebert-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,2.24,2.252,-0.012,0.956,-0.3919,-0.4447,-0.262,-0.2309,-0.1094,-0.2017,0.1139,0.2835
+nrw_166662,Städt. Albertus-Magnus-Gymnasium - Sekundarstufen I und II -,Ehrenfeld,nrw,Gymnasium,,2.252,,0.894,-0.3919,-0.4447,-0.262,-0.2309,-0.1722,-0.2139,0.1477,0.3242
+hamburg_5825-0,Lise-Meitner-Gymnasium,Altona,hamburg,Gymnasium,2.38,2.253,0.127,0.899,-0.3919,-0.4447,-0.262,-0.1515,-0.1653,-0.1375,0.0732,0.2369
+berlin_06Y13,Gymnasium Steglitz,Steglitz-Zehlendorf,berlin,Gymnasium,1.9,2.254,-0.354,0.93,-0.3919,-0.4447,-0.262,-0.2407,-0.0943,-0.2017,0.0847,0.3093
+hamburg_5853-0,Louise Weiss Gymnasium,Hamburg-Mitte,hamburg,Gymnasium,,2.254,,0.856,-0.3919,-0.4447,-0.262,-0.0867,-0.148,-0.275,0.13,0.2369
+berlin_11Y02,Johann-Gottfried-Herder-Gymnasium,Lichtenberg,berlin,Gymnasium,1.86,2.256,-0.396,0.91,-0.3919,-0.4447,-0.262,-0.2333,-0.0781,-0.2475,0.113,0.3057
+hamburg_5046-0,Gyula Trebitsch Schule Tonndorf,Wandsbek,hamburg,Stadtteilschule_Gymnasium,,2.257,,0.92,-0.3919,-0.4447,-0.262,-0.193,-0.1342,-0.1222,0.0727,0.2369
+hamburg_5663-0,Stadtteilschule Hamburg-Mitte,Hamburg-Mitte,hamburg,Stadtteilschule,,2.257,,0.795,-0.3919,-0.4447,-0.262,-0.0,-0.2272,-0.275,0.1257,0.2369
+hamburg_5899-0,Gymnasium Hummelsbüttel,Wandsbek,hamburg,Gymnasium,2.0,2.258,-0.258,0.934,-0.3919,-0.4447,-0.262,-0.2089,-0.136,-0.1375,0.1063,0.2369
+berlin_09Y11,Emmy-Noether-Gymnasium,Treptow-Köpenick,berlin,Gymnasium,2.17,2.26,-0.09,0.905,-0.3919,-0.4447,-0.262,-0.2394,-0.0582,-0.1864,0.0446,0.3032
+berlin_11Y11,Immanuel-Kant-Gymnasium,Lichtenberg,berlin,Gymnasium,2.18,2.26,-0.08,0.909,-0.3919,-0.4447,-0.262,-0.2333,-0.0836,-0.2414,0.0977,0.324
+berlin_03Y17,Inge-Deutschkron-Gymnasium,Pankow,berlin,Gymnasium,2.59,2.261,0.329,0.952,-0.3919,-0.4447,-0.262,-0.2382,-0.0825,-0.1925,0.0952,0.2823
+berlin_07P01,Katholische Schule Sankt Franziskus (Integrierte Sekundarschule),Tempelhof-Schöneberg,berlin,ISS,,2.263,,0.897,-0.3919,-0.4447,-0.262,-0.237,-0.0953,-0.2017,0.1636,0.2369
+berlin_10Y12,12. Schule (Gymnasium),Marzahn-Hellersdorf,berlin,Gymnasium,,2.264,,0.888,-0.3919,-0.4447,-0.262,-0.2345,-0.0137,-0.1925,0.0716,0.2369
+berlin_03Y16,Robert-Havemann-Gymnasium,Pankow,berlin,Gymnasium,2.44,2.264,0.176,0.881,-0.3919,-0.4447,-0.262,-0.2382,-0.0946,-0.0947,0.0561,0.239
+berlin_04Y03,Sophie-Charlotte-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,2.48,2.264,0.216,0.915,-0.3919,-0.4447,-0.262,-0.2309,-0.1429,-0.2139,0.1533,0.3019
+hamburg_8112-0,Rudolf-Steiner-Schule Bergstedt,Wandsbek,hamburg,Stadtteilschule,,2.264,,0.9,-0.3919,-0.4447,-0.262,-0.2358,-0.1345,-0.0886,0.0891,0.2369
+nrw_160118,Städt. Realschule für Jungen und Mädchen,,nrw,Realschule,,2.264,,0.921,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.168,0.1477,0.2941
+berlin_12Y03,Humboldt-Gymnasium,Reinickendorf,berlin,Gymnasium,2.12,2.265,-0.145,0.904,-0.3919,-0.4447,-0.262,-0.2358,-0.0894,-0.1955,0.057,0.3322
+berlin_03Y10,Rosa-Luxemburg-Gymnasium,Pankow,berlin,Gymnasium,1.75,2.265,-0.515,0.906,-0.3919,-0.4447,-0.262,-0.2382,-0.0718,-0.1955,0.0577,0.3163
+nrw_198912,Stadt Köln igis Köln -Integrierte Gesamtschule Innenstadt  -Sekundarstufen I und II-,Innenstadt,nrw,Gesamtschule,,2.265,,0.874,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.2292,0.1477,0.3492
+hamburg_5814-0,Heisenberg-Gymnasium,Harburg,hamburg,Gymnasium,2.26,2.267,-0.007,0.949,-0.3919,-0.4447,-0.262,-0.1955,-0.1258,-0.1528,0.1076,0.2369
+hamburg_7801-0,Stadtteilschule St. Georg,Hamburg-Mitte,hamburg,Stadtteilschule,,2.267,,0.793,-0.3919,-0.4447,-0.262,-0.0,-0.2243,-0.275,0.1323,0.2369
+berlin_06P12,Evangelische Schule Steglitz (Integrierte Sekundarschule),Steglitz-Zehlendorf,berlin,ISS,,2.268,,0.904,-0.3919,-0.4447,-0.262,-0.2407,-0.0854,-0.1253,0.0857,0.2369
+berlin_06Y12,Willi-Graf-Gymnasium,Steglitz-Zehlendorf,berlin,Gymnasium,2.27,2.269,0.001,0.95,-0.3919,-0.4447,-0.262,-0.2407,-0.1067,-0.1497,0.0872,0.2818
+hamburg_7703-0,Privates Gymnasium Brecht,Hamburg-Mitte,hamburg,Gymnasium,1.88,2.269,-0.389,0.754,-0.3919,-0.4447,-0.262,-0.0,-0.2334,-0.3055,0.1739,0.2369
+hamburg_7714-0,Private Stadtteilschule Brecht,Hamburg-Mitte,hamburg,Stadtteilschule,,2.269,,0.754,-0.3919,-0.4447,-0.262,-0.0,-0.2334,-0.3055,0.1739,0.2369
+hamburg_8405-0,Privates Abendgymnasium Brecht,Hamburg-Mitte,hamburg,Gymnasium,,2.269,,0.754,-0.3919,-0.4447,-0.262,-0.0,-0.2334,-0.3055,0.1739,0.2369
+berlin_07Y06,Askanisches Gymnasium,Tempelhof-Schöneberg,berlin,Gymnasium,2.56,2.272,0.288,0.937,-0.3919,-0.4447,-0.262,-0.237,-0.0712,-0.1925,0.1105,0.2656
+berlin_10S07,Schule am Rosenhain,Marzahn-Hellersdorf,berlin,ISS,,2.274,,0.9,-0.3919,-0.4447,-0.262,-0.2345,-0.022,-0.1925,0.0891,0.2369
+nrw_166479,Städt. Apostel-Gymnasium,Lindenthal,nrw,Gymnasium,,2.275,,0.904,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.1833,0.1477,0.3242
+berlin_12Y04,Gabriele-von-Bülow-Gymnasium,Reinickendorf,berlin,Gymnasium,2.3,2.276,0.024,0.92,-0.3919,-0.4447,-0.262,-0.2358,-0.0883,-0.1497,0.0568,0.2961
+hamburg_5805-1,Struensee Gymnasium,Altona,hamburg,Gymnasium,2.49,2.276,0.214,0.86,-0.3919,-0.4447,-0.262,-0.0452,-0.1704,-0.2444,0.1021,0.2369
+hamburg_5805-2,Struensee Gymnasium,Altona,hamburg,Gymnasium,2.49,2.276,0.214,0.86,-0.3919,-0.4447,-0.262,-0.0452,-0.1704,-0.2444,0.1021,0.2369
+berlin_07Y02,Rückert-Gymnasium,Tempelhof-Schöneberg,berlin,Gymnasium,2.42,2.278,0.142,0.959,-0.3919,-0.4447,-0.262,-0.237,-0.1046,-0.1742,0.1016,0.2958
+hamburg_5866-0,Gymnasium Klosterschule,Hamburg-Mitte,hamburg,Gymnasium,2.27,2.279,-0.009,0.771,-0.3919,-0.4447,-0.262,-0.0,-0.2089,-0.3055,0.1597,0.2369
+berlin_08K05,Clay-Schule,Neukölln,berlin,ISS,2.67,2.28,0.39,0.803,-0.4702,-0.5405,-0.1813,-0.2297,-0.0798,-0.0978,0.0563,0.3282
+berlin_04P35,Mentora Gymnasium (KEIN Schulbetrieb),Charlottenburg-Wilmersdorf,berlin,Gymnasium,,2.28,,0.906,-0.3919,-0.4447,-0.262,-0.2309,-0.1297,-0.1619,0.1693,0.2369
+berlin_08S04,Schule am Zwickauer Damm,Neukölln,berlin,ISS,,2.282,,0.91,-0.3919,-0.4447,-0.262,-0.2297,-0.0417,-0.1925,0.1125,0.2369
+berlin_11Y05,Hans-und-Hilde-Coppi-Gymnasium,Lichtenberg,berlin,Gymnasium,2.13,2.284,-0.154,0.91,-0.3919,-0.4447,-0.262,-0.2333,-0.0726,-0.223,0.0923,0.3236
+hamburg_5849-0,Carl-von-Ossietzky-Gymnasium,Wandsbek,hamburg,Gymnasium,2.28,2.284,-0.004,0.926,-0.3919,-0.4447,-0.262,-0.1674,-0.1068,-0.1528,0.0776,0.2369
+nrw_184937,Städt. Willy-Brandt-Gesamtschule - Sekundarstufen I und II -,Mülheim,nrw,Gesamtschule,,2.284,,0.889,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1986,0.1477,0.3421
+nrw_195959,Stadt Köln Carl-von-Ossietzky-Gesamtschule Sekundarstufen I u. II,Nippes,nrw,Gesamtschule,,2.284,,0.869,-0.3919,-0.4447,-0.262,-0.2333,-0.1722,-0.0917,0.1477,0.2369
+berlin_04Y10,Marie-Curie-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,2.4,2.286,0.114,0.954,-0.3919,-0.4447,-0.262,-0.2309,-0.1102,-0.1711,0.0952,0.3067
+hamburg_5087-0,Stadtteilschule Kirchwerder,Bergedorf,hamburg,Stadtteilschule,,2.286,,0.875,-0.3919,-0.4447,-0.262,-0.2394,-0.115,-0.0581,0.0649,0.2369
+hamburg_5087-1,Stadtteilschule Kirchwerder,Bergedorf,hamburg,Stadtteilschule,,2.286,,0.875,-0.3919,-0.4447,-0.262,-0.2394,-0.115,-0.0581,0.0649,0.2369
+hamburg_5885-0,Gymnasium Farmsen,Wandsbek,hamburg,Gymnasium,2.0,2.286,-0.286,0.913,-0.3919,-0.4447,-0.262,-0.1295,-0.0999,-0.1986,0.0806,0.2369
+berlin_08S08,Schilling-Schule,Neukölln,berlin,ISS,,2.287,,0.883,-0.3919,-0.4447,-0.262,-0.2297,-0.0662,-0.1131,0.0624,0.2369
+hamburg_5894-0,Heinrich-Heine-Gymnasium,Wandsbek,hamburg,Gymnasium,2.29,2.287,0.003,0.895,-0.3919,-0.4447,-0.262,-0.1674,-0.1567,-0.1008,0.0778,0.2369
+berlin_01Y12,Gymnasium Tiergarten,Mitte,berlin,Gymnasium,2.49,2.288,0.202,0.897,-0.3919,-0.4447,-0.262,-0.2284,-0.1145,-0.2444,0.1828,0.2956
+hamburg_8302-0,Bilinguales Gymnasium Phorms Hamburg,Hamburg-Mitte,hamburg,Gymnasium,,2.289,,0.771,-0.3919,-0.4447,-0.262,-0.0818,-0.2225,-0.275,0.2345,0.2369
+berlin_08Y06,Hannah-Arendt-Gymnasium,Neukölln,berlin,Gymnasium,2.28,2.29,-0.01,0.882,-0.3919,-0.4447,-0.262,-0.2297,-0.0746,-0.1008,0.04,0.2585
+berlin_01Y13,Rosalind-Franklin-Gymnasium,Mitte,berlin,Gymnasium,,2.29,,0.893,-0.3919,-0.4447,-0.262,-0.2284,-0.1046,-0.1986,0.1875,0.2369
+berlin_04P40,Berlin British School (Integrierte Sekundarschule),Charlottenburg-Wilmersdorf,berlin,ISS,,2.291,,0.892,-0.3919,-0.4447,-0.262,-0.2309,-0.0965,-0.0917,0.0761,0.2369
+nrw_160064,Städt. Henry-Ford-Realschule - Sekundarstufe I -,Chorweiler,nrw,Realschule,,2.291,,0.889,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1069,0.1477,0.2576
+berlin_04Y08,Hildegard-Wegscheider-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,2.11,2.292,-0.182,0.901,-0.3919,-0.4447,-0.262,-0.2309,-0.162,-0.0703,0.0995,0.2586
+berlin_06Y09,Fichtenberg-Oberschule,Steglitz-Zehlendorf,berlin,Gymnasium,2.27,2.294,-0.024,0.923,-0.3919,-0.4447,-0.262,-0.2407,-0.1014,-0.1558,0.0767,0.3182
+berlin_04Y01,Schiller-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,2.18,2.294,-0.114,0.9,-0.3919,-0.4447,-0.262,-0.2309,-0.1416,-0.2139,0.1741,0.3098
+nrw_194402,Michaeli Schule Freie Waldorfschule,Innenstadt,nrw,Waldorfschule,,2.294,,0.888,-0.3919,-0.4447,-0.262,-0.2272,-0.1722,-0.1986,0.1477,0.3477
+berlin_07Y08,Ulrich-von-Hutten-Gymnasium,Tempelhof-Schöneberg,berlin,Gymnasium,2.19,2.296,-0.106,0.927,-0.3919,-0.4447,-0.262,-0.237,-0.0702,-0.1467,0.0781,0.2747
+berlin_06Y06,Beethoven-Gymnasium,Steglitz-Zehlendorf,berlin,Gymnasium,1.92,2.298,-0.378,0.917,-0.3919,-0.4447,-0.262,-0.2407,-0.0796,-0.1467,0.0681,0.3005
+hamburg_5064-0,Erich Kästner Schule,Wandsbek,hamburg,Stadtteilschule,,2.299,,0.915,-0.3919,-0.4447,-0.262,-0.1295,-0.0948,-0.1986,0.0884,0.2369
+hamburg_5064-1,Erich Kästner Schule,Wandsbek,hamburg,Stadtteilschule,,2.299,,0.915,-0.3919,-0.4447,-0.262,-0.1295,-0.0948,-0.1986,0.0884,0.2369
+hamburg_5651-0,Elisabeth-Lange-Schule,Harburg,hamburg,Stadtteilschule,,2.299,,0.937,-0.3919,-0.4447,-0.262,-0.1955,-0.1181,-0.1528,0.1317,0.2369
+hamburg_5839-0,Immanuel-Kant-Gymnasium,Harburg,hamburg,Gymnasium,2.34,2.299,0.041,0.898,-0.3919,-0.4447,-0.262,-0.2333,-0.1318,-0.0917,0.122,0.2369
+hamburg_5881-0,Gymnasium Allee,Altona,hamburg,Gymnasium,2.25,2.299,-0.049,0.868,-0.3919,-0.4447,-0.262,-0.0415,-0.1816,-0.1986,0.0871,0.2369
+berlin_06Y08,Hermann-Ehlers-Gymnasium,Steglitz-Zehlendorf,berlin,Gymnasium,2.66,2.3,0.36,0.923,-0.3919,-0.4447,-0.262,-0.2407,-0.084,-0.1558,0.0765,0.3076
+berlin_07Y07,Eckener-Gymnasium,Tempelhof-Schöneberg,berlin,Gymnasium,2.28,2.301,-0.021,0.94,-0.3919,-0.4447,-0.262,-0.237,-0.0587,-0.1925,0.1114,0.2807
+berlin_07Y01,Robert-Blum-Gymnasium,Tempelhof-Schöneberg,berlin,Gymnasium,2.19,2.301,-0.111,0.914,-0.3919,-0.4447,-0.262,-0.237,-0.0852,-0.2139,0.1224,0.3183
+nrw_100187,Städt. Gymnasium Bernburger Straße,Bezirk 8,nrw,Gymnasium,,2.301,,0.84,-0.3919,-0.4447,-0.262,-0.2394,-0.1722,-0.2292,0.1477,0.3975
+berlin_01Y11,Max-Planck-Gymnasium,Mitte,berlin,Gymnasium,2.51,2.303,0.207,0.885,-0.3919,-0.4447,-0.262,-0.2284,-0.0803,-0.2536,0.1694,0.2993
+hamburg_5862-0,Charlotte-Paulsen-Gymnasium,Wandsbek,hamburg,Gymnasium,2.19,2.303,-0.113,0.875,-0.3919,-0.4447,-0.262,-0.0476,-0.1795,-0.1986,0.0946,0.2369
+berlin_10Y01,Tagore-Gymnasium,Marzahn-Hellersdorf,berlin,Gymnasium,2.51,2.304,0.206,0.896,-0.3919,-0.4447,-0.262,-0.2345,-0.0106,-0.2261,0.0829,0.2953
+nrw_185255,Städt. Heinrich-Mann-Gymnasium - Sekundarstufen I und II -,Chorweiler,nrw,Gymnasium,,2.306,,0.876,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1986,0.1477,0.3641
+berlin_07K02,Carl-Zeiss-Schule,Tempelhof-Schöneberg,berlin,ISS,2.63,2.307,0.323,0.781,-0.4702,-0.5641,-0.1486,-0.237,-0.0701,-0.0978,0.067,0.3326
+berlin_04P05,Evangelische Schule Charlottenburg (Integrierte Sekundarschule),Charlottenburg-Wilmersdorf,berlin,ISS,,2.308,,0.901,-0.3919,-0.4447,-0.262,-0.2309,-0.1173,-0.1436,0.1666,0.2369
+berlin_07Y09,Georg-Büchner-Gymnasium,Tempelhof-Schöneberg,berlin,Gymnasium,2.25,2.308,-0.058,0.919,-0.3919,-0.4447,-0.262,-0.237,-0.071,-0.1467,0.07,0.2955
+hamburg_8201-0,Wichern-Schule (Stadtteilschule),Hamburg-Mitte,hamburg,Stadtteilschule,2.32,2.308,0.012,0.904,-0.3919,-0.4447,-0.262,-0.0928,-0.1273,-0.2139,0.1087,0.2369
+hamburg_8202-0,Wichern-Schule (Gymnasium),Hamburg-Mitte,hamburg,Gymnasium,2.32,2.308,0.012,0.904,-0.3919,-0.4447,-0.262,-0.0928,-0.1273,-0.2139,0.1087,0.2369
+nrw_188165,Katharina-Henoth-Schule Städt. Gesamtschule - Sekundarstufen I und II -,Kalk,nrw,Gesamtschule,,2.308,,0.877,-0.3919,-0.4447,-0.262,-0.2297,-0.1722,-0.1986,0.1477,0.3643
+berlin_11K02,Mildred-Harnack-Schule,Lichtenberg,berlin,ISS,2.35,2.311,0.039,0.857,-0.4702,-0.2676,-0.2632,-0.2333,-0.1127,-0.2505,0.1193,0.2946
+berlin_11A07,Schul- und Leistungssportzentrum Berlin (Sportforum),Lichtenberg,berlin,ISS,2.34,2.311,0.029,0.638,-0.7837,-0.4447,-0.0188,-0.2333,-0.0779,-0.0856,0.0655,0.3946
+hamburg_5801-0,Friedrich-Ebert-Gymnasium,Harburg,hamburg,Gymnasium,2.38,2.312,0.068,0.882,-0.3919,-0.4447,-0.262,-0.1527,-0.124,-0.2292,0.1841,0.2369
+hamburg_5824-0,Goethe-Gymnasium,Altona,hamburg,Gymnasium,2.43,2.312,0.118,0.891,-0.3919,-0.4447,-0.262,-0.1429,-0.082,-0.2292,0.1328,0.2369
+nrw_140879,Ursula-Kuhr-Schule Städt. Gem. Hauptschule,Chorweiler,nrw,Hauptschule,,2.312,,0.898,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1528,0.1477,0.3242
+berlin_05Y05,Lily-Braun-Gymnasium,Spandau,berlin,Gymnasium,2.43,2.314,0.116,0.915,-0.3919,-0.4447,-0.262,-0.2321,-0.061,-0.2139,0.1444,0.2794
+berlin_11Y10,Manfred-von-Ardenne-Gymnasium,Lichtenberg,berlin,Gymnasium,2.44,2.315,0.125,0.929,-0.3919,-0.4447,-0.262,-0.2333,-0.0669,-0.1436,0.0788,0.2836
+hamburg_5805-0,Struensee Gymnasium,Hamburg-Mitte,hamburg,Gymnasium,2.49,2.317,0.173,0.844,-0.3919,-0.4447,-0.262,-0.0037,-0.1704,-0.2444,0.1021,0.2369
+berlin_09P21,NEWSchool (Integrierte Sekundarschule) (KEIN Schulbetrieb),Treptow-Köpenick,berlin,ISS,,2.318,,0.893,-0.3919,-0.4447,-0.262,-0.2394,-0.0809,-0.1528,0.1574,0.2369
+berlin_02Y06,Leibniz-Gymnasium,Friedrichshain-Kreuzberg,berlin,Gymnasium,2.23,2.318,-0.088,0.932,-0.3919,-0.4447,-0.262,-0.2272,-0.0952,-0.1955,0.1365,0.3023
+hamburg_5860-0,Albrecht-Thaer-Gymnasium,Eimsbüttel,hamburg,Gymnasium,2.36,2.32,0.04,0.894,-0.3919,-0.4447,-0.262,-0.1393,-0.1591,-0.1069,0.0919,0.2369
+berlin_10Y08,Sartre-Gymnasium,Marzahn-Hellersdorf,berlin,Gymnasium,2.55,2.321,0.229,0.933,-0.3919,-0.4447,-0.262,-0.2345,-0.0401,-0.1803,0.11,0.2696
+berlin_10Y11,Melanchthon-Gymnasium,Marzahn-Hellersdorf,berlin,Gymnasium,2.28,2.322,-0.042,0.905,-0.3919,-0.4447,-0.262,-0.2345,-0.0324,-0.1925,0.1302,0.2543
+berlin_08Y03,Albert-Einstein-Gymnasium,Neukölln,berlin,Gymnasium,2.38,2.324,0.056,0.916,-0.3919,-0.4447,-0.262,-0.2297,-0.066,-0.1894,0.0839,0.3287
+nrw_100205,Gymnasium Nippes im Toni-Steingass-Park,Nippes,nrw,Gymnasium,,2.324,,0.833,-0.3919,-0.4447,-0.262,-0.2333,-0.1722,-0.2292,0.1477,0.4147
+hamburg_5661-0,Stadtteilschule Lurup,Altona,hamburg,Stadtteilschule,,2.326,,0.93,-0.3919,-0.4447,-0.262,-0.1429,-0.121,-0.1528,0.1091,0.2369
+berlin_12Y07,Romain-Rolland-Gymnasium,Reinickendorf,berlin,Gymnasium,2.29,2.328,-0.038,0.915,-0.3919,-0.4447,-0.262,-0.2358,-0.0652,-0.1222,0.0717,0.2825
+berlin_10Y03,Wilhelm-von-Siemens-Gymnasium,Marzahn-Hellersdorf,berlin,Gymnasium,2.37,2.328,0.042,0.924,-0.3919,-0.4447,-0.262,-0.2345,-0.0153,-0.1803,0.0811,0.2799
+hamburg_5822-0,Johannes-Brahms-Gymnasium,Wandsbek,hamburg,Gymnasium,2.46,2.328,0.132,0.901,-0.3919,-0.4447,-0.262,-0.099,-0.1284,-0.1528,0.0746,0.2369
+berlin_02K01,Ellen-Key-Schule,Friedrichshain-Kreuzberg,berlin,ISS,2.41,2.329,0.081,0.798,-0.3135,-0.5746,-0.1662,-0.2272,-0.0988,-0.2567,0.1463,0.3239
+hamburg_5859-0,Gymnasium Dörpsweg,Eimsbüttel,hamburg,Gymnasium,2.46,2.329,0.131,0.915,-0.3919,-0.4447,-0.262,-0.1246,-0.1391,-0.1528,0.1113,0.2369
+hamburg_8114-0,Rudolf-Steiner-Schule Harburg,Harburg,hamburg,Stadtteilschule,,2.329,,0.877,-0.3919,-0.4447,-0.262,-0.2065,-0.1696,-0.0428,0.1144,0.2369
+hamburg_5664-0,Lessing-Stadtteilschule,Harburg,hamburg,Stadtteilschule,,2.33,,0.925,-0.3919,-0.4447,-0.262,-0.1869,-0.1057,-0.1375,0.1265,0.2369
+hamburg_5845-0,Hansa-Gymnasium Bergedorf,Bergedorf,hamburg,Gymnasium,2.37,2.33,0.04,0.897,-0.3919,-0.4447,-0.262,-0.0647,-0.1363,-0.1833,0.081,0.2369
+berlin_10K15,15. Schule (Integrierte Sekundarschule),Marzahn-Hellersdorf,berlin,ISS,,2.332,,0.869,-0.3919,-0.4447,-0.262,-0.2345,-0.0409,-0.0978,0.0716,0.2369
+berlin_08P03,Evangelische Schule Neukölln (Integrierte Sekundarschule),Neukölln,berlin,ISS,,2.333,,0.877,-0.3919,-0.4447,-0.262,-0.2297,-0.0839,-0.1925,0.2058,0.2369
+berlin_08P04,Katholische Schule Sankt Marien,Neukölln,berlin,ISS-Gymnasium,,2.333,,0.874,-0.3919,-0.4447,-0.262,-0.2297,-0.0849,-0.1955,0.2098,0.2369
+berlin_04Y09,Walther-Rathenau-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,2.35,2.335,0.015,0.922,-0.3919,-0.4447,-0.262,-0.2309,-0.1408,-0.1008,0.1192,0.2912
+berlin_06Y10,Lilienthal-Gymnasium,Steglitz-Zehlendorf,berlin,Gymnasium,2.36,2.336,0.024,0.925,-0.3919,-0.4447,-0.262,-0.2407,-0.1147,-0.1008,0.0954,0.3004
+hamburg_5067-0,Julius-Leber-Schule,Eimsbüttel,hamburg,Stadtteilschule,,2.336,,0.924,-0.3919,-0.4447,-0.262,-0.1698,-0.1161,-0.1222,0.1105,0.2369
+hamburg_5667-0,Stadtteilschule Am Hafen,Hamburg-Mitte,hamburg,Stadtteilschule,,2.338,,0.82,-0.3919,-0.4447,-0.262,-0.0379,-0.1798,-0.2444,0.1661,0.2369
+hamburg_5873-0,Bille-Gymnasium (Beschulung ab dem 01.08.2026),Bergedorf,hamburg,Gymnasium,,2.338,,0.909,-0.3919,-0.4447,-0.262,-0.1112,-0.1041,-0.1986,0.1187,0.2369
+berlin_05P03,Evangelische Schule Spandau im Johannesstift,Spandau,berlin,ISS,,2.34,,0.83,-0.3919,-0.4447,-0.262,-0.2321,-0.0936,-0.0031,0.0349,0.2369
+hamburg_8115-0,Rudolf-Steiner-Schule Bergedorf,Bergedorf,hamburg,Stadtteilschule,,2.34,,0.896,-0.3919,-0.4447,-0.262,-0.0647,-0.1548,-0.1833,0.1096,0.2369
+hamburg_5656-0,Stadtteilschule Bramfeld,Wandsbek,hamburg,Stadtteilschule,,2.341,,0.899,-0.3919,-0.4447,-0.262,-0.099,-0.1124,-0.1528,0.0711,0.2369
+hamburg_5848-0,Luisen-Gymnasium Bergedorf,Bergedorf,hamburg,Gymnasium,2.16,2.342,-0.182,0.865,-0.3919,-0.4447,-0.262,-0.0647,-0.1505,-0.1375,0.0607,0.2369
+berlin_01Y09,Diesterweg-Gymnasium,Mitte,berlin,Gymnasium,2.75,2.347,0.403,0.856,-0.3919,-0.4447,-0.262,-0.2284,-0.0815,-0.2597,0.2305,0.2898
+hamburg_5094-0,Stadtteilschule Lohbrügge,Bergedorf,hamburg,Stadtteilschule,,2.347,,0.887,-0.3919,-0.4447,-0.262,-0.1112,-0.0838,-0.1528,0.0614,0.2369
+berlin_04Y04,Gottfried-Keller-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,2.56,2.349,0.211,0.906,-0.3919,-0.4447,-0.262,-0.2309,-0.0884,-0.2017,0.1577,0.3158
+hamburg_5811-0,Gymnasium Alstertal,Hamburg-Nord,hamburg,Gymnasium,2.45,2.349,0.101,0.882,-0.3919,-0.4447,-0.262,-0.0428,-0.153,-0.1986,0.1096,0.2369
+hamburg_5895-0,Gymnasium Grootmoor,Wandsbek,hamburg,Gymnasium,2.12,2.349,-0.229,0.856,-0.3919,-0.4447,-0.262,-0.099,-0.152,-0.0917,0.0577,0.2369
+hamburg_5099-0,Schule auf der Veddel,Hamburg-Mitte,hamburg,Stadtteilschule,,2.35,,0.828,-0.3919,-0.4447,-0.262,-0.215,-0.1117,-0.2444,0.2874,0.2369
+hamburg_5826-0,Campus Zweiter Bildungsweg,Hamburg-Mitte,hamburg,Gymnasium,,2.35,,0.729,-0.3919,-0.4447,-0.262,-0.0,-0.2465,-0.275,0.2375,0.2369
+hamburg_5847-0,Gymnasium Lohbrügge,Bergedorf,hamburg,Gymnasium,2.0,2.351,-0.351,0.892,-0.3919,-0.4447,-0.262,-0.1112,-0.0867,-0.1528,0.0682,0.2369
+hamburg_5081-0,Esther Bejarano Schule,Altona,hamburg,Stadtteilschule,,2.355,,0.876,-0.3919,-0.4447,-0.262,-0.0843,-0.1744,-0.1375,0.1172,0.2369
+hamburg_5838-0,Gymnasium Bornbrook,Bergedorf,hamburg,Gymnasium,2.49,2.355,0.135,0.888,-0.3919,-0.4447,-0.262,-0.1112,-0.0806,-0.1528,0.0657,0.2369
+berlin_12Y01,Friedrich-Engels-Gymnasium,Reinickendorf,berlin,Gymnasium,2.39,2.356,0.034,0.91,-0.3919,-0.4447,-0.262,-0.2358,-0.0657,-0.1925,0.1427,0.3105
+hamburg_5093-0,Stadtteilschule Süderelbe,Harburg,hamburg,Stadtteilschule,,2.356,,0.916,-0.3919,-0.4447,-0.262,-0.1368,-0.0632,-0.1833,0.1058,0.2369
+hamburg_5897-0,Gymnasium Osterbek,Wandsbek,hamburg,Gymnasium,2.25,2.357,-0.107,0.886,-0.3919,-0.4447,-0.262,-0.099,-0.1054,-0.1375,0.0652,0.2369
+hamburg_8022-0,ahfs Christliche Stadtteilschule Bergedorf,Bergedorf,hamburg,Stadtteilschule,,2.359,,0.883,-0.3919,-0.4447,-0.262,-0.0647,-0.1645,-0.168,0.1225,0.2369
+berlin_01S01,Schule am Zille-Park,Mitte,berlin,ISS,,2.361,,0.851,-0.3919,-0.4447,-0.262,-0.2284,-0.0922,-0.2047,0.2525,0.2369
+hamburg_5063-0,Stadtteilschule Horn,Hamburg-Mitte,hamburg,Stadtteilschule,,2.362,,0.909,-0.3919,-0.4447,-0.262,-0.0928,-0.1316,-0.1528,0.1054,0.2369
+hamburg_5063-6,Stadtteilschule Horn,Hamburg-Mitte,hamburg,Stadtteilschule,,2.362,,0.909,-0.3919,-0.4447,-0.262,-0.0928,-0.1316,-0.1528,0.1054,0.2369
+hamburg_5654-0,Stadtteilschule Altona,Altona,hamburg,Stadtteilschule,,2.362,,0.859,-0.3919,-0.4447,-0.262,-0.0415,-0.1807,-0.1375,0.0881,0.2369
+hamburg_5065-0,Fritz-Schumacher-Schule,Hamburg-Nord,hamburg,Stadtteilschule,,2.363,,0.899,-0.3919,-0.4447,-0.262,-0.0806,-0.1187,-0.1528,0.0812,0.2369
+hamburg_5065-1,Fritz-Schumacher-Schule,Hamburg-Nord,hamburg,Stadtteilschule,,2.363,,0.899,-0.3919,-0.4447,-0.262,-0.0806,-0.1187,-0.1528,0.0812,0.2369
+berlin_09A07,Flatow-Oberschule,Treptow-Köpenick,berlin,ISS,2.18,2.364,-0.184,0.598,-0.7837,-0.4447,-0.0212,-0.2394,-0.0227,-0.0856,0.0526,0.4136
+nrw_100010,Gymnasium Claudia Agrippina Privat schule als priv.Ersatzsch. d. Sek.I u.II d. CAPS Privatschu gGmbH,Lindenthal,nrw,Gymnasium,,2.365,,0.835,-0.3919,-0.4447,-0.262,-0.2382,-0.1722,-0.1986,0.1477,0.4299
+hamburg_5657-0,Stadtteilschule Richard-Linde-Weg,Bergedorf,hamburg,Stadtteilschule,,2.368,,0.883,-0.3919,-0.4447,-0.262,-0.1112,-0.0675,-0.1528,0.0653,0.2369
+berlin_01S06,Albert-Gutzmann-Schule,Mitte,berlin,ISS,,2.369,,0.839,-0.3919,-0.4447,-0.262,-0.2284,-0.0797,-0.2139,0.2576,0.2369
+berlin_01Y08,Lessing-Gymnasium,Mitte,berlin,Gymnasium,2.54,2.37,0.17,0.862,-0.3919,-0.4447,-0.262,-0.2284,-0.0766,-0.2383,0.1849,0.332
+berlin_05Y01,Freiherr-vom-Stein-Gymnasium,Spandau,berlin,Gymnasium,2.34,2.371,-0.031,0.885,-0.3919,-0.4447,-0.262,-0.2321,-0.0639,-0.2139,0.1633,0.321
+hamburg_5675-0,Stadtteilschule Osterbek,Wandsbek,hamburg,Stadtteilschule,,2.371,,0.878,-0.3919,-0.4447,-0.262,-0.099,-0.104,-0.1222,0.0627,0.2369
+nrw_198742,Trude-Herr-Gesamtschule der Stadt Köln - Sekundarstufen I und II -,Mülheim,nrw,Gesamtschule,,2.371,,0.865,-0.3919,-0.4447,-0.262,-0.2321,-0.1722,-0.1375,0.1477,0.3683
+hamburg_5061-0,Stadtteilschule Bergedorf,Bergedorf,hamburg,Stadtteilschule,,2.372,,0.908,-0.3919,-0.4447,-0.262,-0.1112,-0.0841,-0.1833,0.1172,0.2369
+hamburg_5667-1,Stadtteilschule Am Hafen,Hamburg-Mitte,hamburg,Stadtteilschule,,2.372,,0.807,-0.3919,-0.4447,-0.262,-0.0037,-0.1798,-0.2444,0.1661,0.2369
+hamburg_5667-3,Stadtteilschule Am Hafen,Hamburg-Mitte,hamburg,Stadtteilschule,,2.372,,0.807,-0.3919,-0.4447,-0.262,-0.0037,-0.1798,-0.2444,0.1661,0.2369
+hamburg_5670-0,Otto-Hahn-Schule,Wandsbek,hamburg,Stadtteilschule,,2.372,,0.907,-0.3919,-0.4447,-0.262,-0.1454,-0.1115,-0.1528,0.1481,0.2369
+berlin_11K01,Alexander-Puschkin-Schule,Lichtenberg,berlin,ISS,,2.376,,0.816,-0.4702,-0.4486,-0.0606,-0.2333,-0.0663,-0.2505,0.0982,0.3124
+berlin_07Y05,Luise-Henriette-Gymnasium,Tempelhof-Schöneberg,berlin,Gymnasium,2.47,2.376,0.094,0.907,-0.3919,-0.4447,-0.262,-0.237,-0.0618,-0.1436,0.0935,0.3279
+hamburg_5672-0,Stadtteilschule In den Reethen,Harburg,hamburg,Stadtteilschule,,2.376,,0.905,-0.3919,-0.4447,-0.262,-0.1368,-0.1141,-0.1528,0.1462,0.2369
+hamburg_5828-0,Gymnasium Neugraben,Harburg,hamburg,Gymnasium,2.0,2.376,-0.376,0.905,-0.3919,-0.4447,-0.262,-0.1368,-0.1141,-0.1528,0.1462,0.2369
+berlin_02Y07,Robert-Koch-Gymnasium,Friedrichshain-Kreuzberg,berlin,Gymnasium,2.53,2.377,0.153,0.902,-0.3919,-0.4447,-0.262,-0.2272,-0.0803,-0.1955,0.1768,0.3067
+hamburg_5869-0,Gymnasium Rahlstedt,Wandsbek,hamburg,Gymnasium,2.46,2.377,0.083,0.864,-0.3919,-0.4447,-0.262,-0.0281,-0.1399,-0.1528,0.0643,0.2369
+berlin_06K02,Wilma-Rudolph-Schule (Integrierte Sekundarschule),Steglitz-Zehlendorf,berlin,ISS,2.52,2.378,0.142,0.695,-0.627,-0.3358,-0.02,-0.2407,-0.1591,-0.1161,0.0436,0.3378
+berlin_07K03,Gustav-Heinemann-Oberschule,Tempelhof-Schöneberg,berlin,ISS,2.3,2.379,-0.079,0.768,-0.627,-0.4224,-0.0716,-0.237,-0.0397,-0.1008,0.089,0.2929
+berlin_06K08,Max-von-Laue-Schule,Steglitz-Zehlendorf,berlin,ISS,,2.381,,0.839,-0.4702,-0.4565,-0.1704,-0.2407,-0.1168,-0.0978,0.0878,0.35
+hamburg_5898-0,Gymnasium Marienthal,Wandsbek,hamburg,Gymnasium,2.59,2.383,0.207,0.9,-0.3919,-0.4447,-0.262,-0.16,-0.1074,-0.1528,0.1694,0.2369
+berlin_04Y02,Wald-Gymnasium,Charlottenburg-Wilmersdorf,berlin,Gymnasium,2.31,2.388,-0.078,0.892,-0.3919,-0.4447,-0.262,-0.2309,-0.1431,-0.0825,0.1355,0.3121
+hamburg_5840-0,Alexander-von-Humboldt-Gymnasium,Harburg,hamburg,Gymnasium,2.32,2.388,-0.068,0.899,-0.3919,-0.4447,-0.262,-0.1869,-0.1009,-0.0917,0.1335,0.2369
+nrw_990003,Internationale Friedensschule Köln (Cologne International School),,nrw,Internationale Schule,,2.389,,0.849,-0.3919,-0.4447,-0.262,-0.2345,-0.1722,-0.1528,0.1477,0.4044
+berlin_01P49,Quinoa-Schule Freie Sekundarschule Berlin Wedding,Mitte,berlin,ISS,,2.392,,0.866,-0.3919,-0.4447,-0.262,-0.2284,-0.0706,-0.1497,0.2067,0.2369
+berlin_12Y02,Europäisches Gymnasium Bertha-von-Suttner,Reinickendorf,berlin,Gymnasium,2.03,2.392,-0.362,0.908,-0.3919,-0.4447,-0.262,-0.2358,-0.0677,-0.1528,0.1588,0.2925
+hamburg_5049-0,Stadtteilschule Am Heidberg,Hamburg-Nord,hamburg,Stadtteilschule,,2.392,,0.899,-0.3919,-0.4447,-0.262,-0.0806,-0.1216,-0.1344,0.0948,0.2369
+hamburg_5049-1,Stadtteilschule Am Heidberg,Hamburg-Nord,hamburg,Stadtteilschule,,2.392,,0.899,-0.3919,-0.4447,-0.262,-0.0806,-0.1216,-0.1344,0.0948,0.2369
+hamburg_5803-0,Gymnasium Süderelbe,Harburg,hamburg,Gymnasium,2.22,2.393,-0.173,0.903,-0.3919,-0.4447,-0.262,-0.1368,-0.0693,-0.1528,0.1182,0.2369
+berlin_05Y02,Kant-Gymnasium,Spandau,berlin,Gymnasium,2.46,2.395,0.065,0.908,-0.3919,-0.4447,-0.262,-0.2321,-0.068,-0.168,0.1695,0.2966
+hamburg_5660-0,Stadtteilschule Oldenfelde,Wandsbek,hamburg,Stadtteilschule,,2.396,,0.873,-0.3919,-0.4447,-0.262,-0.0281,-0.1325,-0.1528,0.0756,0.2369
+berlin_02Y08,Hermann-Hesse-Gymnasium,Friedrichshain-Kreuzberg,berlin,Gymnasium,2.55,2.398,0.152,0.889,-0.3919,-0.4447,-0.262,-0.2272,-0.0863,-0.1955,0.1835,0.3272
+berlin_11K16,16. Schule (Integrierte Sekundarschule),Lichtenberg,berlin,ISS,,2.399,,0.609,-0.3919,-0.042,-0.2535,-0.2333,-0.0165,-0.275,0.116,0.0
+berlin_01P06,Canisius-Kolleg,Mitte,berlin,ISS-Gymnasium,,2.399,,0.846,-0.3919,-0.4447,-0.262,-0.2284,-0.1355,-0.1039,0.2331,0.2369
+hamburg_5837-0,Gymnasium Oldenfelde,Wandsbek,hamburg,Gymnasium,2.34,2.399,-0.059,0.876,-0.3919,-0.4447,-0.262,-0.0281,-0.1395,-0.1528,0.0857,0.2369
+berlin_12P07,Private Goethe-Schulen,Reinickendorf,berlin,ISS-Gymnasium,,2.4,,0.866,-0.3919,-0.4447,-0.262,-0.2358,-0.0247,-0.0978,0.1243,0.2369
+berlin_09Y04,Anne-Frank-Gymnasium,Treptow-Köpenick,berlin,Gymnasium,2.23,2.4,-0.17,0.899,-0.3919,-0.4447,-0.262,-0.2394,-0.0276,-0.1008,0.0991,0.272
+berlin_09K01,Merian-Schule (Integrierte Sekundarschule),Treptow-Köpenick,berlin,ISS,2.43,2.401,0.029,0.771,-0.4702,-0.3988,-0.0152,-0.2394,-0.0763,-0.2261,0.0245,0.3068
+berlin_08Y01,Albrecht-Dürer-Gymnasium,Neukölln,berlin,Gymnasium,2.45,2.402,0.048,0.885,-0.3919,-0.4447,-0.262,-0.2297,-0.0798,-0.1986,0.2171,0.2966
+berlin_04K08,Peter-Ustinov-Schule,Charlottenburg-Wilmersdorf,berlin,ISS,,2.403,,0.739,-0.4702,-0.181,-0.433,-0.2309,-0.1248,-0.168,0.1275,0.3882
+berlin_05S01,Schule am Grüngürtel,Spandau,berlin,ISS,,2.403,,0.862,-0.3919,-0.4447,-0.262,-0.2321,-0.0582,-0.1008,0.1609,0.2369
+berlin_08Y04,Ernst-Abbe-Gymnasium,Neukölln,berlin,Gymnasium,2.61,2.404,0.206,0.887,-0.3919,-0.4447,-0.262,-0.2297,-0.0813,-0.1925,0.1896,0.3216
+berlin_08Y05,Leonardo-da-Vinci-Gymnasium,Neukölln,berlin,Gymnasium,2.66,2.408,0.252,0.906,-0.3919,-0.4447,-0.262,-0.2297,-0.0648,-0.0978,0.0977,0.3062
+berlin_12K03,Max-Beckmann-Schule (Integrierte Sekundarschule),Reinickendorf,berlin,ISS,2.7,2.411,0.289,0.784,-0.3135,-0.6139,-0.2499,-0.2358,-0.0509,-0.1436,0.1793,0.3445
+hamburg_5827-0,Gymnasium Langenhorn,Hamburg-Nord,hamburg,Gymnasium,,2.417,,0.891,-0.3919,-0.4447,-0.262,-0.0806,-0.1245,-0.1222,0.1111,0.2369
+hamburg_5075-0,Schule am See,Wandsbek,hamburg,Stadtteilschule,,2.418,,0.886,-0.3919,-0.4447,-0.262,-0.1771,-0.0595,-0.1375,0.1588,0.2369
+berlin_12Y06,Schulfarm Insel Scharfenberg,Reinickendorf,berlin,Gymnasium,2.42,2.419,0.001,0.851,-0.3919,-0.4447,-0.262,-0.2358,-0.1058,-0.0336,0.0577,0.3398
+hamburg_5083-0,Stadtteilschule Eidelstedt,Eimsbüttel,hamburg,Stadtteilschule,,2.42,,0.889,-0.3919,-0.4447,-0.262,-0.1246,-0.1059,-0.1069,0.1237,0.2369
+hamburg_5083-1,Stadtteilschule Eidelstedt,Eimsbüttel,hamburg,Stadtteilschule,,2.42,,0.889,-0.3919,-0.4447,-0.262,-0.1246,-0.1059,-0.1069,0.1237,0.2369
+hamburg_5835-0,Gymnasium Heidberg,Hamburg-Nord,hamburg,Gymnasium,2.27,2.42,-0.15,0.886,-0.3919,-0.4447,-0.262,-0.0806,-0.1199,-0.1069,0.0936,0.2369
+hamburg_5098-0,Stadtteilschule Meiendorf,Wandsbek,hamburg,Stadtteilschule,,2.421,,0.88,-0.3919,-0.4447,-0.262,-0.0281,-0.1164,-0.1528,0.0845,0.2369
+hamburg_5098-1,Stadtteilschule Meiendorf,Wandsbek,hamburg,Stadtteilschule,,2.421,,0.88,-0.3919,-0.4447,-0.262,-0.0281,-0.1164,-0.1528,0.0845,0.2369
+hamburg_5054-1,Max-Schmeling-Stadtteilschule,Wandsbek,hamburg,Stadtteilschule,,2.423,,0.881,-0.3919,-0.4447,-0.262,-0.16,-0.0887,-0.1528,0.1913,0.2369
+berlin_04K03,Robert-Jungk-Schule,Charlottenburg-Wilmersdorf,berlin,ISS,2.48,2.426,0.054,0.861,-0.3135,-0.4408,-0.2984,-0.2309,-0.1302,-0.1711,0.143,0.3723
+berlin_08Y02,Albert-Schweitzer-Gymnasium,Neukölln,berlin,Gymnasium,2.48,2.428,0.052,0.873,-0.3919,-0.4447,-0.262,-0.2297,-0.0863,-0.1925,0.1999,0.34
+berlin_11Y12,12. Schule (Gymnasium),Lichtenberg,berlin,Gymnasium,,2.429,,0.813,-0.3919,-0.4447,-0.262,-0.2333,-0.1473,-0.1192,0.2953,0.2369
+berlin_03K01,Kurt-Schwitters-Schule,Pankow,berlin,ISS,2.27,2.431,-0.161,0.856,-0.4702,-0.3437,-0.1552,-0.2382,-0.1299,-0.1772,0.1158,0.3347
+hamburg_5054-0,Max-Schmeling-Stadtteilschule,Wandsbek,hamburg,Stadtteilschule,,2.438,,0.875,-0.3919,-0.4447,-0.262,-0.1454,-0.0887,-0.1528,0.1913,0.2369
+hamburg_7910-0,Neue Schule Hamburg,Wandsbek,hamburg,Stadtteilschule,,2.439,,0.864,-0.3919,-0.4447,-0.262,-0.0281,-0.0883,-0.1528,0.0743,0.2369
+hamburg_5066-0,Geschwister-Scholl-Stadtteilschule,Altona,hamburg,Stadtteilschule,,2.441,,0.879,-0.3919,-0.4447,-0.262,-0.1429,-0.0707,-0.1222,0.1435,0.2369
+hamburg_5890-0,Gymnasium Meiendorf,Wandsbek,hamburg,Gymnasium,2.16,2.441,-0.281,0.863,-0.3919,-0.4447,-0.262,-0.0281,-0.1183,-0.1222,0.0759,0.2369
+berlin_03K02,Kurt-Tucholsky-Schule (Integrierte Sekundarschule),Pankow,berlin,ISS,2.3,2.445,-0.145,0.815,-0.4702,-0.3647,-0.0309,-0.2382,-0.0925,-0.2292,0.086,0.2896
+berlin_11K05,Fritz-Reuter-Schule,Lichtenberg,berlin,ISS,2.66,2.448,0.212,0.814,-0.3135,-0.5221,-0.1571,-0.2333,-0.0135,-0.2292,0.1182,0.3037
+berlin_10K13,Integrierte Sekundarschule Mahlsdorf,Marzahn-Hellersdorf,berlin,ISS,,2.449,,0.779,-0.3135,-0.5116,-0.0261,-0.2345,-0.1195,-0.223,0.0504,0.332
+berlin_05P13,Wilhelmstadt Schulen,Spandau,berlin,ISS-Gymnasium,,2.456,,0.84,-0.3919,-0.4447,-0.262,-0.2321,-0.0354,-0.0733,0.1628,0.2369
+berlin_07K01,Sophie-Scholl-Schule,Tempelhof-Schöneberg,berlin,ISS,2.17,2.461,-0.291,0.785,-0.4702,-0.4749,-0.0734,-0.237,-0.0933,-0.2047,0.1633,0.3554
+berlin_11Y09,Barnim-Gymnasium,Lichtenberg,berlin,Gymnasium,2.27,2.463,-0.193,0.884,-0.3919,-0.4447,-0.262,-0.2333,-0.027,-0.0947,0.1383,0.2831
+hamburg_5650-0,Grund- und Stadtteilschule Altrahlstedt,Wandsbek,hamburg,Stadtteilschule,,2.463,,0.863,-0.3919,-0.4447,-0.262,-0.0281,-0.1059,-0.1222,0.0851,0.2369
+hamburg_5650-2,Grund- und Stadtteilschule Altrahlstedt,Wandsbek,hamburg,Stadtteilschule,,2.463,,0.863,-0.3919,-0.4447,-0.262,-0.0281,-0.1059,-0.1222,0.0851,0.2369
+hamburg_5650-3,Grund- und Stadtteilschule Altrahlstedt,Wandsbek,hamburg,Stadtteilschule,,2.463,,0.863,-0.3919,-0.4447,-0.262,-0.0281,-0.1059,-0.1222,0.0851,0.2369
+berlin_11S05,Schule am grünen Grund,Lichtenberg,berlin,ISS,,2.464,,0.822,-0.3919,-0.4447,-0.262,-0.2333,-0.0958,-0.1253,0.2843,0.2369
+hamburg_5097-0,Brüder-Grimm-Schule,Hamburg-Mitte,hamburg,Stadtteilschule,,2.465,,0.869,-0.3919,-0.4447,-0.262,-0.0928,-0.0901,-0.1528,0.1669,0.2369
+hamburg_5669-0,Stadtteilschule Fischbek-Falkenberg,Harburg,hamburg,Stadtteilschule,,2.467,,0.859,-0.3919,-0.4447,-0.262,-0.1368,-0.1265,-0.0672,0.1638,0.2369
+hamburg_5669-2,Stadtteilschule Fischbek-Falkenberg,Harburg,hamburg,Stadtteilschule,,2.467,,0.859,-0.3919,-0.4447,-0.262,-0.1368,-0.1265,-0.0672,0.1638,0.2369
+berlin_11K04,Gutenberg-Schule,Lichtenberg,berlin,ISS,2.58,2.471,0.109,0.796,-0.4702,-0.5142,-0.0321,-0.2333,-0.06,-0.1161,0.1157,0.2861
+berlin_05P19,SIS Swiss International School Berlin,Spandau,berlin,ISS,,2.475,,0.831,-0.3919,-0.4447,-0.262,-0.2321,-0.0407,-0.0642,0.1778,0.2369
+hamburg_5800-0,Kurt-Körber-Gymnasium,Hamburg-Mitte,hamburg,Gymnasium,2.64,2.481,0.159,0.819,-0.3919,-0.4447,-0.262,-0.0159,-0.0987,-0.2292,0.1914,0.2369
+berlin_05K01,Martin-Buber-Oberschule (Integrierte Sekundarschule),Spandau,berlin,ISS,2.34,2.483,-0.143,0.719,-0.4702,-0.5929,-0.1043,-0.2321,-0.0418,-0.0672,0.1703,0.3259
+berlin_12Y08,Thomas-Mann-Gymnasium,Reinickendorf,berlin,Gymnasium,2.68,2.484,0.196,0.871,-0.3919,-0.4447,-0.262,-0.2358,-0.0225,-0.1008,0.1515,0.2945
+berlin_02K10,Ferdinand-Freiligrath-Schule (Integrierte Sekundarschule),Friedrichshain-Kreuzberg,berlin,ISS,2.76,2.489,0.271,0.822,-0.3135,-0.2886,-0.3566,-0.2272,-0.0947,-0.1894,0.1316,0.3318
+hamburg_5070-0,Goethe-Schule-Harburg,Harburg,hamburg,Stadtteilschule,,2.497,,0.798,-0.3919,-0.4447,-0.262,-0.0098,-0.1327,-0.2292,0.2353,0.2369
+hamburg_5070-1,Goethe-Schule-Harburg,Harburg,hamburg,Stadtteilschule,,2.497,,0.798,-0.3919,-0.4447,-0.262,-0.0098,-0.1327,-0.2292,0.2353,0.2369
+berlin_07K07,Johanna-Eck-Schule (Integrierte Sekundarschule),Tempelhof-Schöneberg,berlin,ISS,,2.499,,0.726,-0.1567,-0.3621,-0.4433,-0.237,-0.067,-0.1925,0.0798,0.3829
+berlin_11K15,Kosmos-Schule (Integrierte Sekundarschule),Lichtenberg,berlin,ISS,,2.499,,0.845,-0.3919,-0.446,-0.2383,-0.2333,-0.1348,-0.1253,0.2568,0.3163
+berlin_01Y07,Französisches Gymnasium,Mitte,berlin,Gymnasium,,2.503,,0.843,-0.3919,-0.4447,-0.262,-0.2284,-0.1042,-0.1711,0.2117,0.398
+hamburg_3203-0,Katholische Schule St. Paulus,Hamburg-Mitte,hamburg,Stadtteilschule,,2.504,,0.807,-0.3919,-0.4447,-0.262,-0.0159,-0.1008,-0.2292,0.2159,0.2369
+hamburg_5807-0,Helmut-Schmidt-Gymnasium,Hamburg-Mitte,hamburg,Gymnasium,2.44,2.505,-0.065,0.806,-0.3919,-0.4447,-0.262,-0.0366,-0.0831,-0.2292,0.2198,0.2369
+berlin_05Y04,Carl-Friedrich-von-Siemens-Gymnasium,Spandau,berlin,Gymnasium,2.58,2.509,0.071,0.857,-0.3919,-0.4447,-0.262,-0.2321,-0.0718,-0.0611,0.1777,0.3
+berlin_09K03,Fritz-Kühn-Schule (Integrierte Sekundarschule),Treptow-Köpenick,berlin,ISS,,2.51,,0.817,-0.4702,-0.2597,-0.1176,-0.2394,-0.1259,-0.1436,0.0723,0.2987
+hamburg_5089-0,Stadtteilschule Öjendorf,Hamburg-Mitte,hamburg,Stadtteilschule,,2.51,,0.836,-0.3919,-0.4447,-0.262,-0.0159,-0.0779,-0.1986,0.1688,0.2369
+berlin_12K01,Julius-Leber-Schule,Reinickendorf,berlin,ISS,,2.511,,0.789,-0.1567,-0.3463,-0.336,-0.2358,-0.0998,-0.1955,0.0551,0.3308
+berlin_10K01,Rudolf-Virchow-Schule,Marzahn-Hellersdorf,berlin,ISS,2.8,2.525,0.275,0.844,-0.3135,-0.4355,-0.1971,-0.2345,-0.0064,-0.1406,0.0557,0.302
+hamburg_5072-0,Nelson-Mandela-Schule im Stadtteil Kirchdorf,Hamburg-Mitte,hamburg,Stadtteilschule,,2.525,,0.827,-0.3919,-0.4447,-0.262,-0.0366,-0.0635,-0.1986,0.1906,0.2369
+berlin_09K06,Hans-Grade-Schule (Integrierte Sekundarschule),Treptow-Köpenick,berlin,ISS,,2.527,,0.772,-0.4702,-0.3227,-0.0067,-0.2394,-0.0566,-0.1772,0.0314,0.2737
+hamburg_5677-0,Traute-Lafrenz-Schule,Harburg,hamburg,Stadtteilschule,,2.532,,0.832,-0.3919,-0.4447,-0.262,-0.0098,-0.1297,-0.168,0.2056,0.2369
+hamburg_3216-0,Katholische Schule Harburg,Harburg,hamburg,Stadtteilschule,,2.532,,0.832,-0.3919,-0.4447,-0.262,-0.0098,-0.1297,-0.168,0.2056,0.2369
+hamburg_5057-0,Stadtteilschule Mümmelmannsberg,Hamburg-Mitte,hamburg,Stadtteilschule,,2.535,,0.803,-0.3919,-0.4447,-0.262,-0.0159,-0.0059,-0.2292,0.1522,0.2369
+berlin_12A44,Willkommensschule TXL,Charlottenburg-Wilmersdorf,berlin,ISS,,2.536,,0.805,-0.3919,-0.4447,-0.262,-0.2309,-0.0,-0.0642,0.197,0.2369
+hamburg_5097-1,Brüder-Grimm-Schule,Hamburg-Mitte,hamburg,Stadtteilschule,,2.542,,0.839,-0.3919,-0.4447,-0.262,-0.0159,-0.0901,-0.1528,0.1669,0.2369
+berlin_06K03,Kopernikus-Schule (Integrierte Sekundarschule),Steglitz-Zehlendorf,berlin,ISS,2.83,2.547,0.283,0.781,-0.4702,-0.1705,-0.1528,-0.2407,-0.1072,-0.2078,0.0706,0.3309
+berlin_07K06,Georg-von-Giesche-Schule,Tempelhof-Schöneberg,berlin,ISS,,2.554,,0.705,-0.3135,-0.1627,-0.4506,-0.237,-0.1098,-0.2017,0.138,0.3959
+berlin_06K09,Gail-S.-Halvorsen-Integrierte Sekundarschule,Steglitz-Zehlendorf,berlin,ISS,,2.558,,0.807,-0.3135,-0.1889,-0.2589,-0.2407,-0.1978,-0.1894,0.1006,0.3515
+hamburg_5703-0,Schule Maretstraße,Harburg,hamburg,Stadtteilschule,,2.559,,0.8,-0.3919,-0.4447,-0.262,-0.0098,-0.127,-0.1986,0.261,0.2369
+hamburg_3217-0,Katholische Bonifatiusschule,Hamburg-Mitte,hamburg,Stadtteilschule,,2.565,,0.828,-0.3919,-0.4447,-0.262,-0.0366,-0.0751,-0.1375,0.1804,0.2369
+berlin_06K04,Bröndby-Schule (Integrierte Sekundarschule),Steglitz-Zehlendorf,berlin,ISS,2.87,2.566,0.304,0.781,-0.4702,-0.1417,-0.2844,-0.2407,-0.071,-0.1008,0.0764,0.3031
+hamburg_5095-0,Stadtteilschule Wilhelmsburg,Hamburg-Mitte,hamburg,Stadtteilschule,,2.569,,0.824,-0.3919,-0.4447,-0.262,-0.0366,-0.0843,-0.1375,0.1934,0.2369
+hamburg_5095-1,Stadtteilschule Wilhelmsburg,Hamburg-Mitte,hamburg,Stadtteilschule,,2.569,,0.824,-0.3919,-0.4447,-0.262,-0.0366,-0.0843,-0.1375,0.1934,0.2369
+hamburg_8120-0,Demokratische Schule FLeKS,Hamburg-Mitte,hamburg,Stadtteilschule,,2.572,,0.821,-0.3919,-0.4447,-0.262,-0.0366,-0.0892,-0.1528,0.2168,0.2369
+berlin_08S09,Schule an der Windmühle,Neukölln,berlin,ISS,,2.576,,0.81,-0.3919,-0.4447,-0.262,-0.2297,-0.0715,-0.0947,0.1015,0.4739
+hamburg_5658-0,Schule Stübenhofer Weg,Hamburg-Mitte,hamburg,Stadtteilschule,,2.592,,0.821,-0.3919,-0.4447,-0.262,-0.0366,-0.0127,-0.1528,0.1601,0.2369
+berlin_09K05,Wilhelm-Bölsche-Schule (Integrierte Sekundarschule),Treptow-Köpenick,berlin,ISS,,2.597,,0.732,-0.4702,-0.0971,-0.1183,-0.2394,-0.0679,-0.1864,0.01,0.2706
+berlin_01K03,Ernst-Reuter-Schule,Mitte,berlin,ISS,2.89,2.598,0.292,0.632,-0.1567,-0.1889,-0.4566,-0.2284,-0.1375,-0.2719,0.1738,0.3693
+berlin_03K06,Reinhold-Burger-Schule,Pankow,berlin,ISS,,2.61,,0.785,-0.3135,-0.3358,-0.0916,-0.2382,-0.0876,-0.2292,0.0686,0.3418
+berlin_12K10,Carl-Bosch-Schule,Reinickendorf,berlin,ISS,,2.611,,0.736,-0.4702,-0.0761,-0.2802,-0.2358,-0.1135,-0.0672,0.0384,0.3199
+berlin_07K11,Hugo-Gaudig-Schule,Tempelhof-Schöneberg,berlin,ISS,,2.611,,0.686,-0.1567,-0.2178,-0.5021,-0.237,-0.0626,-0.165,0.1094,0.3476
+berlin_11K13,May-Ayim-Schule (Integrierte Sekundarschule),Lichtenberg,berlin,ISS,,2.613,,0.818,-0.3919,-0.2414,-0.1298,-0.2333,-0.0832,-0.2322,0.1047,0.3249
+berlin_10K02,Ernst-Haeckel-Schule,Marzahn-Hellersdorf,berlin,ISS,2.62,2.625,-0.005,0.832,-0.3135,-0.425,-0.0728,-0.2345,-0.0299,-0.1497,0.0803,0.275
+berlin_05K04,Heinrich-Böll-Oberschule (Integrierte Sekundarschule),Spandau,berlin,ISS,2.61,2.628,-0.018,0.789,-0.3135,-0.3096,-0.3208,-0.2321,-0.0736,-0.0367,0.0924,0.3269
+berlin_03K09,Janusz-Korczak-Schule (Integrierte Sekundarschule),Pankow,berlin,ISS,,2.629,,0.784,-0.3135,-0.265,-0.1274,-0.2382,-0.084,-0.2322,0.0692,0.3249
+berlin_05K03,Bertolt-Brecht-Oberschule (Integrierte Sekundarschule),Spandau,berlin,ISS,2.86,2.636,0.224,0.825,-0.3135,-0.2965,-0.2844,-0.2321,-0.0709,-0.1039,0.1324,0.3093
+berlin_11K14,Elsa-Neumann-Schule (Integrierte Sekundarschule),Lichtenberg,berlin,ISS,,2.639,,0.783,-0.3919,-0.2466,-0.1674,-0.2333,-0.013,-0.1467,0.133,0.2094
+berlin_11K09,Philipp-Reis-Schule (Integrierte Sekundarschule),Lichtenberg,berlin,ISS,,2.657,,0.819,-0.3135,-0.2151,-0.2062,-0.2333,-0.0655,-0.1436,0.0801,0.2589
+berlin_12K09,Carl-Benz-Schule (Integrierte Sekundarschule),Reinickendorf,berlin,ISS,,2.658,,0.788,-0.3135,-0.2204,-0.1844,-0.2358,-0.1293,-0.1436,0.0455,0.3444
+berlin_11K07,Vincent-van-Gogh-Schule (Integrierte Sekundarschule),Lichtenberg,berlin,ISS,,2.666,,0.723,-0.3135,-0.0944,-0.3257,-0.2333,-0.013,-0.275,0.1012,0.3249
+berlin_03K03,Konrad-Duden-Schule (Integrierte Sekundarschule),Pankow,berlin,ISS,,2.668,,0.762,-0.3135,-0.3017,-0.0461,-0.2382,-0.092,-0.1925,0.0273,0.3292
+berlin_11K06,Schule am Rathaus,Lichtenberg,berlin,ISS,,2.673,,0.784,-0.3135,-0.1994,-0.2074,-0.2333,-0.1089,-0.2444,0.136,0.3492
+berlin_01K06,Herbert-Hoover-Schule (Integrierte Sekundarschule),Mitte,berlin,ISS,,2.692,,0.604,-0.1567,-0.4617,-0.487,-0.2284,-0.0811,-0.0,0.26,0.3521
+berlin_12K05,Gustav-Freytag-Schule (Integrierte Sekundarschule),Reinickendorf,berlin,ISS,,2.693,,0.708,-0.1567,-0.2361,-0.4093,-0.2358,-0.0674,-0.1925,0.1555,0.3405
+berlin_12K06,Benjamin-Franklin-Schule (Integrierte Sekundarschule),Reinickendorf,berlin,ISS,,2.698,,0.81,-0.3135,-0.2519,-0.2632,-0.2358,-0.0787,-0.0978,0.0965,0.3467
+berlin_05K09,Schule am Staakener Kleeblatt (Integrierte Sekundarschule),Spandau,berlin,ISS,3.1,2.702,0.398,0.633,-0.3135,-0.0,-0.4736,-0.2321,-0.0571,-0.0672,0.0442,0.3059
+berlin_07K10,Friedrich-Bergius-Schule,Tempelhof-Schöneberg,berlin,ISS,,2.708,,0.648,-0.1567,-0.0656,-0.4767,-0.237,-0.1029,-0.2017,0.0877,0.3653
+berlin_01K02,Ernst-Schering-Schule,Mitte,berlin,ISS,,2.71,,0.573,-0.1567,-0.0997,-0.5015,-0.2284,-0.0834,-0.275,0.2264,0.333
+berlin_07K09,Gustav-Langenscheidt-Schule,Tempelhof-Schöneberg,berlin,ISS,,2.715,,0.638,-0.1567,-0.0682,-0.4997,-0.237,-0.0955,-0.2017,0.1226,0.3559
+berlin_07K04,Theodor-Haubach-Schule,Tempelhof-Schöneberg,berlin,ISS,,2.715,,0.794,-0.3135,-0.1758,-0.168,-0.237,-0.0726,-0.1467,0.0564,0.277
+berlin_08K03,Otto-Hahn-Schule,Neukölln,berlin,ISS,2.95,2.717,0.233,0.648,-0.0,-0.3279,-0.5033,-0.2297,-0.0814,-0.1436,0.1762,0.3312
+berlin_10K06,Georg-Klingenberg-Schule,Marzahn-Hellersdorf,berlin,ISS,,2.719,,0.709,-0.4702,-0.084,-0.1462,-0.2345,-0.1532,-0.0642,0.0557,0.32
+berlin_11K08,Schule-am-Tierpark (Integrierte Sekundarschule),Lichtenberg,berlin,ISS,2.83,2.729,0.101,0.765,-0.4702,-0.0918,-0.1364,-0.2333,-0.0538,-0.1955,0.1067,0.3082
+berlin_03K08,Hagenbeck-Schule,Pankow,berlin,ISS,,2.73,,0.789,-0.3135,-0.3568,-0.0613,-0.2382,-0.0923,-0.1192,0.0806,0.3352
+berlin_01K08,Schule am Schillerpark (Integrierte Sekundarschule),Mitte,berlin,ISS,,2.73,,0.582,-0.1567,-0.1207,-0.5106,-0.2284,-0.0788,-0.2383,0.1928,0.3755
+berlin_05K02,Carlo-Schmid-Oberschule (Integrierte Sekundarschule),Spandau,berlin,ISS,2.6,2.736,-0.136,0.714,-0.1567,-0.4775,-0.3208,-0.2321,-0.0383,-0.0672,0.1943,0.3388
+berlin_07K13,Schule am Berlinickeplatz (Integrierte Sekundarschule),Tempelhof-Schöneberg,berlin,ISS,,2.746,,0.666,-0.1567,-0.084,-0.4573,-0.237,-0.0746,-0.1955,0.1125,0.3434
+berlin_08K11,Alfred-Nobel-Schule,Neukölln,berlin,ISS,,2.756,,0.651,-0.1567,-0.1364,-0.4579,-0.2297,-0.0705,-0.0947,0.0736,0.3331
+berlin_12K11,Albrecht-Haushofer-Schule,Reinickendorf,berlin,ISS,,2.771,,0.721,-0.3135,-0.0026,-0.3147,-0.2358,-0.1129,-0.11,0.0438,0.3218
+berlin_06K10,Helene-Lange-Schule (Integrierte Sekundarschule),Steglitz-Zehlendorf,berlin,ISS,,2.783,,0.732,-0.3135,-0.181,-0.3069,-0.2407,-0.0902,-0.0,0.0842,0.3362
+berlin_12K02,Bettina-von-Arnim-Schule,Reinickendorf,berlin,ISS,2.6,2.789,-0.189,0.767,-0.3135,-0.4198,-0.1322,-0.2358,-0.0195,-0.1008,0.1615,0.3536
+berlin_05K06,Wolfgang-Borchert-Schule (Integrierte Sekundarschule),Spandau,berlin,ISS,3.12,2.789,0.331,0.711,-0.1567,-0.2414,-0.3699,-0.2321,-0.0638,-0.1497,0.1698,0.3377
+berlin_02K09,Albrecht-von-Graefe-Schule (Integrierte Sekundarschule),Friedrichshain-Kreuzberg,berlin,ISS,,2.792,,0.594,-0.0,-0.2335,-0.5197,-0.2272,-0.084,-0.1955,0.1807,0.3766
+berlin_02K03,Hector-Peterson-Schule,Friedrichshain-Kreuzberg,berlin,ISS,,2.797,,0.611,-0.1567,-0.0472,-0.4942,-0.2272,-0.1109,-0.2017,0.1801,0.3597
+berlin_05K07,Schule an der Jungfernheide (Integrierte Sekundarschule),Spandau,berlin,ISS,2.93,2.798,0.132,0.765,-0.3135,-0.2702,-0.1813,-0.2321,-0.0697,-0.1894,0.1891,0.3696
+berlin_01K01,Willy-Brandt-Schule,Mitte,berlin,ISS,,2.803,,0.555,-0.0,-0.2125,-0.4936,-0.2284,-0.0832,-0.2597,0.2333,0.3515
+berlin_11K11,Paul-Schmidt-Schule (Integrierte Sekundarschule),Lichtenberg,berlin,ISS,,2.807,,0.758,-0.3135,-0.0918,-0.3038,-0.2333,-0.059,-0.1467,0.132,0.3283
+berlin_10K07,Caspar-David-Friedrich-Schule,Marzahn-Hellersdorf,berlin,ISS,,2.815,,0.783,-0.3135,-0.3358,-0.0437,-0.2345,-0.0364,-0.1406,0.1068,0.3179
+berlin_10K03,Kerschensteiner-Schule,Marzahn-Hellersdorf,berlin,ISS,,2.815,,0.771,-0.3135,-0.1023,-0.185,-0.2345,-0.0123,-0.1742,0.0652,0.2762
+berlin_02K05,Schule am Königstor (Integrierte Sekundarschule),Friedrichshain-Kreuzberg,berlin,ISS,,2.816,,0.688,-0.1567,-0.202,-0.319,-0.2272,-0.1098,-0.2322,0.1318,0.436
+berlin_03K04,Gustave-Eiffel-Schule,Pankow,berlin,ISS,,2.821,,0.766,-0.3135,-0.0603,-0.2268,-0.2382,-0.0698,-0.1955,0.0858,0.3437
+berlin_04K07,Integrierte Sekundarschule Wilmersdorf,Charlottenburg-Wilmersdorf,berlin,ISS,,2.824,,0.792,-0.3135,-0.0944,-0.1922,-0.2309,-0.1282,-0.1497,0.1089,0.3285
+berlin_04K09,Otto-von-Guericke-Schule (Integrierte Sekundarschule),Charlottenburg-Wilmersdorf,berlin,ISS,,2.825,,0.778,-0.1567,-0.2046,-0.2492,-0.2309,-0.1128,-0.1986,0.1404,0.3423
+berlin_08K09,Röntgen-Schule,Treptow-Köpenick,berlin,ISS,2.05,2.836,-0.786,0.589,-0.0,-0.1784,-0.524,-0.2394,-0.0803,-0.1528,0.166,0.3497
+berlin_12K04,Paul-Löbe-Schule,Reinickendorf,berlin,ISS,,2.839,,0.675,-0.1567,-0.1469,-0.379,-0.2358,-0.0687,-0.1925,0.1473,0.3764
+berlin_08K12,Kepler-Schule,Neukölln,berlin,ISS,,2.862,,0.579,-0.1567,-0.0682,-0.5033,-0.2297,-0.0453,-0.1925,0.1832,0.3793
+berlin_01K09,Hedwig-Dohm-Schule (Integrierte Sekundarschule),Mitte,berlin,ISS,,2.88,,0.566,-0.0,-0.1417,-0.4676,-0.2284,-0.0896,-0.2444,0.1939,0.3628
+berlin_10K09,Konrad-Wachsmann-Schule,Marzahn-Hellersdorf,berlin,ISS,,2.902,,0.758,-0.1567,-0.181,-0.208,-0.2345,-0.0298,-0.1742,0.0808,0.3103
+berlin_02K07,Georg-Weerth-Schule,Friedrichshain-Kreuzberg,berlin,ISS,,2.927,,0.681,-0.1567,-0.1154,-0.1565,-0.2272,-0.1321,-0.2719,0.1465,0.3448
+berlin_08K10,Zuckmayer-Schule,Neukölln,berlin,ISS,,2.937,,0.548,-0.0,-0.0971,-0.5173,-0.2297,-0.0777,-0.1986,0.2147,0.347
+berlin_09K04,Isaac-Newton-Schule (Integrierte Sekundarschule),Treptow-Köpenick,berlin,ISS,,2.939,,0.756,-0.1567,-0.1941,-0.1413,-0.2394,-0.1037,-0.1467,0.1143,0.3112
+berlin_04K06,Schule am Schloss (Integrierte Sekundarschule),Charlottenburg-Wilmersdorf,berlin,ISS,,2.952,,0.621,-0.0,-0.1049,-0.4421,-0.2309,-0.1121,-0.1497,0.142,0.3547
+berlin_02K08,Refik-Veseli-Schule (Integrierte Sekundarschule),Friedrichshain-Kreuzberg,berlin,ISS,2.69,2.96,-0.27,0.648,-0.1567,-0.0997,-0.3517,-0.2272,-0.0806,-0.1955,0.174,0.4023
+berlin_07K05,Solling-Schule,Tempelhof-Schöneberg,berlin,ISS,,2.97,,0.737,-0.3135,-0.0525,-0.2038,-0.237,-0.0591,-0.1008,0.125,0.3166
+berlin_12K07,Jean-Krämer-Schule (Integrierte Sekundarschule) Wittenau,Reinickendorf,berlin,ISS,,2.983,,0.606,-0.0,-0.042,-0.399,-0.2358,-0.0552,-0.1986,0.0702,0.3484
+berlin_05K08,Schule an der Haveldüne (Integrierte Sekundarschule),Spandau,berlin,ISS,2.88,2.989,-0.109,0.693,-0.1567,-0.1181,-0.2893,-0.2321,-0.0658,-0.0703,0.0831,0.3428
+berlin_08K02,Hermann-von-Helmholtz-Schule,Neukölln,berlin,ISS,,2.997,,0.637,-0.1567,-0.139,-0.3772,-0.2297,-0.0407,-0.0,0.1194,0.326
+berlin_01K07,Hemingway-Schule,Mitte,berlin,ISS,,3.035,,0.502,-0.0,-0.1076,-0.5027,-0.2284,-0.1583,-0.0,0.1664,0.3706
+berlin_10K08,Johann-Julius-Hecker-Schule,Marzahn-Hellersdorf,berlin,ISS,,3.035,,0.635,-0.0,-0.1469,-0.1419,-0.2345,-0.0154,-0.22,0.0752,0.2233
+berlin_08K04,Heinrich-Mann-Schule,Neukölln,berlin,ISS,,3.082,,0.592,-0.0,-0.0394,-0.4221,-0.2297,-0.0669,-0.0703,0.0915,0.3231
+berlin_03K10,Hufeland-Schule (Integrierte Sekundarschule),Pankow,berlin,ISS,,3.11,,0.678,-0.3135,-0.0971,-0.1371,-0.2382,-0.0164,-0.0,0.1088,0.3083
+berlin_10K05,Jean-Piaget-Schule,Marzahn-Hellersdorf,berlin,ISS,,3.146,,0.693,-0.0,-0.1915,-0.1346,-0.2345,-0.0426,-0.1803,0.126,0.308

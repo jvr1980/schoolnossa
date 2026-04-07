@@ -1,0 +1,4 @@
+2025-11-17 14:38:23,166 - INFO - Starting Education Location Master Table Builder
+2025-11-17 14:38:23,220 - INFO - Initialized GCS bucket: schoolnossa-berlin
+2025-11-17 14:38:23,220 - INFO - Building education location master table
+2025-11-17 14:38:23,220 - INFO - Loading kita detail data...

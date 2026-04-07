@@ -764,7 +764,44 @@ def apply_cache_to_dataframe(df, cache, passes):
                     updated_structured += 1
 
     logger.info(f"Applied: {updated_descriptions} description updates, {updated_structured} structured field fills")
+
+    # ── Derived backfills: propagate web-scraped stats into Berlin-canonical columns ──
+    # Berlin schema uses year-specific columns: schueler_2024_25, lehrer_2024_25, etc.
+    # Web research extracts year-specific values where possible, year-unknown otherwise.
+    # Fill order: exact year match first, then adjacent year, then year-unknown fallback.
+    # Never create new non-Berlin column names — keep extras as city-specific only.
+    df, n = _backfill_col(df, "schueler_2024_25", ["schueler_gesamt_web"])
+    if n: logger.info(f"  Backfilled schueler_2024_25 from web for {n} schools")
+    df, n = _backfill_col(df, "lehrer_2024_25",   ["lehrer_2023_24"])
+    if n: logger.info(f"  Backfilled lehrer_2024_25 from adjacent year for {n} schools")
+
     return df
+
+
+def _backfill_col(df, target_col, source_cols):
+    """Fill nulls in target_col from source_cols (left-to-right priority).
+
+    Only writes to target_col — never creates non-Berlin canonical columns.
+    Returns (df, n_filled).
+    """
+    n = 0
+    for src in source_cols:
+        if src not in df.columns:
+            continue
+        if target_col not in df.columns:
+            # Only create the column if it's a known Berlin-canonical column
+            BERLIN_CANONICAL = {
+                "schueler_2024_25", "schueler_2023_24", "schueler_2022_23",
+                "lehrer_2024_25",   "lehrer_2023_24",   "lehrer_2022_23",
+            }
+            if target_col not in BERLIN_CANONICAL:
+                continue
+            df[target_col] = None
+        mask = df[target_col].isna() & df[src].notna()
+        if mask.sum() > 0:
+            df.loc[mask, target_col] = pd.to_numeric(df.loc[mask, src], errors="coerce")
+            n += mask.sum()
+    return df, n
 
 
 def save_results(df, city, school_type, output_dir):

@@ -1,0 +1,151 @@
+LLM Scraping started at 2026-01-18 13:08:32.496127
+Model: gemini-2.5-flash
+============================================================
+
+[2026-01-18 13:08:32] Processing: 10K15 - 15. Schule (Integrierte Sekundarschule)
+[2026-01-18 13:08:32] Processing: 11K17 - 17. Schule (Integrierte Sekundarschule) Neugründun
+[2026-01-18 13:08:32] Processing: 01S06 - Albert-Gutzmann-Schule
+[2026-01-18 13:08:32]   No website for 11K17
+[2026-01-18 13:08:32] Processing: 03P37 - Berlin Bilingual School (Integrierte Sekundarschul
+[2026-01-18 13:08:40]   Found for 03P37: ['sprachen', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:08:40] Processing: 04P40 - Berlin British School (Integrierte Sekundarschule)
+[2026-01-18 13:08:44]   Found for 10K15: ['besonderheiten']
+[2026-01-18 13:08:44] Processing: 01P16 - Berlin Metropolitan School (Integrierte Sekundarsc
+[2026-01-18 13:08:51]   Found for 01S06: ['schueler', 'besonderheiten']
+[2026-01-18 13:08:51] Processing: 09P09 - BEST-Sabel-Oberschule
+[2026-01-18 13:09:00]   Found for 04P40: ['besonderheiten']
+[2026-01-18 13:09:00] Processing: 01P06 - Canisius-Kolleg
+[2026-01-18 13:09:00] Checkpoint saved: 5/65
+[2026-01-18 13:09:08]   Found for 01P16: ['sprachen', 'besonderheiten']
+[2026-01-18 13:09:08] Processing: 04S05 - Ernst-Adolf-Eschke-Schule für Gehörlose
+[2026-01-18 13:09:17]   Found for 09P09: ['sprachen', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:09:17] Processing: 04P05 - Evangelische Schule Charlottenburg (Integrierte Se
+[2026-01-18 13:09:22]   Found for 01P06: ['schueler', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:09:22] Processing: 08P03 - Evangelische Schule Neukölln (Integrierte Sekundar
+[2026-01-18 13:09:25]   Found for 04S05: ['besonderheiten']
+[2026-01-18 13:09:25] Processing: 05P03 - Evangelische Schule Spandau im Johannesstift
+[2026-01-18 13:09:30]   Found for 04P05: ['besonderheiten']
+[2026-01-18 13:09:30] Processing: 06P12 - Evangelische Schule Steglitz (Integrierte Sekundar
+[2026-01-18 13:09:30] Checkpoint saved: 10/65
+[2026-01-18 13:09:34]   Found for 08P03: ['besonderheiten']
+[2026-01-18 13:09:34] Processing: 10P12 - Freie Schule Berlin Mahlsdorf
+[2026-01-18 13:09:36]   Website content too short for 10P12
+[2026-01-18 13:09:36] Processing: 04P15 - Freie Schule Charlottenburg
+[2026-01-18 13:09:39]   Found for 05P03: ['besonderheiten']
+[2026-01-18 13:09:39] Processing: 03P13 - Freie Schule Pankow (Integrierte Sekundarschule)
+[2026-01-18 13:09:44]   Found for 06P12: ['besonderheiten']
+[2026-01-18 13:09:44] Processing: 04P23 - Jüdische Traditionsschule
+[2026-01-18 13:09:49]   Found for 04P15: ['besonderheiten']
+[2026-01-18 13:09:49] Processing: 01P03 - Jüdisches Gymnasium Moses Mendelssohn
+[2026-01-18 13:09:49] Checkpoint saved: 15/65
+[2026-01-18 13:09:55]   Found for 03P13: ['sprachen', 'besonderheiten']
+[2026-01-18 13:09:55] Processing: 12P04 - Katholische Schule Salvator
+[2026-01-18 13:10:01]   Found for 04P23: ['lehrer', 'sprachen', 'besonderheiten']
+[2026-01-18 13:10:01] Processing: 07P01 - Katholische Schule Sankt Franziskus (Integrierte S
+[2026-01-18 13:10:08]   Found for 01P03: ['schueler', 'sprachen', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:10:08] Processing: 08P04 - Katholische Schule Sankt Marien
+[2026-01-18 13:10:14]   Found for 12P04: ['sprachen', 'besonderheiten']
+[2026-01-18 13:10:14] Processing: 06P06 - Königin-Luise-Stiftung
+[2026-01-18 13:10:21]   Found for 07P01: ['sprachen', 'besonderheiten']
+[2026-01-18 13:10:21] Processing: 12P14 - Montessori Campus am Tegeler Forst
+[2026-01-18 13:10:21] Checkpoint saved: 20/65
+[2026-01-18 13:10:28]   Found for 08P04: ['besonderheiten']
+[2026-01-18 13:10:28] Processing: 09P21 - NEWSchool (Integrierte Sekundarschule) (KEIN Schul
+[2026-01-18 13:10:32]   Found for 06P06: ['schueler', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:10:32] Processing: 03P45 - PepperMont Freie Sekundarschule für ganzheitliches
+[2026-01-18 13:10:37]   Found for 12P14: ['besonderheiten']
+[2026-01-18 13:10:37] Processing: 06S01 - Pestalozzi-Schule
+[2026-01-18 13:10:39]   Found for 09P21: nothing
+[2026-01-18 13:10:39] Processing: 12P07 - Private Goethe-Schulen
+[2026-01-18 13:10:46]   Found for 03P45: nothing
+[2026-01-18 13:10:46] Processing: 06P11 - Private Kant-Schule
+[2026-01-18 13:10:46] Checkpoint saved: 25/65
+[2026-01-18 13:10:49]   Found for 06S01: ['besonderheiten']
+[2026-01-18 13:10:49] Processing: 04P42 - Private Kant-Schule - Berlin International School
+[2026-01-18 13:10:54]   Found for 12P07: ['sprachen', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:10:54] Processing: 01P49 - Quinoa-Schule Freie Sekundarschule Berlin Wedding
+[2026-01-18 13:11:01]   Found for 06P11: ['sprachen', 'besonderheiten']
+[2026-01-18 13:11:01] Processing: 08S08 - Schilling-Schule
+[2026-01-18 13:11:08]   Found for 04P42: ['sprachen', 'besonderheiten']
+[2026-01-18 13:11:08] Processing: 11S05 - Schule am grünen Grund
+[2026-01-18 13:11:08]   No website for 11S05
+[2026-01-18 13:11:08] Processing: 05S01 - Schule am Grüngürtel
+[2026-01-18 13:11:08] Checkpoint saved: 30/65
+[2026-01-18 13:11:14]   Found for 01P49: ['besonderheiten']
+[2026-01-18 13:11:14] Processing: 10S07 - Schule am Rosenhain
+[2026-01-18 13:11:15] Request failed after 3 attempts for https://schule-am-gruenguertel.de: HTTPSConnectionPool(host='schule-am-gruenguertel.de', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1129)')))
+[2026-01-18 13:11:15]   Failed to fetch website for 05S01
+[2026-01-18 13:11:15] Processing: 09S06 - Schule am Wildgarten
+[2026-01-18 13:11:20]   Found for 08S08: ['besonderheiten']
+[2026-01-18 13:11:20] Processing: 01S01 - Schule am Zille-Park
+[2026-01-18 13:11:24]   Found for 10S07: ['besonderheiten']
+[2026-01-18 13:11:24] Processing: 08S04 - Schule am Zwickauer Damm
+[2026-01-18 13:11:24]   No website for 08S04
+[2026-01-18 13:11:24] Processing: 08S09 - Schule an der Windmühle
+[2026-01-18 13:11:24] Checkpoint saved: 35/65
+[2026-01-18 13:11:27]   Found for 09S06: ['besonderheiten']
+[2026-01-18 13:11:27] Processing: 03P03 - Schulen Christburg Campus Prenzlauer Berg
+[2026-01-18 13:11:31]   Found for 01S01: ['besonderheiten']
+[2026-01-18 13:11:31] Processing: 05P19 - SIS Swiss International School Berlin
+[2026-01-18 13:11:36]   Found for 08S09: ['schueler', 'lehrer', 'besonderheiten']
+[2026-01-18 13:11:36] Processing: 03B08 - Staatliche Ballett- und Artistikschule Berlin
+[2026-01-18 13:11:42]   Found for 03P03: ['besonderheiten']
+[2026-01-18 13:11:42] Processing: 03P24 - Ting-Schule (Integrierte Sekundarschule)
+[2026-01-18 13:11:43] Request failed after 3 attempts for https://www.ballettschule-berlin.de: HTTPSConnectionPool(host='www.ballettschule-berlin.de', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1129)')))
+[2026-01-18 13:11:43]   Failed to fetch website for 03B08
+[2026-01-18 13:11:43] Processing: 12S05 - Waldseeschule
+[2026-01-18 13:11:43] Checkpoint saved: 40/65
+[2026-01-18 13:11:47]   Found for 05P19: ['sprachen', 'besonderheiten']
+[2026-01-18 13:11:47] Processing: 05P13 - Wilhelmstadt Schulen
+[2026-01-18 13:11:52]   Found for 03P24: ['schueler', 'lehrer', 'besonderheiten']
+[2026-01-18 13:11:52] Processing: 07A44 - Willkommensschule THF
+[2026-01-18 13:11:52]   No website for 07A44
+[2026-01-18 13:11:52] Processing: 12A44 - Willkommensschule TXL
+[2026-01-18 13:11:57]   Found for 12S05: ['besonderheiten']
+[2026-01-18 13:11:57] Processing: 09Y12 - 12. Schule (Gymnasium)
+[2026-01-18 13:12:01]   Found for 05P13: ['besonderheiten']
+[2026-01-18 13:12:01] Processing: 11Y12 - 12. Schule (Gymnasium)
+[2026-01-18 13:12:01] Checkpoint saved: 45/65
+[2026-01-18 13:12:09]   Found for 12A44: ['schueler', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:12:09] Processing: 10Y12 - 12. Schule (Gymnasium)
+[2026-01-18 13:12:13]   Found for 09Y12: ['sprachen', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:12:13] Processing: 01P22 - Berlin Cosmopolitan School
+[2026-01-18 13:12:18]   Found for 11Y12: ['besonderheiten']
+[2026-01-18 13:12:18] Processing: 01P18 - Bilinguale Schule Phorms Berlin Mitte
+[2026-01-18 13:12:25]   Found for 10Y12: ['sprachen', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:12:25] Processing: 06P18 - Bilinguale Schule Phorms Berlin Süd
+[2026-01-18 13:12:32] Request failed after 3 attempts for https://www.berlin-sued.phorms.de: HTTPSConnectionPool(host='www.berlin-sued.phorms.de', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x116a6c820>: Failed to resolve 'www.berlin-sued.phorms.de' ([Errno 8] nodename nor servname provided, or not known)"))
+[2026-01-18 13:12:32]   Failed to fetch website for 06P18
+[2026-01-18 13:12:32] Processing: 12P03 - Evangelische Schule Frohnau
+[2026-01-18 13:12:32] Checkpoint saved: 50/65
+[2026-01-18 13:12:36]   Found for 01P22: ['sprachen', 'besonderheiten']
+[2026-01-18 13:12:36] Processing: 09P07 - Evangelische Schule Köpenick (Gymnasium)
+[2026-01-18 13:12:41]   Found for 01P18: ['schueler', 'sprachen', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:12:41] Processing: 04P11 - Evangelisches Gymnasium zum Grauen Kloster
+[2026-01-18 13:12:45]   Found for 12P03: ['besonderheiten']
+[2026-01-18 13:12:45] Processing: 01Y07 - Französisches Gymnasium
+[2026-01-18 13:12:49]   Found for 09P07: ['gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:12:49] Processing: 06P20 - Freie Schule Anne-Sophie Berlin
+[2026-01-18 13:12:55]   Found for 04P11: ['sprachen', 'besonderheiten']
+[2026-01-18 13:12:55] Processing: 04Y11 - Goethe-Gymnasium
+[2026-01-18 13:12:55] Checkpoint saved: 55/65
+[2026-01-18 13:13:02]   Found for 01Y07: ['schueler', 'lehrer', 'sprachen', 'besonderheiten']
+[2026-01-18 13:13:02] Processing: 04P04 - Katholische Schule Liebfrauen (Gymnasium)
+[2026-01-18 13:13:06]   Found for 06P20: ['sprachen', 'besonderheiten']
+[2026-01-18 13:13:06] Processing: 03P10 - Katholische Theresienschule (Gymnasium)
+[2026-01-18 13:13:11]   Found for 04Y11: ['besonderheiten']
+[2026-01-18 13:13:11] Processing: 04P35 - Mentora Gymnasium (KEIN Schulbetrieb)
+[2026-01-18 13:13:12]   Website content too short for 04P35
+[2026-01-18 13:13:12] Processing: 04P24 - Moser-Schule - Schweizer Gymnasium
+[2026-01-18 13:13:15]   Found for 04P04: ['gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:13:15] Processing: 01Y04 - Musikgymnasium Carl Philipp Emanuel Bach
+[2026-01-18 13:13:15] Checkpoint saved: 60/65
+[2026-01-18 13:13:21]   Found for 03P10: ['sprachen', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:13:21] Processing: 04P47 - Privates Europa-Gymnasium Berlin
+[2026-01-18 13:13:27]   Found for 04P24: ['sprachen', 'gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:13:27] Processing: 01Y13 - Rosalind-Franklin-Gymnasium
+[2026-01-18 13:13:34] Request failed after 3 attempts for https://gymnasium-13.de: HTTPSConnectionPool(host='gymnasium-13.de', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1129)')))
+[2026-01-18 13:13:34]   Failed to fetch website for 01Y13
+[2026-01-18 13:13:34]   Found for 01Y04: ['gruendungsjahr', 'besonderheiten']
+[2026-01-18 13:13:41]   Found for 04P47: ['sprachen', 'besonderheiten']
+[2026-01-18 13:13:41] Checkpoint saved: 65/65

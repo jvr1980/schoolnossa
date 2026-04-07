@@ -1,0 +1,10 @@
+sep=;
+Schluessel;Schulbetrieb;
+"0";"Schule wird zum Ende des laufenden Schuljahres aufgelöst";
+"1";"Schule hat Schulbetrieb";
+"2";"Schule wird zu einem späteren Zeitpunkt als zum Ende des laufenden Schuljahres aufgelöst";
+"3";"Schule nimmt den Schulbetrieb auf ab (Datum)";
+"4";"Schulbetrieb ruht";
+"5";"Gelöschte Schule, die für die Stellendatei (STD) noch bestehen bleiben muss";
+"6";"Wie Schulbetriebsschlüssel 1, nimmt jedoch nur an bestimmten Erhebungen teil (nicht ASD). Erhält Schulmail";
+"9";"Aufgelöste Schule, die für Zwecke der ASD noch bestehen bleiben muss";

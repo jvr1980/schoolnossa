@@ -1,0 +1,399 @@
+Scraping started at 2026-01-18 12:55:43.459947
+============================================================
+
+[2026-01-18 12:55:43] Processing: 10K15 - 15. Schule (Integrierte Sekundarschule)
+[2026-01-18 12:55:43] Processing: 11K17 - 17. Schule (Integrierte Sekundarschule) Neugründun
+[2026-01-18 12:55:43] Processing: 01S06 - Albert-Gutzmann-Schule
+[2026-01-18 12:55:43] Processing: 03P37 - Berlin Bilingual School (Integrierte Sekundarschul
+[2026-01-18 12:55:43] Processing: 04P40 - Berlin British School (Integrierte Sekundarschule)
+[2026-01-18 12:55:44] [bildung.berlin.de] Searching for 11K17
+[2026-01-18 12:55:44] [bildung.berlin.de] Searching for 04P40
+[2026-01-18 12:55:44] [bildung.berlin.de] Searching for 03P37
+[2026-01-18 12:55:44] [bildung.berlin.de] Searching for 10K15
+[2026-01-18 12:55:44] [bildung.berlin.de] Searching for 01S06
+[2026-01-18 12:55:45] [schulen.de] Searching for 15. Schule (Integrierte Sekundarschule)
+[2026-01-18 12:55:45] [schulen.de] Searching for Berlin Bilingual School (Integrierte Sek
+[2026-01-18 12:55:45] Request failed after 1 attempts for https://schulen.de/schulen/15-schule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/15-schule-berlin/
+[2026-01-18 12:55:46] Request failed after 1 attempts for https://schulen.de/schulen/berlin-bilingual-school-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/berlin-bilingual-school-berlin/
+[2026-01-18 12:55:46] Request failed after 1 attempts for https://schulen.de/schulen/15-schule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/15-schule/
+[2026-01-18 12:55:46] Request failed after 1 attempts for https://schulen.de/schulen/berlin-bilingual-school/: 404 Client Error: Not Found for url: https://schulen.de/schulen/berlin-bilingual-school/
+[2026-01-18 12:55:46] [schulen.de] Searching for 17. Schule (Integrierte Sekundarschule) 
+[2026-01-18 12:55:46] [schulen.de] Searching for Berlin British School (Integrierte Sekun
+[2026-01-18 12:55:46] Request failed after 1 attempts for https://schulen.de/schulen/17-schule-neugründung-zum-01082026-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/17-schule-neugr%C3%BCndung-zum-01082026-berlin/
+[2026-01-18 12:55:46] Request failed after 1 attempts for https://schulen.de/schulen/berlin-british-school-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/berlin-british-school-berlin/
+[2026-01-18 12:55:46] [schulen.de] Searching for Albert-Gutzmann-Schule
+[2026-01-18 12:55:46] Request failed after 1 attempts for https://schulen.de/schulen/17-schule-neugründung-zum-01082026/: 404 Client Error: Not Found for url: https://schulen.de/schulen/17-schule-neugr%C3%BCndung-zum-01082026/
+[2026-01-18 12:55:46] Processing: 01P16 - Berlin Metropolitan School (Integrierte Sekundarsc
+[2026-01-18 12:55:46] Request failed after 1 attempts for https://schulen.de/schulen/berlin-british-school/: 404 Client Error: Not Found for url: https://schulen.de/schulen/berlin-british-school/
+[2026-01-18 12:55:46] [website] Fetching https://www.iss-biesdorf.de
+[2026-01-18 12:55:46] Request failed after 1 attempts for https://schulen.de/schulen/albert-gutzmann-schule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/albert-gutzmann-schule-berlin/
+[2026-01-18 12:55:46] [website] Fetching https://www.berlin-bilingual-school.de
+[2026-01-18 12:55:46] Request failed after 1 attempts for https://schulen.de/schulen/albert-gutzmann-schule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/albert-gutzmann-schule/
+[2026-01-18 12:55:47] Processing: 09P09 - BEST-Sabel-Oberschule
+[2026-01-18 12:55:47] Processing: 01P06 - Canisius-Kolleg
+[2026-01-18 12:55:47] [bildung.berlin.de] Searching for 01P16
+[2026-01-18 12:55:47] [website] Fetching https://www.berlinbritishschool.de
+[2026-01-18 12:55:47] [website] Fetching https://www.gutzmannschule.de
+[2026-01-18 12:55:47] Processing: 04S05 - Ernst-Adolf-Eschke-Schule für Gehörlose
+[2026-01-18 12:55:47] [bildung.berlin.de] Searching for 09P09
+[2026-01-18 12:55:47] [bildung.berlin.de] Searching for 01P06
+[2026-01-18 12:55:48] [bildung.berlin.de] Searching for 04S05
+[2026-01-18 12:55:48] [schulen.de] Searching for Berlin Metropolitan School (Integrierte 
+[2026-01-18 12:55:48] Processing: 04P05 - Evangelische Schule Charlottenburg (Integrierte Se
+[2026-01-18 12:55:48] Request failed after 1 attempts for https://schulen.de/schulen/berlin-metropolitan-school-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/berlin-metropolitan-school-berlin/
+[2026-01-18 12:55:49] Request failed after 1 attempts for https://schulen.de/schulen/berlin-metropolitan-school/: 404 Client Error: Not Found for url: https://schulen.de/schulen/berlin-metropolitan-school/
+[2026-01-18 12:55:49] [schulen.de] Searching for BEST-Sabel-Oberschule
+[2026-01-18 12:55:49] [bildung.berlin.de] Searching for 04P05
+[2026-01-18 12:55:49] Request failed after 1 attempts for https://schulen.de/schulen/best-sabel-oberschule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/best-sabel-oberschule-berlin/
+[2026-01-18 12:55:49] Request failed after 1 attempts for https://schulen.de/schulen/best-sabel-oberschule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/best-sabel-oberschule/
+[2026-01-18 12:55:49] [website] Fetching https://www.metropolitanschool.com
+[2026-01-18 12:55:49] [schulen.de] Searching for Ernst-Adolf-Eschke-Schule für Gehörlose
+[2026-01-18 12:55:49] [schulen.de] Searching for Canisius-Kolleg
+[2026-01-18 12:55:50] Request failed after 1 attempts for https://schulen.de/schulen/canisius-kolleg-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/canisius-kolleg-berlin/
+[2026-01-18 12:55:50] Request failed after 1 attempts for https://schulen.de/schulen/ernst-adolf-eschke-schule-für-gehörlose-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/ernst-adolf-eschke-schule-f%C3%BCr-geh%C3%B6rlose-berlin/
+[2026-01-18 12:55:50] [website] Fetching https://best-sabel.de
+[2026-01-18 12:55:50] Request failed after 1 attempts for https://schulen.de/schulen/ernst-adolf-eschke-schule-für-gehörlose/: 404 Client Error: Not Found for url: https://schulen.de/schulen/ernst-adolf-eschke-schule-f%C3%BCr-geh%C3%B6rlose/
+[2026-01-18 12:55:50] Request failed after 1 attempts for https://schulen.de/schulen/canisius-kolleg/: 404 Client Error: Not Found for url: https://schulen.de/schulen/canisius-kolleg/
+[2026-01-18 12:55:50] Processing: 08P03 - Evangelische Schule Neukölln (Integrierte Sekundar
+[2026-01-18 12:55:50] [schulen.de] Searching for Evangelische Schule Charlottenburg (Inte
+[2026-01-18 12:55:50] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-charlottenburg-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-charlottenburg-berlin/
+[2026-01-18 12:55:50] [website] Fetching https://eschke-schule.de
+[2026-01-18 12:55:50] Processing: 05P03 - Evangelische Schule Spandau im Johannesstift
+[2026-01-18 12:55:50] [bildung.berlin.de] Searching for 08P03
+[2026-01-18 12:55:50] [website] Fetching https://canisius.de
+[2026-01-18 12:55:50] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-charlottenburg/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-charlottenburg/
+[2026-01-18 12:55:51] Processing: 06P12 - Evangelische Schule Steglitz (Integrierte Sekundar
+[2026-01-18 12:55:51] [bildung.berlin.de] Searching for 05P03
+[2026-01-18 12:55:51] [website] Fetching https://www.ev-schule-charlottenburg.de
+[2026-01-18 12:55:51] [bildung.berlin.de] Searching for 06P12
+[2026-01-18 12:55:52] [schulen.de] Searching for Evangelische Schule Neukölln (Integriert
+[2026-01-18 12:55:52] Processing: 10P12 - Freie Schule Berlin Mahlsdorf
+[2026-01-18 12:55:52] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-neukölln-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-neuk%C3%B6lln-berlin/
+[2026-01-18 12:55:52] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-neukölln/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-neuk%C3%B6lln/
+[2026-01-18 12:55:52] Processing: 04P15 - Freie Schule Charlottenburg
+[2026-01-18 12:55:52] Checkpoint saved: 10/65
+[2026-01-18 12:55:52] [bildung.berlin.de] Searching for 10P12
+[2026-01-18 12:55:52] [schulen.de] Searching for Evangelische Schule Spandau im Johanness
+[2026-01-18 12:55:52] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-spandau-im-johannesstift-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-spandau-im-johannesstift-berlin/
+[2026-01-18 12:55:52] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-spandau-im-johannesstift/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-spandau-im-johannesstift/
+[2026-01-18 12:55:52] [schulen.de] Searching for Evangelische Schule Steglitz (Integriert
+[2026-01-18 12:55:53] [website] Fetching https://evangelische-schule-neukoelln.de
+[2026-01-18 12:55:53] [bildung.berlin.de] Searching for 04P15
+[2026-01-18 12:55:53] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-steglitz-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-steglitz-berlin/
+[2026-01-18 12:55:53] Processing: 03P13 - Freie Schule Pankow (Integrierte Sekundarschule)
+[2026-01-18 12:55:53] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-steglitz/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-steglitz/
+[2026-01-18 12:55:53] [website] Fetching https://www.ev-schule-spandau.de
+[2026-01-18 12:55:53] [schulen.de] Searching for Freie Schule Berlin Mahlsdorf
+[2026-01-18 12:55:53] [bildung.berlin.de] Searching for 03P13
+[2026-01-18 12:55:53] [website] Fetching https://www.ev-schule-steglitz.de
+[2026-01-18 12:55:53] Request failed after 1 attempts for https://schulen.de/schulen/freie-schule-berlin-mahlsdorf-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/freie-schule-berlin-mahlsdorf-berlin/
+[2026-01-18 12:55:54] Request failed after 1 attempts for https://schulen.de/schulen/freie-schule-berlin-mahlsdorf/: 404 Client Error: Not Found for url: https://schulen.de/schulen/freie-schule-berlin-mahlsdorf/
+[2026-01-18 12:55:54] [schulen.de] Searching for Freie Schule Charlottenburg
+[2026-01-18 12:55:54] Processing: 04P23 - Jüdische Traditionsschule
+[2026-01-18 12:55:54] Request failed after 1 attempts for https://schulen.de/schulen/freie-schule-charlottenburg-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/freie-schule-charlottenburg-berlin/
+[2026-01-18 12:55:54] [website] Fetching https://freieschule-mahlsdorf.de
+[2026-01-18 12:55:54] Request failed after 1 attempts for https://schulen.de/schulen/freie-schule-charlottenburg/: 404 Client Error: Not Found for url: https://schulen.de/schulen/freie-schule-charlottenburg/
+[2026-01-18 12:55:55] [schulen.de] Searching for Freie Schule Pankow (Integrierte Sekunda
+[2026-01-18 12:55:55] [bildung.berlin.de] Searching for 04P23
+[2026-01-18 12:55:55] Request failed after 1 attempts for https://schulen.de/schulen/freie-schule-pankow-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/freie-schule-pankow-berlin/
+[2026-01-18 12:55:55] Processing: 01P03 - Jüdisches Gymnasium Moses Mendelssohn
+[2026-01-18 12:55:55] [website] Fetching https://www.freie-schule-charlottenburg.de
+[2026-01-18 12:55:55] Request failed after 1 attempts for https://schulen.de/schulen/freie-schule-pankow/: 404 Client Error: Not Found for url: https://schulen.de/schulen/freie-schule-pankow/
+[2026-01-18 12:55:55] Processing: 12P04 - Katholische Schule Salvator
+[2026-01-18 12:55:55] [bildung.berlin.de] Searching for 01P03
+[2026-01-18 12:55:55] [website] Fetching https://www.freie-schule-pankow.de
+[2026-01-18 12:55:55] [bildung.berlin.de] Searching for 12P04
+[2026-01-18 12:55:55] Processing: 07P01 - Katholische Schule Sankt Franziskus (Integrierte S
+[2026-01-18 12:55:56] [schulen.de] Searching for Jüdische Traditionsschule
+[2026-01-18 12:55:56] [bildung.berlin.de] Searching for 07P01
+[2026-01-18 12:55:56] Request failed after 1 attempts for https://schulen.de/schulen/jüdische-traditionsschule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/j%C3%BCdische-traditionsschule-berlin/
+[2026-01-18 12:55:56] Processing: 08P04 - Katholische Schule Sankt Marien
+[2026-01-18 12:55:56] Request failed after 1 attempts for https://schulen.de/schulen/jüdische-traditionsschule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/j%C3%BCdische-traditionsschule/
+[2026-01-18 12:55:56] [schulen.de] Searching for Jüdisches Gymnasium Moses Mendelssohn
+[2026-01-18 12:55:57] Request failed after 1 attempts for https://schulen.de/schulen/jüdisches-gymnasium-moses-mendelssohn-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/j%C3%BCdisches-gymnasium-moses-mendelssohn-berlin/
+[2026-01-18 12:55:57] [bildung.berlin.de] Searching for 08P04
+[2026-01-18 12:55:57] [schulen.de] Searching for Katholische Schule Salvator
+[2026-01-18 12:55:57] [website] Fetching https://www.jschule.de
+[2026-01-18 12:55:57] Request failed after 1 attempts for https://schulen.de/schulen/jüdisches-gymnasium-moses-mendelssohn/: 404 Client Error: Not Found for url: https://schulen.de/schulen/j%C3%BCdisches-gymnasium-moses-mendelssohn/
+[2026-01-18 12:55:57] Request failed after 1 attempts for https://schulen.de/schulen/katholische-schule-salvator-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/katholische-schule-salvator-berlin/
+[2026-01-18 12:55:57] Request failed after 1 attempts for https://schulen.de/schulen/katholische-schule-salvator/: 404 Client Error: Not Found for url: https://schulen.de/schulen/katholische-schule-salvator/
+[2026-01-18 12:55:57] [schulen.de] Searching for Katholische Schule Sankt Franziskus (Int
+[2026-01-18 12:55:57] [website] Fetching https://jgmm.de
+[2026-01-18 12:55:57] Request failed after 1 attempts for https://schulen.de/schulen/katholische-schule-sankt-franziskus-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/katholische-schule-sankt-franziskus-berlin/
+[2026-01-18 12:55:58] Processing: 06P06 - Königin-Luise-Stiftung
+[2026-01-18 12:55:58] Request failed after 1 attempts for https://schulen.de/schulen/katholische-schule-sankt-franziskus/: 404 Client Error: Not Found for url: https://schulen.de/schulen/katholische-schule-sankt-franziskus/
+[2026-01-18 12:55:58] [website] Fetching https://salvator.net
+[2026-01-18 12:55:58] Processing: 12P14 - Montessori Campus am Tegeler Forst
+[2026-01-18 12:55:58] [schulen.de] Searching for Katholische Schule Sankt Marien
+[2026-01-18 12:55:58] [bildung.berlin.de] Searching for 06P06
+[2026-01-18 12:55:58] [website] Fetching https://kssf-berlin.de
+[2026-01-18 12:55:58] Request failed after 1 attempts for https://schulen.de/schulen/katholische-schule-sankt-marien-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/katholische-schule-sankt-marien-berlin/
+[2026-01-18 12:55:58] Processing: 09P21 - NEWSchool (Integrierte Sekundarschule) (KEIN Schul
+[2026-01-18 12:55:58] Request failed after 1 attempts for https://schulen.de/schulen/katholische-schule-sankt-marien/: 404 Client Error: Not Found for url: https://schulen.de/schulen/katholische-schule-sankt-marien/
+[2026-01-18 12:55:59] [bildung.berlin.de] Searching for 12P14
+[2026-01-18 12:55:59] Processing: 03P45 - PepperMont Freie Sekundarschule für ganzheitliches
+[2026-01-18 12:55:59] Checkpoint saved: 20/65
+[2026-01-18 12:55:59] [bildung.berlin.de] Searching for 09P21
+[2026-01-18 12:55:59] [website] Fetching https://marienschule-berlin.de
+[2026-01-18 12:55:59] [bildung.berlin.de] Searching for 03P45
+[2026-01-18 12:55:59] [schulen.de] Searching for Königin-Luise-Stiftung
+[2026-01-18 12:55:59] Processing: 06S01 - Pestalozzi-Schule
+[2026-01-18 12:55:59] Request failed after 1 attempts for https://schulen.de/schulen/königin-luise-stiftung-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/k%C3%B6nigin-luise-stiftung-berlin/
+[2026-01-18 12:56:00] [schulen.de] Searching for Montessori Campus am Tegeler Forst
+[2026-01-18 12:56:00] [bildung.berlin.de] Searching for 06S01
+[2026-01-18 12:56:00] Request failed after 1 attempts for https://schulen.de/schulen/königin-luise-stiftung/: 404 Client Error: Not Found for url: https://schulen.de/schulen/k%C3%B6nigin-luise-stiftung/
+[2026-01-18 12:56:00] Request failed after 1 attempts for https://schulen.de/schulen/montessori-campus-am-tegeler-forst-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/montessori-campus-am-tegeler-forst-berlin/
+[2026-01-18 12:56:00] [schulen.de] Searching for NEWSchool (Integrierte Sekundarschule) (
+[2026-01-18 12:56:00] Request failed after 1 attempts for https://schulen.de/schulen/montessori-campus-am-tegeler-forst/: 404 Client Error: Not Found for url: https://schulen.de/schulen/montessori-campus-am-tegeler-forst/
+[2026-01-18 12:56:00] Request failed after 1 attempts for https://schulen.de/schulen/newschool-kein-schulbetrieb-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/newschool-kein-schulbetrieb-berlin/
+[2026-01-18 12:56:00] [website] Fetching https://www.koenigin-luise-stiftung.de
+[2026-01-18 12:56:00] Request failed after 1 attempts for https://schulen.de/schulen/newschool-kein-schulbetrieb/: 404 Client Error: Not Found for url: https://schulen.de/schulen/newschool-kein-schulbetrieb/
+[2026-01-18 12:56:00] [schulen.de] Searching for PepperMont Freie Sekundarschule für ganz
+[2026-01-18 12:56:01] [website] Fetching https://montessori-tegel.de
+[2026-01-18 12:56:01] Processing: 12P07 - Private Goethe-Schulen
+[2026-01-18 12:56:01] Request failed after 1 attempts for https://schulen.de/schulen/peppermont-freie-sekundarschule-für-ganzheitliches-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/peppermont-freie-sekundarschule-f%C3%BCr-ganzheitliches-berlin/
+[2026-01-18 12:56:01] [website] Fetching https://www.newschool.de
+[2026-01-18 12:56:01] [schulen.de] Searching for Pestalozzi-Schule
+[2026-01-18 12:56:01] Processing: 06P11 - Private Kant-Schule
+[2026-01-18 12:56:01] [bildung.berlin.de] Searching for 12P07
+[2026-01-18 12:56:01] Request failed after 1 attempts for https://schulen.de/schulen/peppermont-freie-sekundarschule-für-ganzheitliches/: 404 Client Error: Not Found for url: https://schulen.de/schulen/peppermont-freie-sekundarschule-f%C3%BCr-ganzheitliches/
+[2026-01-18 12:56:02] Processing: 04P42 - Private Kant-Schule - Berlin International School
+[2026-01-18 12:56:02] Request failed after 1 attempts for https://schulen.de/schulen/pestalozzi-schule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/pestalozzi-schule-berlin/
+[2026-01-18 12:56:02] [bildung.berlin.de] Searching for 06P11
+[2026-01-18 12:56:02] [website] Fetching https://www.pfefferwerk.de
+[2026-01-18 12:56:02] Request failed after 1 attempts for https://schulen.de/schulen/pestalozzi-schule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/pestalozzi-schule/
+[2026-01-18 12:56:02] [bildung.berlin.de] Searching for 04P42
+[2026-01-18 12:56:03] [schulen.de] Searching for Private Goethe-Schulen
+[2026-01-18 12:56:03] [website] Fetching https://www.pestalozzi-schule-berlin.de
+[2026-01-18 12:56:03] Request failed after 1 attempts for https://schulen.de/schulen/private-goethe-schulen-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/private-goethe-schulen-berlin/
+[2026-01-18 12:56:03] [schulen.de] Searching for Private Kant-Schule
+[2026-01-18 12:56:03] Processing: 01P49 - Quinoa-Schule Freie Sekundarschule Berlin Wedding
+[2026-01-18 12:56:03] Processing: 08S08 - Schilling-Schule
+[2026-01-18 12:56:03] Request failed after 1 attempts for https://schulen.de/schulen/private-kant-schule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/private-kant-schule-berlin/
+[2026-01-18 12:56:03] Request failed after 1 attempts for https://schulen.de/schulen/private-goethe-schulen/: 404 Client Error: Not Found for url: https://schulen.de/schulen/private-goethe-schulen/
+[2026-01-18 12:56:03] Request failed after 1 attempts for https://schulen.de/schulen/private-kant-schule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/private-kant-schule/
+[2026-01-18 12:56:03] [schulen.de] Searching for Private Kant-Schule - Berlin Internation
+[2026-01-18 12:56:04] [bildung.berlin.de] Searching for 01P49
+[2026-01-18 12:56:04] Request failed after 1 attempts for https://schulen.de/schulen/private-kant-schule---berlin-international-school-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/private-kant-schule---berlin-international-school-berlin/
+[2026-01-18 12:56:04] [bildung.berlin.de] Searching for 08S08
+[2026-01-18 12:56:04] [website] Fetching https://goethe-grundschule.bifiz.de
+[2026-01-18 12:56:04] [website] Fetching https://www.kant-oberschule.de
+[2026-01-18 12:56:04] Request failed after 1 attempts for https://schulen.de/schulen/private-kant-schule---berlin-international-school/: 404 Client Error: Not Found for url: https://schulen.de/schulen/private-kant-schule---berlin-international-school/
+[2026-01-18 12:56:04] [website] Fetching https://www.berlin-international-school.de
+[2026-01-18 12:56:05] [schulen.de] Searching for Quinoa-Schule Freie Sekundarschule Berli
+[2026-01-18 12:56:05] Request failed after 1 attempts for https://schulen.de/schulen/quinoa-schule-freie-sekundarschule-berlin-wedding-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/quinoa-schule-freie-sekundarschule-berlin-wedding-berlin/
+[2026-01-18 12:56:05] Processing: 11S05 - Schule am grünen Grund
+[2026-01-18 12:56:05] [schulen.de] Searching for Schilling-Schule
+[2026-01-18 12:56:05] Request failed after 1 attempts for https://schulen.de/schulen/quinoa-schule-freie-sekundarschule-berlin-wedding/: 404 Client Error: Not Found for url: https://schulen.de/schulen/quinoa-schule-freie-sekundarschule-berlin-wedding/
+[2026-01-18 12:56:05] Request failed after 1 attempts for https://schulen.de/schulen/schilling-schule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schilling-schule-berlin/
+[2026-01-18 12:56:05] Processing: 05S01 - Schule am Grüngürtel
+[2026-01-18 12:56:05] Request failed after 1 attempts for https://schulen.de/schulen/schilling-schule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schilling-schule/
+[2026-01-18 12:56:06] [bildung.berlin.de] Searching for 11S05
+[2026-01-18 12:56:06] [website] Fetching https://www.quinoa-bildung.de
+[2026-01-18 12:56:06] [bildung.berlin.de] Searching for 05S01
+[2026-01-18 12:56:06] [website] Fetching https://www.schillingschule.de
+[2026-01-18 12:56:06] Processing: 10S07 - Schule am Rosenhain
+[2026-01-18 12:56:07] [bildung.berlin.de] Searching for 10S07
+[2026-01-18 12:56:07] [schulen.de] Searching for Schule am grünen Grund
+[2026-01-18 12:56:07] Processing: 09S06 - Schule am Wildgarten
+[2026-01-18 12:56:07] Checkpoint saved: 30/65
+[2026-01-18 12:56:07] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-grünen-grund-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-gr%C3%BCnen-grund-berlin/
+[2026-01-18 12:56:07] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-grünen-grund/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-gr%C3%BCnen-grund/
+[2026-01-18 12:56:07] Processing: 01S01 - Schule am Zille-Park
+[2026-01-18 12:56:07] [schulen.de] Searching for Schule am Grüngürtel
+[2026-01-18 12:56:07] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-grüngürtel-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-gr%C3%BCng%C3%BCrtel-berlin/
+[2026-01-18 12:56:07] [bildung.berlin.de] Searching for 09S06
+[2026-01-18 12:56:08] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-grüngürtel/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-gr%C3%BCng%C3%BCrtel/
+[2026-01-18 12:56:08] [bildung.berlin.de] Searching for 01S01
+[2026-01-18 12:56:08] [schulen.de] Searching for Schule am Rosenhain
+[2026-01-18 12:56:08] [website] Fetching https://schule-am-gruenguertel.de
+[2026-01-18 12:56:08] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-rosenhain-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-rosenhain-berlin/
+[2026-01-18 12:56:09] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-rosenhain/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-rosenhain/
+[2026-01-18 12:56:09] [schulen.de] Searching for Schule am Wildgarten
+[2026-01-18 12:56:09] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-wildgarten-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-wildgarten-berlin/
+[2026-01-18 12:56:09] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-wildgarten/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-wildgarten/
+[2026-01-18 12:56:09] [schulen.de] Searching for Schule am Zille-Park
+[2026-01-18 12:56:09] [website] Fetching https://schule-am-rosenhain.de
+[2026-01-18 12:56:09] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-zille-park-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-zille-park-berlin/
+[2026-01-18 12:56:09] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-zille-park/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-zille-park/
+[2026-01-18 12:56:09] [website] Fetching https://www.schule-wildgarten.de
+[2026-01-18 12:56:10] Processing: 08S04 - Schule am Zwickauer Damm
+[2026-01-18 12:56:10] [website] Fetching https://www.schule-am-zille-park.de
+[2026-01-18 12:56:10] [bildung.berlin.de] Searching for 08S04
+[2026-01-18 12:56:11] Processing: 08S09 - Schule an der Windmühle
+[2026-01-18 12:56:11] [schulen.de] Searching for Schule am Zwickauer Damm
+[2026-01-18 12:56:12] [bildung.berlin.de] Searching for 08S09
+[2026-01-18 12:56:12] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-zwickauer-damm-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-zwickauer-damm-berlin/
+[2026-01-18 12:56:12] Processing: 03P03 - Schulen Christburg Campus Prenzlauer Berg
+[2026-01-18 12:56:12] Request failed after 1 attempts for https://schulen.de/schulen/schule-am-zwickauer-damm/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-am-zwickauer-damm/
+[2026-01-18 12:56:12] Processing: 05P19 - SIS Swiss International School Berlin
+[2026-01-18 12:56:12] Processing: 03B08 - Staatliche Ballett- und Artistikschule Berlin
+[2026-01-18 12:56:12] [bildung.berlin.de] Searching for 03P03
+[2026-01-18 12:56:12] [bildung.berlin.de] Searching for 05P19
+[2026-01-18 12:56:12] [bildung.berlin.de] Searching for 03B08
+[2026-01-18 12:56:13] [schulen.de] Searching for Schule an der Windmühle
+[2026-01-18 12:56:13] Request failed after 1 attempts for https://schulen.de/schulen/schule-an-der-windmühle-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-an-der-windm%C3%BChle-berlin/
+[2026-01-18 12:56:13] Request failed after 1 attempts for https://schulen.de/schulen/schule-an-der-windmühle/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schule-an-der-windm%C3%BChle/
+[2026-01-18 12:56:13] [schulen.de] Searching for Staatliche Ballett- und Artistikschule B
+[2026-01-18 12:56:14] Request failed after 1 attempts for https://schulen.de/schulen/staatliche-ballett--und-artistikschule-berlin-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/staatliche-ballett--und-artistikschule-berlin-berlin/
+[2026-01-18 12:56:14] Request failed after 1 attempts for https://schulen.de/schulen/staatliche-ballett--und-artistikschule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/staatliche-ballett--und-artistikschule-berlin/
+[2026-01-18 12:56:14] [website] Fetching https://www.schule-an-der-windmuehle.de
+[2026-01-18 12:56:14] [schulen.de] Searching for Schulen Christburg Campus Prenzlauer Ber
+[2026-01-18 12:56:14] [schulen.de] Searching for SIS Swiss International School Berlin
+[2026-01-18 12:56:14] Request failed after 1 attempts for https://schulen.de/schulen/schulen-christburg-campus-prenzlauer-berg-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schulen-christburg-campus-prenzlauer-berg-berlin/
+[2026-01-18 12:56:14] Processing: 03P24 - Ting-Schule (Integrierte Sekundarschule)
+[2026-01-18 12:56:14] Request failed after 1 attempts for https://schulen.de/schulen/sis-swiss-international-school-berlin-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/sis-swiss-international-school-berlin-berlin/
+[2026-01-18 12:56:14] Request failed after 1 attempts for https://schulen.de/schulen/schulen-christburg-campus-prenzlauer-berg/: 404 Client Error: Not Found for url: https://schulen.de/schulen/schulen-christburg-campus-prenzlauer-berg/
+[2026-01-18 12:56:14] [website] Fetching https://www.ballettschule-berlin.de
+[2026-01-18 12:56:14] Request failed after 1 attempts for https://schulen.de/schulen/sis-swiss-international-school-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/sis-swiss-international-school-berlin/
+[2026-01-18 12:56:14] Request failed after 3 attempts for https://schule-am-gruenguertel.de: HTTPSConnectionPool(host='schule-am-gruenguertel.de', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1129)')))
+[2026-01-18 12:56:14] Processing: 12S05 - Waldseeschule
+[2026-01-18 12:56:15] [bildung.berlin.de] Searching for 03P24
+[2026-01-18 12:56:15] [website] Fetching https://www.christburg-campus.de
+[2026-01-18 12:56:15] [website] Fetching https://www.swissinternationalschool.de
+[2026-01-18 12:56:15] [bildung.berlin.de] Searching for 12S05
+[2026-01-18 12:56:15] Processing: 05P13 - Wilhelmstadt Schulen
+[2026-01-18 12:56:15] Processing: 07A44 - Willkommensschule THF
+[2026-01-18 12:56:15] Checkpoint saved: 40/65
+[2026-01-18 12:56:16] [bildung.berlin.de] Searching for 05P13
+[2026-01-18 12:56:16] [bildung.berlin.de] Searching for 07A44
+[2026-01-18 12:56:16] [schulen.de] Searching for Ting-Schule (Integrierte Sekundarschule)
+[2026-01-18 12:56:16] Request failed after 1 attempts for https://schulen.de/schulen/ting-schule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/ting-schule-berlin/
+[2026-01-18 12:56:16] Request failed after 1 attempts for https://schulen.de/schulen/ting-schule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/ting-schule/
+[2026-01-18 12:56:16] [schulen.de] Searching for Waldseeschule
+[2026-01-18 12:56:17] Request failed after 1 attempts for https://schulen.de/schulen/waldseeschule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/waldseeschule-berlin/
+[2026-01-18 12:56:17] [website] Fetching https://ting-schule.de
+[2026-01-18 12:56:17] Request failed after 1 attempts for https://schulen.de/schulen/waldseeschule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/waldseeschule/
+[2026-01-18 12:56:17] Processing: 12A44 - Willkommensschule TXL
+[2026-01-18 12:56:17] [schulen.de] Searching for Willkommensschule THF
+[2026-01-18 12:56:17] Request failed after 1 attempts for https://schulen.de/schulen/willkommensschule-thf-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/willkommensschule-thf-berlin/
+[2026-01-18 12:56:17] Request failed after 1 attempts for https://schulen.de/schulen/willkommensschule-thf/: 404 Client Error: Not Found for url: https://schulen.de/schulen/willkommensschule-thf/
+[2026-01-18 12:56:17] Processing: 09Y12 - 12. Schule (Gymnasium)
+[2026-01-18 12:56:17] [schulen.de] Searching for Wilhelmstadt Schulen
+[2026-01-18 12:56:17] [website] Fetching https://waldseeschule-berlin.de
+[2026-01-18 12:56:18] Request failed after 1 attempts for https://schulen.de/schulen/wilhelmstadt-schulen-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/wilhelmstadt-schulen-berlin/
+[2026-01-18 12:56:18] [bildung.berlin.de] Searching for 12A44
+[2026-01-18 12:56:18] Request failed after 1 attempts for https://schulen.de/schulen/wilhelmstadt-schulen/: 404 Client Error: Not Found for url: https://schulen.de/schulen/wilhelmstadt-schulen/
+[2026-01-18 12:56:18] Processing: 11Y12 - 12. Schule (Gymnasium)
+[2026-01-18 12:56:18] [bildung.berlin.de] Searching for 09Y12
+[2026-01-18 12:56:18] [website] Fetching https://wilhelmstadtschulen.de
+[2026-01-18 12:56:18] [bildung.berlin.de] Searching for 11Y12
+[2026-01-18 12:56:19] [schulen.de] Searching for Willkommensschule TXL
+[2026-01-18 12:56:19] Request failed after 1 attempts for https://schulen.de/schulen/willkommensschule-txl-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/willkommensschule-txl-berlin/
+[2026-01-18 12:56:19] [schulen.de] Searching for 12. Schule (Gymnasium)
+[2026-01-18 12:56:19] Request failed after 1 attempts for https://schulen.de/schulen/willkommensschule-txl/: 404 Client Error: Not Found for url: https://schulen.de/schulen/willkommensschule-txl/
+[2026-01-18 12:56:19] Request failed after 1 attempts for https://schulen.de/schulen/12-schule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/12-schule-berlin/
+[2026-01-18 12:56:19] Request failed after 1 attempts for https://schulen.de/schulen/12-schule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/12-schule/
+[2026-01-18 12:56:20] [schulen.de] Searching for 12. Schule (Gymnasium)
+[2026-01-18 12:56:20] [website] Fetching https://willkommensschule-txl.de
+[2026-01-18 12:56:20] Request failed after 1 attempts for https://schulen.de/schulen/12-schule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/12-schule-berlin/
+[2026-01-18 12:56:20] [website] Fetching https://gymnasium09y12.de
+[2026-01-18 12:56:20] Processing: 10Y12 - 12. Schule (Gymnasium)
+[2026-01-18 12:56:20] Request failed after 1 attempts for https://schulen.de/schulen/12-schule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/12-schule/
+[2026-01-18 12:56:20] Processing: 01P22 - Berlin Cosmopolitan School
+[2026-01-18 12:56:20] [bildung.berlin.de] Searching for 10Y12
+[2026-01-18 12:56:21] [website] Fetching https://gym.adkosmos.eu
+[2026-01-18 12:56:21] [bildung.berlin.de] Searching for 01P22
+[2026-01-18 12:56:21] Request failed after 3 attempts for https://www.ballettschule-berlin.de: HTTPSConnectionPool(host='www.ballettschule-berlin.de', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1129)')))
+[2026-01-18 12:56:21] Processing: 01P18 - Bilinguale Schule Phorms Berlin Mitte
+[2026-01-18 12:56:21] [bildung.berlin.de] Searching for 01P18
+[2026-01-18 12:56:21] Processing: 06P18 - Bilinguale Schule Phorms Berlin Süd
+[2026-01-18 12:56:22] [schulen.de] Searching for 12. Schule (Gymnasium)
+[2026-01-18 12:56:22] Request failed after 1 attempts for https://schulen.de/schulen/12-schule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/12-schule-berlin/
+[2026-01-18 12:56:22] [bildung.berlin.de] Searching for 06P18
+[2026-01-18 12:56:22] [schulen.de] Searching for Berlin Cosmopolitan School
+[2026-01-18 12:56:22] Request failed after 1 attempts for https://schulen.de/schulen/12-schule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/12-schule/
+[2026-01-18 12:56:22] Processing: 12P03 - Evangelische Schule Frohnau
+[2026-01-18 12:56:22] Request failed after 1 attempts for https://schulen.de/schulen/berlin-cosmopolitan-school-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/berlin-cosmopolitan-school-berlin/
+[2026-01-18 12:56:22] Request failed after 1 attempts for https://schulen.de/schulen/berlin-cosmopolitan-school/: 404 Client Error: Not Found for url: https://schulen.de/schulen/berlin-cosmopolitan-school/
+[2026-01-18 12:56:23] [schulen.de] Searching for Bilinguale Schule Phorms Berlin Mitte
+[2026-01-18 12:56:23] [bildung.berlin.de] Searching for 12P03
+[2026-01-18 12:56:23] [website] Fetching https://adw.berlin
+[2026-01-18 12:56:23] Request failed after 1 attempts for https://schulen.de/schulen/bilinguale-schule-phorms-berlin-mitte-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/bilinguale-schule-phorms-berlin-mitte-berlin/
+[2026-01-18 12:56:23] [website] Fetching https://www.cosmopolitanschool.de
+[2026-01-18 12:56:23] Request failed after 1 attempts for https://schulen.de/schulen/bilinguale-schule-phorms-berlin-mitte/: 404 Client Error: Not Found for url: https://schulen.de/schulen/bilinguale-schule-phorms-berlin-mitte/
+[2026-01-18 12:56:23] [schulen.de] Searching for Bilinguale Schule Phorms Berlin Süd
+[2026-01-18 12:56:23] [website] Fetching https://berlin-mitte.phorms.de
+[2026-01-18 12:56:24] Request failed after 1 attempts for https://schulen.de/schulen/bilinguale-schule-phorms-berlin-süd-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/bilinguale-schule-phorms-berlin-s%C3%BCd-berlin/
+[2026-01-18 12:56:24] Request failed after 1 attempts for https://schulen.de/schulen/bilinguale-schule-phorms-berlin-süd/: 404 Client Error: Not Found for url: https://schulen.de/schulen/bilinguale-schule-phorms-berlin-s%C3%BCd/
+[2026-01-18 12:56:24] Processing: 09P07 - Evangelische Schule Köpenick (Gymnasium)
+[2026-01-18 12:56:24] [schulen.de] Searching for Evangelische Schule Frohnau
+[2026-01-18 12:56:24] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-frohnau-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-frohnau-berlin/
+[2026-01-18 12:56:24] [website] Fetching https://www.berlin-sued.phorms.de
+[2026-01-18 12:56:24] [bildung.berlin.de] Searching for 09P07
+[2026-01-18 12:56:24] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-frohnau/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-frohnau/
+[2026-01-18 12:56:25] Processing: 04P11 - Evangelisches Gymnasium zum Grauen Kloster
+[2026-01-18 12:56:25] Checkpoint saved: 50/65
+[2026-01-18 12:56:25] [website] Fetching https://www.ev-frohnau.de
+[2026-01-18 12:56:25] [bildung.berlin.de] Searching for 04P11
+[2026-01-18 12:56:25] Processing: 01Y07 - Französisches Gymnasium
+[2026-01-18 12:56:26] [schulen.de] Searching for Evangelische Schule Köpenick (Gymnasium)
+[2026-01-18 12:56:26] [bildung.berlin.de] Searching for 01Y07
+[2026-01-18 12:56:26] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-köpenick-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-k%C3%B6penick-berlin/
+[2026-01-18 12:56:26] Request failed after 1 attempts for https://schulen.de/schulen/evangelische-schule-köpenick/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelische-schule-k%C3%B6penick/
+[2026-01-18 12:56:26] Processing: 06P20 - Freie Schule Anne-Sophie Berlin
+[2026-01-18 12:56:26] [schulen.de] Searching for Evangelisches Gymnasium zum Grauen Klost
+[2026-01-18 12:56:27] [website] Fetching https://www.ev-schule-koepenick.de
+[2026-01-18 12:56:27] Request failed after 1 attempts for https://schulen.de/schulen/evangelisches-gymnasium-zum-grauen-kloster-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelisches-gymnasium-zum-grauen-kloster-berlin/
+[2026-01-18 12:56:27] [bildung.berlin.de] Searching for 06P20
+[2026-01-18 12:56:27] Request failed after 1 attempts for https://schulen.de/schulen/evangelisches-gymnasium-zum-grauen-kloster/: 404 Client Error: Not Found for url: https://schulen.de/schulen/evangelisches-gymnasium-zum-grauen-kloster/
+[2026-01-18 12:56:27] [schulen.de] Searching for Französisches Gymnasium
+[2026-01-18 12:56:27] [website] Fetching https://www.graues-kloster.de
+[2026-01-18 12:56:27] Request failed after 1 attempts for https://schulen.de/schulen/französisches-gymnasium-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/franz%C3%B6sisches-gymnasium-berlin/
+[2026-01-18 12:56:27] Request failed after 1 attempts for https://schulen.de/schulen/französisches-gymnasium/: 404 Client Error: Not Found for url: https://schulen.de/schulen/franz%C3%B6sisches-gymnasium/
+[2026-01-18 12:56:28] Processing: 04Y11 - Goethe-Gymnasium
+[2026-01-18 12:56:28] [schulen.de] Searching for Freie Schule Anne-Sophie Berlin
+[2026-01-18 12:56:28] [website] Fetching https://www.fg-berlin.eu
+[2026-01-18 12:56:28] Request failed after 1 attempts for https://schulen.de/schulen/freie-schule-anne-sophie-berlin-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/freie-schule-anne-sophie-berlin-berlin/
+[2026-01-18 12:56:28] Request failed after 1 attempts for https://schulen.de/schulen/freie-schule-anne-sophie-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/freie-schule-anne-sophie-berlin/
+[2026-01-18 12:56:28] [bildung.berlin.de] Searching for 04Y11
+[2026-01-18 12:56:28] Processing: 04P04 - Katholische Schule Liebfrauen (Gymnasium)
+[2026-01-18 12:56:29] Processing: 03P10 - Katholische Theresienschule (Gymnasium)
+[2026-01-18 12:56:29] [website] Fetching https://www.freie-schule-anne-sophie.de
+[2026-01-18 12:56:29] [bildung.berlin.de] Searching for 04P04
+[2026-01-18 12:56:29] Processing: 04P35 - Mentora Gymnasium (KEIN Schulbetrieb)
+[2026-01-18 12:56:29] [bildung.berlin.de] Searching for 03P10
+[2026-01-18 12:56:29] [bildung.berlin.de] Searching for 04P35
+[2026-01-18 12:56:29] [schulen.de] Searching for Goethe-Gymnasium
+[2026-01-18 12:56:30] Request failed after 1 attempts for https://schulen.de/schulen/goethe-gymnasium-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/goethe-gymnasium-berlin/
+[2026-01-18 12:56:30] Request failed after 1 attempts for https://schulen.de/schulen/goethe-gymnasium/: 404 Client Error: Not Found for url: https://schulen.de/schulen/goethe-gymnasium/
+[2026-01-18 12:56:30] Request failed after 3 attempts for https://www.berlin-sued.phorms.de: HTTPSConnectionPool(host='www.berlin-sued.phorms.de', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x120fd4190>: Failed to resolve 'www.berlin-sued.phorms.de' ([Errno 8] nodename nor servname provided, or not known)"))
+[2026-01-18 12:56:30] Processing: 04P24 - Moser-Schule - Schweizer Gymnasium
+[2026-01-18 12:56:31] [schulen.de] Searching for Katholische Theresienschule (Gymnasium)
+[2026-01-18 12:56:31] [schulen.de] Searching for Katholische Schule Liebfrauen (Gymnasium
+[2026-01-18 12:56:31] [website] Fetching https://goethe-gymnasium.berlin
+[2026-01-18 12:56:31] Request failed after 1 attempts for https://schulen.de/schulen/katholische-theresienschule-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/katholische-theresienschule-berlin/
+[2026-01-18 12:56:31] Request failed after 1 attempts for https://schulen.de/schulen/katholische-schule-liebfrauen-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/katholische-schule-liebfrauen-berlin/
+[2026-01-18 12:56:31] [bildung.berlin.de] Searching for 04P24
+[2026-01-18 12:56:31] Request failed after 1 attempts for https://schulen.de/schulen/katholische-schule-liebfrauen/: 404 Client Error: Not Found for url: https://schulen.de/schulen/katholische-schule-liebfrauen/
+[2026-01-18 12:56:31] Request failed after 1 attempts for https://schulen.de/schulen/katholische-theresienschule/: 404 Client Error: Not Found for url: https://schulen.de/schulen/katholische-theresienschule/
+[2026-01-18 12:56:31] [schulen.de] Searching for Mentora Gymnasium (KEIN Schulbetrieb)
+[2026-01-18 12:56:31] Request failed after 1 attempts for https://schulen.de/schulen/mentora-gymnasium-kein-schulbetrieb-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/mentora-gymnasium-kein-schulbetrieb-berlin/
+[2026-01-18 12:56:32] [website] Fetching https://ksliebfrauen.de
+[2026-01-18 12:56:32] [website] Fetching https://www.Theresienschule.de
+[2026-01-18 12:56:32] Request failed after 1 attempts for https://schulen.de/schulen/mentora-gymnasium-kein-schulbetrieb/: 404 Client Error: Not Found for url: https://schulen.de/schulen/mentora-gymnasium-kein-schulbetrieb/
+[2026-01-18 12:56:32] Processing: 01Y04 - Musikgymnasium Carl Philipp Emanuel Bach
+[2026-01-18 12:56:32] Processing: 04P47 - Privates Europa-Gymnasium Berlin
+[2026-01-18 12:56:32] [website] Fetching https://www.mentora-gymnasium.de
+[2026-01-18 12:56:32] [bildung.berlin.de] Searching for 01Y04
+[2026-01-18 12:56:32] [schulen.de] Searching for Moser-Schule - Schweizer Gymnasium
+[2026-01-18 12:56:32] Processing: 01Y13 - Rosalind-Franklin-Gymnasium
+[2026-01-18 12:56:32] Checkpoint saved: 60/65
+[2026-01-18 12:56:32] [bildung.berlin.de] Searching for 04P47
+[2026-01-18 12:56:32] Request failed after 1 attempts for https://schulen.de/schulen/moser-schule---schweizer-gymnasium-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/moser-schule---schweizer-gymnasium-berlin/
+[2026-01-18 12:56:33] Request failed after 1 attempts for https://schulen.de/schulen/moser-schule---schweizer-gymnasium/: 404 Client Error: Not Found for url: https://schulen.de/schulen/moser-schule---schweizer-gymnasium/
+[2026-01-18 12:56:33] [bildung.berlin.de] Searching for 01Y13
+[2026-01-18 12:56:33] [website] Fetching https://www.moserschule.de
+[2026-01-18 12:56:34] [schulen.de] Searching for Musikgymnasium Carl Philipp Emanuel Bach
+[2026-01-18 12:56:34] Request failed after 1 attempts for https://schulen.de/schulen/musikgymnasium-carl-philipp-emanuel-bach-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/musikgymnasium-carl-philipp-emanuel-bach-berlin/
+[2026-01-18 12:56:34] [schulen.de] Searching for Privates Europa-Gymnasium Berlin
+[2026-01-18 12:56:34] Request failed after 1 attempts for https://schulen.de/schulen/musikgymnasium-carl-philipp-emanuel-bach/: 404 Client Error: Not Found for url: https://schulen.de/schulen/musikgymnasium-carl-philipp-emanuel-bach/
+[2026-01-18 12:56:34] Request failed after 1 attempts for https://schulen.de/schulen/privates-europa-gymnasium-berlin-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/privates-europa-gymnasium-berlin-berlin/
+[2026-01-18 12:56:34] Request failed after 1 attempts for https://schulen.de/schulen/privates-europa-gymnasium-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/privates-europa-gymnasium-berlin/
+[2026-01-18 12:56:34] [schulen.de] Searching for Rosalind-Franklin-Gymnasium
+[2026-01-18 12:56:34] [website] Fetching https://musikgymnasium-berlin.de
+[2026-01-18 12:56:35] Request failed after 1 attempts for https://schulen.de/schulen/rosalind-franklin-gymnasium-berlin/: 404 Client Error: Not Found for url: https://schulen.de/schulen/rosalind-franklin-gymnasium-berlin/
+[2026-01-18 12:56:35] Request failed after 1 attempts for https://schulen.de/schulen/rosalind-franklin-gymnasium/: 404 Client Error: Not Found for url: https://schulen.de/schulen/rosalind-franklin-gymnasium/
+[2026-01-18 12:56:35] [website] Fetching https://www.europa-gymnasium.eu
+[2026-01-18 12:56:35] [website] Fetching https://gymnasium-13.de
+[2026-01-18 12:56:42] Request failed after 3 attempts for https://gymnasium-13.de: HTTPSConnectionPool(host='gymnasium-13.de', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1129)')))

@@ -1,0 +1,156 @@
+2026-01-20 14:51:17,245 - INFO - Loading schools from combined_schools_with_metadata_msa_with_descriptions_v2.csv
+2026-01-20 14:51:17,281 - INFO - Filtered to 41 private schools
+2026-01-20 14:51:17,285 - INFO - Schools needing description: 0
+2026-01-20 14:51:17,285 - INFO - Private schools needing tuition: 41
+2026-01-20 14:51:17,286 - INFO - Scraping https://www.berlin-bilingual-school.de (private - deep)
+2026-01-20 14:51:20,700 - INFO - Scraping https://www.berlinbritishschool.de (private - deep)
+2026-01-20 14:51:27,996 - INFO - Scraping https://www.metropolitanschool.com (private - deep)
+2026-01-20 14:51:31,675 - INFO - Downloading PDF: https://www.metropolitanschool.com/fileadmin/user_upload/pdf/tuition/BMS_Tuition_2026_ENG.pdf
+2026-01-20 14:51:32,022 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/76223922_BMS_Tuition_2026_ENG.pdf
+2026-01-20 14:51:32,513 - INFO - Downloading PDF: https://www.metropolitanschool.com/fileadmin/user_upload/pdf/tuition/bms_calculating_school_tuition_rate_01.pdf
+2026-01-20 14:51:32,604 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/17916028_bms_calculating_school_tuition_rate_01.pdf
+2026-01-20 14:51:32,995 - INFO - Downloading PDF: https://www.metropolitanschool.com/fileadmin/user_upload/pdf/tuition/bms_sepa_direkt_debit_mandate_2017.pdf
+2026-01-20 14:51:33,204 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/21266696_bms_sepa_direkt_debit_mandate_2017.pdf
+2026-01-20 14:51:33,373 - INFO - Extracting tuition for Berlin Metropolitan School (Integrierte Sekundarschule) from PDFs
+2026-01-20 14:51:41,967 - INFO - Scraping https://best-sabel.de (private - deep)
+2026-01-20 14:51:49,740 - INFO - Scraping https://canisius.de (private - deep)
+2026-01-20 14:51:52,214 - INFO - Downloading PDF: https://canisius.de/wp-content/uploads/2025/07/Canisius-Kolleg_Schulgeldinormationen_2025-2027.pdf
+2026-01-20 14:51:52,460 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/26057370_Canisius-Kolleg_Schulgeldinormationen_2025-2027.pdf
+2026-01-20 14:51:53,632 - INFO - Downloading PDF: https://canisius.de/wp-content/uploads/2024/09/sepa-lastschriftmandat_schulgeld.pdf
+2026-01-20 14:51:53,833 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/66623762_sepa-lastschriftmandat_schulgeld.pdf
+2026-01-20 14:51:54,186 - INFO - Extracting tuition for Canisius-Kolleg from PDFs
+2026-01-20 14:52:01,835 - INFO - Scraping https://www.ev-schule-charlottenburg.de (private - deep)
+2026-01-20 14:52:10,467 - INFO - Scraping https://evangelische-schule-neukoelln.de (private - deep)
+2026-01-20 14:52:12,524 - INFO - Downloading PDF: https://evangelische-schule-neukoelln.de/wp-content/uploads/2022/03/erlaeuterungen-zur-kostenfestsetzung-2018-hort.pdf
+2026-01-20 14:52:12,762 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/95272963_erlaeuterungen-zur-kostenfestsetzung-2018-hort.pdf
+2026-01-20 14:52:13,289 - INFO - Downloading PDF: https://evangelische-schule-neukoelln.de/wp-content/uploads/2022/03/erklaerung-fuer-die-festsetzung-der-hortkosten.pdf
+2026-01-20 14:52:13,429 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/68692183_erklaerung-fuer-die-festsetzung-der-hortkosten.pdf
+2026-01-20 14:52:14,547 - INFO - Extracting tuition for Evangelische Schule Neukölln (Integrierte Sekundarschule) from PDFs
+2026-01-20 14:52:24,892 - INFO - Scraping https://www.ev-schule-spandau.de (private - deep)
+2026-01-20 14:52:33,681 - INFO - Scraping https://www.ev-schule-steglitz.de (private - deep)
+2026-01-20 14:52:42,704 - INFO - Scraping https://freieschule-mahlsdorf.de (private - deep)
+2026-01-20 14:52:46,204 - INFO - Downloading PDF: https://freieschule-mahlsdorf.de/wp-content/uploads/2023/08/Schulgeldregelung_freie-Schule-Berlin-Mahlsdorf.pdf
+2026-01-20 14:52:47,016 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/79319890_Schulgeldregelung_freie-Schule-Berlin-Mahlsdorf.pdf
+2026-01-20 14:52:50,028 - INFO - Scraping https://www.freie-schule-charlottenburg.de (private - deep)
+2026-01-20 14:52:54,418 - INFO - Scraping https://www.freie-schule-pankow.de (private - deep)
+2026-01-20 14:52:58,246 - INFO - Scraping https://www.jschule.de (private - deep)
+2026-01-20 14:53:04,828 - INFO - Scraping https://jgmm.de (private - deep)
+2026-01-20 14:53:11,399 - INFO - Scraping https://salvator.net;%20https://salvator-grundschule.de (private - deep)
+2026-01-20 14:53:11,416 - WARNING - Error fetching https://salvator.net;%20https://salvator-grundschule.de: HTTPSConnectionPool(host='salvator.net;%20https', port=443): Max retries exceeded with url: /salvator-grundschule.de (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x12050ef10>: Failed to resolve 'salvator.net;%20https' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-01-20 14:53:14,442 - INFO - Scraping https://kssf-berlin.de (private - deep)
+2026-01-20 14:53:21,493 - INFO - Scraping https://marienschule-berlin.de (private - deep)
+2026-01-20 14:53:27,128 - INFO - Scraping https://www.koenigin-luise-stiftung.de (private - deep)
+2026-01-20 14:53:32,573 - INFO - Scraping https://montessori-tegel.de (private - deep)
+2026-01-20 14:53:34,405 - INFO - Downloading PDF: https://montessori-tegel.de/wp-content/uploads/Beitragsordnung-gueltig-ab-240801.pdf
+2026-01-20 14:53:34,705 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/5470421_Beitragsordnung-gueltig-ab-240801.pdf
+2026-01-20 14:53:35,424 - INFO - Extracting tuition for Montessori Campus am Tegeler Forst from PDFs
+2026-01-20 14:53:43,645 - INFO - Scraping https://www.newschool.de (private - deep)
+2026-01-20 14:53:47,156 - INFO - Scraping https://www.pfefferwerk.de (private - deep)
+2026-01-20 14:53:55,483 - INFO - Scraping https://goethe-grundschule.bifiz.de (private - deep)
+2026-01-20 14:54:05,202 - INFO - Scraping https://www.kant-oberschule.de (private - deep)
+2026-01-20 14:54:16,338 - INFO - Scraping https://www.berlin-international-school.de (private - deep)
+2026-01-20 14:54:30,004 - INFO - Scraping https://www.quinoa-bildung.de (private - deep)
+2026-01-20 14:54:40,505 - INFO - Scraping https://www.christburg-campus.de (private - deep)
+2026-01-20 14:54:44,650 - INFO - Scraping https://www.swissinternationalschool.de (private - deep)
+2026-01-20 14:54:49,214 - INFO - Scraping https://ting-schule.de (private - deep)
+2026-01-20 14:54:53,860 - INFO - Scraping https://wilhelmstadtschulen.de (private - deep)
+2026-01-20 14:54:57,368 - INFO - Scraping https://www.cosmopolitanschool.de (private - deep)
+2026-01-20 14:55:05,476 - INFO - Downloading PDF: https://www.cosmopolitanschool.de/wp-content/uploads/2024/09/Gebuehrenuebersicht-Schulgebuehren-2024-25-.pdf
+2026-01-20 14:55:05,689 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/3623972_Gebuehrenuebersicht-Schulgebuehren-2024-25-.pdf
+2026-01-20 14:55:06,174 - INFO - Extracting tuition for Berlin Cosmopolitan School from PDFs
+2026-01-20 14:55:13,953 - INFO - Scraping https://berlin-mitte.phorms.de (private - deep)
+2026-01-20 14:55:16,379 - INFO - Downloading PDF: https://berlin-mitte.phorms.de/fileadmin/Content/Berlin-Mitte/02-Kita/Downloads/Phorms_Berlin_Foerderverein_Beitragsordnung.pdf
+2026-01-20 14:55:16,756 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/71686591_Phorms_Berlin_Foerderverein_Beitragsordnung.pdf
+2026-01-20 14:55:17,309 - INFO - Extracting tuition for Bilinguale Schule Phorms Berlin Mitte from PDFs
+2026-01-20 14:55:24,469 - INFO - Scraping https://www.berlin-sued.phorms.de (private - deep)
+2026-01-20 14:55:24,695 - WARNING - Error fetching https://www.berlin-sued.phorms.de: HTTPSConnectionPool(host='www.berlin-sued.phorms.de', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x105d7beb0>: Failed to resolve 'www.berlin-sued.phorms.de' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-01-20 14:55:27,699 - INFO - Scraping https://www.ev-frohnau.de (private - deep)
+2026-01-20 14:55:35,483 - INFO - Scraping https://www.ev-schule-koepenick.de (private - deep)
+2026-01-20 14:55:44,854 - INFO - Scraping https://www.graues-kloster.de (private - deep)
+2026-01-20 14:55:53,909 - INFO - Scraping https://www.freie-schule-anne-sophie.de (private - deep)
+2026-01-20 14:55:57,714 - INFO - Scraping https://ksliebfrauen.de (private - deep)
+2026-01-20 14:56:03,270 - INFO - Scraping https://www.Theresienschule.de (private - deep)
+2026-01-20 14:56:09,615 - INFO - Scraping https://www.mentora-gymnasium.de (private - deep)
+2026-01-20 14:56:12,800 - INFO - Scraping https://www.moserschule.de (private - deep)
+2026-01-20 14:56:18,224 - INFO - Scraping https://www.europa-gymnasium.eu (private - deep)
+2026-01-20 14:56:23,971 - INFO - Saved summary to school_descriptions_v3_test/descriptions_summary.csv
+2026-01-20 14:58:05,304 - INFO - Merging into master table
+2026-01-20 14:58:06,376 - INFO - Saved to combined_schools_with_metadata_msa_with_descriptions_v2_v3.csv
+2026-01-20 15:05:47,595 - INFO - Loading schools from combined_schools_with_metadata_msa_with_descriptions_v2.csv
+2026-01-20 15:05:47,653 - INFO - Filtered to 41 private schools
+2026-01-20 15:05:47,656 - INFO - Schools needing description: 0
+2026-01-20 15:05:47,656 - INFO - Private schools needing tuition: 41
+2026-01-20 15:05:47,658 - INFO - Scraping https://www.berlin-bilingual-school.de (private - deep)
+2026-01-20 15:05:50,002 - INFO - Scraping https://www.berlinbritishschool.de (private - deep)
+2026-01-20 15:05:57,047 - INFO - Scraping https://www.metropolitanschool.com (private - deep)
+2026-01-20 15:06:00,534 - INFO - Downloading PDF: https://www.metropolitanschool.com/fileadmin/user_upload/pdf/tuition/BMS_Tuition_2026_ENG.pdf
+2026-01-20 15:06:00,768 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/24077029_BMS_Tuition_2026_ENG.pdf
+2026-01-20 15:06:01,297 - INFO - Downloading PDF: https://www.metropolitanschool.com/fileadmin/user_upload/pdf/tuition/bms_calculating_school_tuition_rate_01.pdf
+2026-01-20 15:06:01,373 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/77404239_bms_calculating_school_tuition_rate_01.pdf
+2026-01-20 15:06:01,658 - INFO - Downloading PDF: https://www.metropolitanschool.com/fileadmin/user_upload/pdf/tuition/bms_sepa_direkt_debit_mandate_2017.pdf
+2026-01-20 15:06:01,780 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/30329720_bms_sepa_direkt_debit_mandate_2017.pdf
+2026-01-20 15:06:01,976 - INFO - Extracting tuition for Berlin Metropolitan School (Integrierte Sekundarschule) from PDFs
+2026-01-20 15:06:09,809 - INFO - Scraping https://best-sabel.de (private - deep)
+2026-01-20 15:06:16,174 - INFO - Scraping https://canisius.de (private - deep)
+2026-01-20 15:06:18,326 - INFO - Downloading PDF: https://canisius.de/wp-content/uploads/2025/07/Canisius-Kolleg_Schulgeldinormationen_2025-2027.pdf
+2026-01-20 15:06:18,553 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/51755868_Canisius-Kolleg_Schulgeldinormationen_2025-2027.pdf
+2026-01-20 15:06:20,132 - INFO - Downloading PDF: https://canisius.de/wp-content/uploads/2024/09/sepa-lastschriftmandat_schulgeld.pdf
+2026-01-20 15:06:20,283 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/51234636_sepa-lastschriftmandat_schulgeld.pdf
+2026-01-20 15:06:20,694 - INFO - Extracting tuition for Canisius-Kolleg from PDFs
+2026-01-20 15:06:39,891 - INFO - Scraping https://www.ev-schule-charlottenburg.de (private - deep)
+2026-01-20 15:06:47,966 - INFO - Scraping https://evangelische-schule-neukoelln.de (private - deep)
+2026-01-20 15:06:49,997 - INFO - Downloading PDF: https://evangelische-schule-neukoelln.de/wp-content/uploads/2022/03/erlaeuterungen-zur-kostenfestsetzung-2018-hort.pdf
+2026-01-20 15:06:50,152 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/51520818_erlaeuterungen-zur-kostenfestsetzung-2018-hort.pdf
+2026-01-20 15:06:50,655 - INFO - Downloading PDF: https://evangelische-schule-neukoelln.de/wp-content/uploads/2022/03/erklaerung-fuer-die-festsetzung-der-hortkosten.pdf
+2026-01-20 15:06:50,745 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/90994678_erklaerung-fuer-die-festsetzung-der-hortkosten.pdf
+2026-01-20 15:06:52,377 - INFO - Extracting tuition for Evangelische Schule Neukölln (Integrierte Sekundarschule) from PDFs
+2026-01-20 15:07:01,463 - INFO - Scraping https://www.ev-schule-spandau.de (private - deep)
+2026-01-20 15:07:10,013 - INFO - Scraping https://www.ev-schule-steglitz.de (private - deep)
+2026-01-20 15:07:18,242 - INFO - Scraping https://freieschule-mahlsdorf.de (private - deep)
+2026-01-20 15:07:21,809 - INFO - Downloading PDF: https://freieschule-mahlsdorf.de/wp-content/uploads/2023/08/Schulgeldregelung_freie-Schule-Berlin-Mahlsdorf.pdf
+2026-01-20 15:07:22,522 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/15650588_Schulgeldregelung_freie-Schule-Berlin-Mahlsdorf.pdf
+2026-01-20 15:07:24,543 - INFO - Scraping https://www.freie-schule-charlottenburg.de (private - deep)
+2026-01-20 15:07:27,820 - INFO - Scraping https://www.freie-schule-pankow.de (private - deep)
+2026-01-20 15:07:30,616 - INFO - Scraping https://www.jschule.de (private - deep)
+2026-01-20 15:07:36,025 - INFO - Scraping https://jgmm.de (private - deep)
+2026-01-20 15:07:41,590 - INFO - Scraping https://salvator.net;%20https://salvator-grundschule.de (private - deep)
+2026-01-20 15:07:41,597 - WARNING - Error fetching https://salvator.net;%20https://salvator-grundschule.de: HTTPSConnectionPool(host='salvator.net;%20https', port=443): Max retries exceeded with url: /salvator-grundschule.de (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x1058f5b20>: Failed to resolve 'salvator.net;%20https' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-01-20 15:07:43,599 - INFO - Scraping https://kssf-berlin.de (private - deep)
+2026-01-20 15:07:49,103 - INFO - Scraping https://marienschule-berlin.de (private - deep)
+2026-01-20 15:07:53,542 - INFO - Scraping https://www.koenigin-luise-stiftung.de (private - deep)
+2026-01-20 15:07:57,973 - INFO - Scraping https://montessori-tegel.de (private - deep)
+2026-01-20 15:07:59,723 - INFO - Downloading PDF: https://montessori-tegel.de/wp-content/uploads/Beitragsordnung-gueltig-ab-240801.pdf
+2026-01-20 15:07:59,926 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/14421318_Beitragsordnung-gueltig-ab-240801.pdf
+2026-01-20 15:08:00,506 - INFO - Extracting tuition for Montessori Campus am Tegeler Forst from PDFs
+2026-01-20 15:08:07,590 - INFO - Scraping https://www.newschool.de (private - deep)
+2026-01-20 15:08:10,121 - INFO - Scraping https://www.pfefferwerk.de (private - deep)
+2026-01-20 15:08:17,239 - INFO - Scraping https://goethe-grundschule.bifiz.de (private - deep)
+2026-01-20 15:08:23,761 - INFO - Scraping https://www.kant-oberschule.de (private - deep)
+2026-01-20 15:08:33,619 - INFO - Scraping https://www.berlin-international-school.de (private - deep)
+2026-01-20 15:08:45,961 - INFO - Scraping https://www.quinoa-bildung.de (private - deep)
+2026-01-20 15:08:56,670 - INFO - Scraping https://www.christburg-campus.de (private - deep)
+2026-01-20 15:08:59,879 - INFO - Scraping https://www.swissinternationalschool.de (private - deep)
+2026-01-20 15:09:03,523 - INFO - Scraping https://ting-schule.de (private - deep)
+2026-01-20 15:09:07,121 - INFO - Scraping https://wilhelmstadtschulen.de (private - deep)
+2026-01-20 15:09:09,471 - INFO - Scraping https://www.cosmopolitanschool.de (private - deep)
+2026-01-20 15:09:17,473 - INFO - Downloading PDF: https://www.cosmopolitanschool.de/wp-content/uploads/2024/09/Gebuehrenuebersicht-Schulgebuehren-2024-25-.pdf
+2026-01-20 15:09:17,634 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/96607546_Gebuehrenuebersicht-Schulgebuehren-2024-25-.pdf
+2026-01-20 15:09:18,201 - INFO - Extracting tuition for Berlin Cosmopolitan School from PDFs
+2026-01-20 15:09:24,979 - INFO - Scraping https://berlin-mitte.phorms.de (private - deep)
+2026-01-20 15:09:27,302 - INFO - Downloading PDF: https://berlin-mitte.phorms.de/fileadmin/Content/Berlin-Mitte/02-Kita/Downloads/Phorms_Berlin_Foerderverein_Beitragsordnung.pdf
+2026-01-20 15:09:27,787 - INFO - Cached PDF to: /Users/josevonroth/Documents/schoolnossa/pdf_cache/64072796_Phorms_Berlin_Foerderverein_Beitragsordnung.pdf
+2026-01-20 15:09:28,427 - INFO - Extracting tuition for Bilinguale Schule Phorms Berlin Mitte from PDFs
+2026-01-20 15:09:35,691 - INFO - Scraping https://www.berlin-sued.phorms.de (private - deep)
+2026-01-20 15:09:35,737 - WARNING - Error fetching https://www.berlin-sued.phorms.de: HTTPSConnectionPool(host='www.berlin-sued.phorms.de', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x105d7bd90>: Failed to resolve 'www.berlin-sued.phorms.de' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-01-20 15:09:37,743 - INFO - Scraping https://www.ev-frohnau.de (private - deep)
+2026-01-20 15:09:45,025 - INFO - Scraping https://www.ev-schule-koepenick.de (private - deep)
+2026-01-20 15:09:54,021 - INFO - Scraping https://www.graues-kloster.de (private - deep)
+2026-01-20 15:10:01,375 - INFO - Scraping https://www.freie-schule-anne-sophie.de (private - deep)
+2026-01-20 15:10:04,468 - INFO - Scraping https://ksliebfrauen.de (private - deep)
+2026-01-20 15:10:09,103 - INFO - Scraping https://www.Theresienschule.de (private - deep)
+2026-01-20 15:10:13,984 - INFO - Scraping https://www.mentora-gymnasium.de (private - deep)
+2026-01-20 15:10:16,174 - INFO - Scraping https://www.moserschule.de (private - deep)
+2026-01-20 15:10:20,457 - INFO - Scraping https://www.europa-gymnasium.eu (private - deep)
+2026-01-20 15:10:25,232 - INFO - Saved summary to school_descriptions_v3/descriptions_summary.csv
+2026-01-20 15:10:38,544 - INFO - Merging into master table
+2026-01-20 15:10:39,968 - INFO - Saved to combined_schools_with_metadata_msa_with_descriptions_v2_v3.csv

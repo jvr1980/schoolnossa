@@ -24,6 +24,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent
 DATA_DIR = PROJECT_ROOT / "data_frankfurt"
 FINAL_DIR = DATA_DIR / "final"
 ENV_FILE = PROJECT_ROOT / ".env"
+CONFIG_FILE = PROJECT_ROOT / "config.yaml"
 
 try:
     from dotenv import load_dotenv
@@ -38,14 +39,40 @@ except ImportError:
                     if k.strip() and k.strip() not in os.environ:
                         os.environ[k.strip()] = v.strip()
 
+# Fallback: load API keys from config.yaml if not already in environment
+try:
+    import yaml
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE) as f:
+            cfg = yaml.safe_load(f) or {}
+        api_keys = cfg.get("api_keys", {})
+        _key_map = {
+            "GEMINI_API_KEY":     api_keys.get("gemini", ""),
+            "OPENAI_API_KEY":     api_keys.get("openai", ""),
+            "GOOGLE_PLACES_KEY":  api_keys.get("google_places", ""),
+        }
+        for env_var, val in _key_map.items():
+            if val and env_var not in os.environ:
+                os.environ[env_var] = val
+except Exception:
+    pass
+
 OPENAI_MODEL = "text-embedding-3-large"
 GEMINI_MODEL = "models/gemini-embedding-001"
 
 
 def load_master_table(school_type):
-    for ext, reader in [('.parquet', pd.read_parquet), ('.csv', pd.read_csv)]:
-        p = FINAL_DIR / f"frankfurt_{school_type}_school_master_table{ext}"
+    # Prefer _final.csv (enriched by description pipeline, tuition, etc.)
+    # Fall back to master_table (non-final) if _final doesn't exist yet.
+    candidates = [
+        (FINAL_DIR / f"frankfurt_{school_type}_school_master_table_final.csv",   pd.read_csv),
+        (FINAL_DIR / f"frankfurt_{school_type}_school_master_table_final.parquet", pd.read_parquet),
+        (FINAL_DIR / f"frankfurt_{school_type}_school_master_table.parquet",      pd.read_parquet),
+        (FINAL_DIR / f"frankfurt_{school_type}_school_master_table.csv",          pd.read_csv),
+    ]
+    for p, reader in candidates:
         if p.exists():
+            logger.info(f"Loading master table: {p.name}")
             return reader(p)
     raise FileNotFoundError(f"No master table for {school_type}")
 
