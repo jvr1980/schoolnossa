@@ -1,8 +1,23 @@
 # SchoolNossa Project
 
+## MANDATORY: Commit, Journal, and Push After Every Unit of Work
+
+These are non-negotiable behaviors. Do them automatically — never wait for the user to ask.
+
+**After EVERY completed unit of work** (a script, a fix, a config change, an enrichment phase):
+1. `git add` the changed files and `git commit` with a concise message ending with `Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>`
+2. Update `docs/DEVJOURNAL.md` — add entry ABOVE the `<!-- NEW ENTRIES GO ABOVE THIS LINE -->` marker. Format: `## YYYY-MM-DD — Short Title` with What/Why/Results.
+3. `git push -u origin <branch>` after every 2-3 commits for backup.
+
+**Before starting any code change**: check `git branch --show-current`. If on `main`, create a feature branch first: `git checkout -b feature/<short-description>`. Branch naming: `feature/{city}-{phase}` (e.g., `feature/munich-traffic-enrichment`).
+
+**When work on a branch is complete**: tell the user the branch is ready for testing. Only merge to main after user confirms. Use `--no-ff` merges.
+
+**Self-check cadence**: after 3+ file edits without a commit, stop and commit before continuing.
+
 ## Pipeline Skills Workflow
 
-When working on SchoolNossa city data pipelines, always use the `/schoolnossa-workflow` skill as the entry point. It coordinates the 5-phase process:
+When working on city data pipelines, use `/schoolnossa-workflow` as the entry point. It coordinates:
 
 1. `/data-source-research` — Research available open data
 2. `/new-city-pipeline` — Scaffold directories and scripts
@@ -10,9 +25,9 @@ When working on SchoolNossa city data pipelines, always use the `/schoolnossa-wo
 4. `/pipeline-qa` — Validate final output
 5. `/schema-drift-check` — Cross-city schema alignment
 
-**After completing any phase or enrichment script**, re-check the pipeline state and tell the user what the next step is. Do not wait for the user to ask "what's next" — proactively show the updated status and suggest the next action.
+After completing any phase, proactively show the updated status and suggest the next action.
 
-**When writing enrichment scripts**, always read the reference implementations from all three existing cities (Berlin, Hamburg, NRW) before generating code. The reference tables are in the `/enrich-phase-builder` and `/new-city-pipeline` skills.
+When writing enrichment scripts, read the reference implementations from Berlin, Hamburg, and NRW first.
 
 ## Project Structure
 
@@ -29,11 +44,3 @@ When working on SchoolNossa city data pipelines, always use the `/schoolnossa-wo
 - All paths relative via `Path(__file__)` — never hardcode absolute paths
 - Cache API responses to `data_{city}/cache/` to avoid repeated calls
 - Fallback input chain in every enrichment script (most-enriched first, raw last)
-
-## Git & Journaling
-
-Follow the global git discipline from `~/.claude/CLAUDE.md`. Additionally for SchoolNossa:
-- Use the `/branch-workflow` skill when starting implementation work
-- Update `docs/DEVJOURNAL.md` after completing each pipeline phase or enrichment
-- Commit after each enrichment script is implemented — don't batch multiple enrichments into one commit
-- Feature branch naming: `feature/{city}-{phase}` (e.g., `feature/munich-traffic-enrichment`)
