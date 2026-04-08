@@ -40,42 +40,41 @@ CACHE_DIR = DATA_DIR / "cache"
 
 # Dresden Open Data crime CSV endpoint
 # The dataset "Kriminalität ab Stadtteile 2002ff." is available at:
-CRIME_DATA_URL = "https://opendata.dresden.de/duva2ckan/files/de-sn-dresden-kriminalitaet_ab_stadtteile_2002ff_zahlen_fuer_dd-gesamt_ueber_summenbildung_der_stadtteile_inkl_unbekannt_generieren/content"
+CRIME_DATA_URL = "https://opendata.dresden.de/dcat-ap/dataset/de-sn-dresden-kriminalitaet_ab_stadtteile_2002ff_zahlen_fuer_dd-gesamt_ueber_summenbildung_der_stadtteile_inkl_unbekannt_generieren/content.csv"
 
-# Dresden PLZ → Stadtteil mapping (major PLZ areas)
-# Dresden has 63 Stadtteile grouped into 10 Ortsamtsbereiche
-# This mapping covers the main PLZ areas
-DRESDEN_PLZ_STADTTEIL = {
-    '01067': 'Innere Altstadt',
-    '01069': 'Südvorstadt',
-    '01097': 'Innere Neustadt',
-    '01099': 'Äußere Neustadt',
-    '01108': 'Weixdorf',
-    '01109': 'Klotzsche',
-    '01127': 'Pieschen',
-    '01129': 'Trachenberge',
-    '01139': 'Gorbitz',
-    '01156': 'Cossebaude',
-    '01157': 'Cotta',
-    '01159': 'Löbtau',
-    '01169': 'Gorbitz',
-    '01187': 'Plauen',
-    '01189': 'Kleinpestitz/Mockritz',
-    '01217': 'Räcknitz/Zschertnitz',
-    '01219': 'Strehlen',
-    '01237': 'Prohlis',
-    '01239': 'Prohlis',
-    '01257': 'Leuben',
-    '01259': 'Großzschachwitz',
-    '01277': 'Blasewitz',
-    '01279': 'Tolkewitz',
-    '01307': 'Johannstadt',
-    '01309': 'Striesen',
-    '01324': 'Weißer Hirsch',
-    '01326': 'Loschwitz',
-    '01328': 'Schönfeld-Weißig',
-    '01445': 'Radebeul',  # nearby, may appear in data
-    '01465': 'Langebrück',
+# Dresden PLZ → Stadtbezirk mapping
+# Crime data uses 10 Stadtbezirke (StB 0-9)
+# PLZ mapping based on Dresden's official Stadtbezirk boundaries
+DRESDEN_PLZ_STADTBEZIRK = {
+    '01067': 'StB 0 Altstadt',
+    '01069': 'StB 8 Plauen',          # Südvorstadt
+    '01097': 'StB 1 Neustadt',
+    '01099': 'StB 1 Neustadt',
+    '01108': 'StB 3 Klotzsche/nördliche Ortschaften',
+    '01109': 'StB 3 Klotzsche/nördliche Ortschaften',
+    '01127': 'StB 2 Pieschen',
+    '01129': 'StB 2 Pieschen',
+    '01139': 'StB 9 Cotta/westliche Ortschaften',  # Gorbitz
+    '01156': 'StB 9 Cotta/westliche Ortschaften',  # Cossebaude
+    '01157': 'StB 9 Cotta/westliche Ortschaften',  # Cotta
+    '01159': 'StB 9 Cotta/westliche Ortschaften',  # Löbtau
+    '01169': 'StB 9 Cotta/westliche Ortschaften',  # Gorbitz
+    '01187': 'StB 8 Plauen',
+    '01189': 'StB 8 Plauen',          # Kleinpestitz/Mockritz
+    '01217': 'StB 8 Plauen',          # Räcknitz/Zschertnitz
+    '01219': 'StB 7 Prohlis',         # Strehlen
+    '01237': 'StB 7 Prohlis',
+    '01239': 'StB 7 Prohlis',
+    '01257': 'StB 6 Leuben',
+    '01259': 'StB 6 Leuben',          # Großzschachwitz
+    '01277': 'StB 5 Blasewitz',
+    '01279': 'StB 5 Blasewitz',       # Tolkewitz
+    '01307': 'StB 0 Altstadt',        # Johannstadt
+    '01309': 'StB 5 Blasewitz',       # Striesen
+    '01324': 'StB 4 Loschwitz/OS Schönfeld-Weißig',
+    '01326': 'StB 4 Loschwitz/OS Schönfeld-Weißig',
+    '01328': 'StB 4 Loschwitz/OS Schönfeld-Weißig',
+    '01465': 'StB 3 Klotzsche/nördliche Ortschaften',
 }
 
 # Population estimates by Stadtteil for rate calculation (2024 approx.)
@@ -188,118 +187,124 @@ def download_crime_data() -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def get_latest_crime_by_stadtteil(crime_df: pd.DataFrame) -> Dict[str, Dict]:
-    """Extract most recent crime data per Stadtteil."""
+def get_latest_crime_by_stadtbezirk(crime_df: pd.DataFrame) -> Dict[str, Dict]:
+    """Extract most recent crime data aggregated per Stadtbezirk."""
     if crime_df.empty:
         return {}
 
     logger.info(f"Crime data columns: {list(crime_df.columns)}")
-    logger.info(f"Crime data shape: {crime_df.shape}")
-    logger.info(f"First few rows:\n{crime_df.head()}")
 
-    # The dataset structure may vary — try to identify year and Stadtteil columns
-    year_col = None
-    stadtteil_col = None
-    cases_col = None
-    solved_col = None
+    year_col = 'Jahr'
+    bezirk_col = 'Stadtbezirk mit zugeordneten Ortschaften'
+    cases_col = 'Fälle erfasst (Tatortprinzip)'
+    solved_col = 'Fälle aufgeklärt'
+    suspects_col = 'Tatverdächtige insgesamt'
 
-    for col in crime_df.columns:
-        cl = col.lower()
-        if 'jahr' in cl or 'year' in cl:
-            year_col = col
-        elif 'stadtteil' in cl or 'bezirk' in cl or 'ortsteil' in cl or 'gebiet' in cl:
-            stadtteil_col = col
-        elif 'erfasst' in cl or 'fälle' in cl or 'faelle' in cl or 'cases' in cl:
-            cases_col = col
-        elif 'aufgekl' in cl or 'solved' in cl:
-            solved_col = col
+    # Get most recent year
+    crime_df[year_col] = pd.to_numeric(crime_df[year_col], errors='coerce')
+    max_year = crime_df[year_col].max()
+    logger.info(f"Most recent year: {max_year}")
+    recent = crime_df[crime_df[year_col] == max_year].copy()
 
-    if not stadtteil_col:
-        logger.warning("Could not identify Stadtteil column in crime data")
-        # Try first column
-        stadtteil_col = crime_df.columns[0]
-        logger.info(f"Using first column as Stadtteil: '{stadtteil_col}'")
+    # Convert numeric columns
+    for col in [cases_col, solved_col, suspects_col]:
+        if col in recent.columns:
+            recent[col] = pd.to_numeric(recent[col], errors='coerce')
 
-    if not year_col:
-        logger.info("No year column found — using all data")
+    # Aggregate by Stadtbezirk
+    grouped = recent.groupby(bezirk_col).agg({
+        cases_col: 'sum',
+        solved_col: 'sum',
+        suspects_col: 'sum',
+    }).reset_index()
 
-    # Get most recent year if available
-    if year_col:
-        crime_df[year_col] = pd.to_numeric(crime_df[year_col], errors='coerce')
-        max_year = crime_df[year_col].max()
-        logger.info(f"Most recent year: {max_year}")
-        recent = crime_df[crime_df[year_col] == max_year].copy()
-    else:
-        recent = crime_df.copy()
+    # Stadtbezirk populations (approx. 2024)
+    bezirk_populations = {
+        'StB 0 Altstadt': 48000,
+        'StB 1 Neustadt': 39000,
+        'StB 2 Pieschen': 55000,
+        'StB 3 Klotzsche/nördliche Ortschaften': 25000,
+        'StB 4 Loschwitz/OS Schönfeld-Weißig': 31000,
+        'StB 5 Blasewitz': 90000,
+        'StB 6 Leuben': 40000,
+        'StB 7 Prohlis': 58000,
+        'StB 8 Plauen': 72000,
+        'StB 9 Cotta/westliche Ortschaften': 75000,
+    }
 
-    # Build per-Stadtteil dict
     result = {}
-    for _, row in recent.iterrows():
-        name = str(row.get(stadtteil_col, '')).strip()
-        if not name or name == 'nan':
+    for _, row in grouped.iterrows():
+        name = str(row[bezirk_col]).strip()
+        if not name or name in ('nan', 'unbekannt'):
             continue
 
-        entry = {'stadtteil': name}
+        cases = row[cases_col]
+        solved = row[solved_col]
+        pop = bezirk_populations.get(name)
 
-        if cases_col:
-            entry['crime_cases_total'] = pd.to_numeric(row.get(cases_col), errors='coerce')
-        if solved_col:
-            entry['crime_cases_solved'] = pd.to_numeric(row.get(solved_col), errors='coerce')
+        entry = {
+            'crime_stadtbezirk': name,
+            'crime_cases_total': int(cases) if pd.notna(cases) else None,
+            'crime_cases_solved': int(solved) if pd.notna(solved) else None,
+            'crime_year': int(max_year),
+        }
 
-        # Calculate rate if population is available
-        pop = STADTTEIL_POPULATION.get(name)
-        if pop and cases_col:
-            cases = entry.get('crime_cases_total')
-            if pd.notna(cases) and cases > 0:
-                entry['crime_rate_per_100k'] = round(cases / pop * 100_000, 1)
-                entry['crime_population'] = pop
-
-        if year_col:
-            entry['crime_year'] = int(max_year) if pd.notna(max_year) else None
+        if pop and pd.notna(cases) and cases > 0:
+            entry['crime_rate_per_100k'] = round(cases / pop * 100_000, 1)
+            entry['crime_clearance_rate'] = round(solved / cases * 100, 1) if cases > 0 else None
+            entry['crime_population'] = pop
 
         result[name] = entry
+        logger.info(f"  {name}: {cases:.0f} cases, rate {entry.get('crime_rate_per_100k', 'N/A')}/100k")
 
-    logger.info(f"Crime data for {len(result)} Stadtteile")
+    logger.info(f"Crime data for {len(result)} Stadtbezirke")
     return result
 
 
-def match_school_to_stadtteil(row: pd.Series) -> Optional[str]:
-    """Match school to its Stadtteil using PLZ."""
-    plz = str(row.get('plz', '')).strip()
-    return DRESDEN_PLZ_STADTTEIL.get(plz)
+def match_school_to_stadtbezirk(row: pd.Series) -> Optional[str]:
+    """Match school to its Stadtbezirk using PLZ."""
+    plz = str(row.get('plz', '')).strip().zfill(5)
+    return DRESDEN_PLZ_STADTBEZIRK.get(plz)
 
 
-def enrich_with_crime(schools_df: pd.DataFrame, crime_by_stadtteil: Dict[str, Dict]) -> pd.DataFrame:
-    """Assign Stadtteil-level crime data to each school."""
+def enrich_with_crime(schools_df: pd.DataFrame, crime_by_bezirk: Dict[str, Dict]) -> pd.DataFrame:
+    """Assign Stadtbezirk-level crime data to each school."""
     logger.info("Enriching schools with crime data...")
 
     df = schools_df.copy()
 
-    crime_cols = ['crime_stadtteil', 'crime_cases_total', 'crime_cases_solved',
-                  'crime_rate_per_100k', 'crime_population', 'crime_year', 'crime_data_source']
+    crime_cols = ['crime_stadtbezirk', 'crime_cases_total', 'crime_cases_solved',
+                  'crime_rate_per_100k', 'crime_clearance_rate', 'crime_population',
+                  'crime_year', 'crime_data_source']
     for col in crime_cols:
         df[col] = None
 
     matched = 0
+    unmatched_plz = set()
     for idx, row in df.iterrows():
-        stadtteil = match_school_to_stadtteil(row)
-        if not stadtteil:
+        bezirk = match_school_to_stadtbezirk(row)
+        if not bezirk:
+            plz = str(row.get('plz', '')).strip()
+            if plz:
+                unmatched_plz.add(plz)
             continue
 
-        df.at[idx, 'crime_stadtteil'] = stadtteil
+        df.at[idx, 'crime_stadtbezirk'] = bezirk
 
-        if stadtteil in crime_by_stadtteil:
-            data = crime_by_stadtteil[stadtteil]
+        if bezirk in crime_by_bezirk:
+            data = crime_by_bezirk[bezirk]
             for col in ['crime_cases_total', 'crime_cases_solved', 'crime_rate_per_100k',
-                         'crime_population', 'crime_year']:
+                         'crime_clearance_rate', 'crime_population', 'crime_year']:
                 if col in data:
                     df.at[idx, col] = data[col]
-            df.at[idx, 'crime_data_source'] = 'stadtteil_actual'
+            df.at[idx, 'crime_data_source'] = 'stadtbezirk_actual'
             matched += 1
         else:
-            df.at[idx, 'crime_data_source'] = 'stadtteil_unmatched'
+            df.at[idx, 'crime_data_source'] = 'stadtbezirk_unmatched'
 
-    logger.info(f"Matched {matched}/{len(df)} schools to Stadtteil crime data")
+    if unmatched_plz:
+        logger.warning(f"Unmatched PLZ codes: {sorted(unmatched_plz)}")
+    logger.info(f"Matched {matched}/{len(df)} schools to Stadtbezirk crime data")
     return df
 
 
@@ -328,10 +333,10 @@ def main():
 
     # Download and parse crime data
     crime_df = download_crime_data()
-    crime_by_stadtteil = get_latest_crime_by_stadtteil(crime_df)
+    crime_by_bezirk = get_latest_crime_by_stadtbezirk(crime_df)
 
     # Enrich schools
-    enriched = enrich_with_crime(schools_df, crime_by_stadtteil)
+    enriched = enrich_with_crime(schools_df, crime_by_bezirk)
 
     # Save
     out_path = INTERMEDIATE_DIR / "dresden_schools_with_crime.csv"
