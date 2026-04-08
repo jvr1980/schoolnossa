@@ -168,6 +168,20 @@ class LeipzigCrimeEnrichment:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         INTERMEDIATE_DIR.mkdir(parents=True, exist_ok=True)
 
+    @staticmethod
+    def _read_crime_csv(path) -> pd.DataFrame:
+        """Read crime CSV trying multiple sep/encoding combos."""
+        for sep in [',', ';', '\t']:
+            for enc in ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252', 'iso-8859-1']:
+                try:
+                    df = pd.read_csv(path, sep=sep, encoding=enc)
+                    if len(df.columns) > 2 and len(df) > 5:
+                        logger.info(f"Parsed crime CSV with sep={repr(sep)}, enc={enc}: {len(df)} rows, {len(df.columns)} cols")
+                        return df
+                except (UnicodeDecodeError, pd.errors.ParserError):
+                    continue
+        raise ValueError(f"Could not parse {path} with any sep/encoding combo")
+
     # ------------------------------------------------------------------
     # 1. Load school data
     # ------------------------------------------------------------------
@@ -178,6 +192,9 @@ class LeipzigCrimeEnrichment:
             if filepath.exists():
                 df = pd.read_csv(filepath)
                 logger.info(f"Loaded {len(df)} schools from {filepath.name}")
+                # Normalize coordinate column names
+                if 'lat' in df.columns and 'latitude' not in df.columns:
+                    df = df.rename(columns={'lat': 'latitude', 'lon': 'longitude'})
                 return df
 
         raise FileNotFoundError(
@@ -197,7 +214,7 @@ class LeipzigCrimeEnrichment:
             age_days = (datetime.now().timestamp() - cache_path.stat().st_mtime) / 86400
             if age_days < 7:
                 logger.info(f"Using cached crime data ({age_days:.1f} days old)")
-                return pd.read_csv(cache_path, sep=';', encoding='utf-8')
+                return self._read_crime_csv(cache_path)
 
         logger.info(f"Downloading crime data from Leipzig Open Data API...")
         try:
@@ -208,20 +225,7 @@ class LeipzigCrimeEnrichment:
             cache_path.write_bytes(resp.content)
             logger.info(f"Cached API response to {cache_path.name} ({len(resp.content) / 1024:.1f} KB)")
 
-            # Parse the CSV (semicolon-separated, German encoding)
-            # Try utf-8 first, fall back to latin-1
-            for enc in ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']:
-                try:
-                    df = pd.read_csv(io.BytesIO(resp.content), sep=';', encoding=enc)
-                    if len(df.columns) > 1:
-                        break
-                except (UnicodeDecodeError, pd.errors.ParserError):
-                    continue
-            else:
-                raise ValueError("Could not parse API response with any encoding")
-
-            # Re-save with consistent encoding
-            df.to_csv(cache_path, sep=';', index=False, encoding='utf-8')
+            df = self._read_crime_csv(cache_path)
             return df
 
         except requests.RequestException as e:

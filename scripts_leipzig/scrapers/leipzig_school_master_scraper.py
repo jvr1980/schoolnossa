@@ -400,7 +400,7 @@ def map_api_columns(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # 4. Merge supplementary Leipzig Open Data
 # ---------------------------------------------------------------------------
-def _find_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
+def _find_column(df, candidates):
     """Return the first column name from *candidates* that exists (case-insensitive)."""
     col_lower = {c.lower(): c for c in df.columns}
     for cand in candidates:

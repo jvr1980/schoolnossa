@@ -429,7 +429,7 @@ def main():
     # Find schools with coordinates that haven't been processed yet
     schools_to_process = [
         (idx, row) for idx, row in df.iterrows()
-        if pd.notna(row.get('latitude')) and pd.notna(row.get('longitude'))
+        if pd.notna(row.get('latitude', row.get('lat'))) and pd.notna(row.get('longitude', row.get('lon')))
         and idx not in processed_indices
     ]
 
@@ -459,7 +459,7 @@ def main():
             school_id = str(row.get('schulnummer', row.get('school_id', idx)))
             future = executor.submit(
                 enrich_school, idx,
-                row['latitude'], row['longitude'],
+                row.get('latitude', row.get('lat')), row.get('longitude', row.get('lon')),
                 row.get('schulname', ''),
                 school_id,
             )
