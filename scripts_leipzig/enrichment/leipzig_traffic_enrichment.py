@@ -424,6 +424,9 @@ def enrich_schools_with_traffic(schools_df: pd.DataFrame, accidents_df: pd.DataF
     acc_lons = valid_accidents['accident_lon'].values
     logger.info(f"Valid accidents with coordinates: {len(valid_accidents)}")
 
+    # Normalize coordinate column names
+    if 'lat' in df.columns and 'latitude' not in df.columns:
+        df = df.rename(columns={'lat': 'latitude', 'lon': 'longitude'})
     schools_with_coords = df[df['latitude'].notna() & df['longitude'].notna()]
     logger.info(f"Schools with coordinates: {len(schools_with_coords)}")
 

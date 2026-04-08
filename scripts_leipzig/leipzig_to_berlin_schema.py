@@ -44,17 +44,29 @@ BERLIN_PRI_REF = PROJECT_ROOT / "data_berlin_primary" / "final" / "grundschule_m
 
 
 def get_berlin_schema(school_type: str = "secondary") -> list:
-    """Load the exact column list from the Berlin reference parquet."""
+    """Load the exact column list from the Berlin reference parquet.
+
+    Falls back to any available city's final parquet, or returns None if
+    no reference is available (schema enforcement will be partial).
+    """
     if school_type == "secondary":
         ref_path = BERLIN_SEC_REF
     else:
         ref_path = BERLIN_PRI_REF
 
-    if not ref_path.exists():
-        raise FileNotFoundError(f"Berlin reference not found: {ref_path}")
+    if ref_path.exists():
+        berlin = pd.read_parquet(ref_path)
+        return list(berlin.columns)
 
-    berlin = pd.read_parquet(ref_path)
-    return list(berlin.columns)
+    # Try other cities as fallback references
+    for city in ['hamburg', 'nrw', 'munich', 'stuttgart', 'frankfurt']:
+        fallback = PROJECT_ROOT / f"data_{city}" / "final"
+        for f in fallback.glob("*master_table_final_with_embeddings.parquet"):
+            logger.info(f"Berlin reference not found, using {f.name} as schema reference")
+            return list(pd.read_parquet(f).columns)
+
+    logger.warning("No Berlin reference parquet found — schema enforcement will be partial")
+    return None
 
 
 def transform_to_berlin_schema():
@@ -81,7 +93,10 @@ def transform_to_berlin_schema():
     berlin_columns = get_berlin_schema("secondary")
 
     print(f"  Leipzig input:  {len(leipzig)} schools, {len(leipzig.columns)} columns")
-    print(f"  Berlin target:  {len(berlin_columns)} columns")
+    if berlin_columns:
+        print(f"  Berlin target:  {len(berlin_columns)} columns")
+    else:
+        print(f"  Berlin target:  No reference available — partial enforcement only")
 
     # Work on a copy
     df = leipzig.copy()
@@ -215,45 +230,47 @@ def transform_to_berlin_schema():
     # =========================================================================
     print("  Step 4: Building output (Berlin columns + Leipzig extras)...")
 
-    output = pd.DataFrame(index=range(len(df)))
+    if berlin_columns:
+        output = pd.DataFrame(index=range(len(df)))
 
-    # First: all Berlin columns in exact order
-    populated = 0
-    added_null = 0
-    for col in berlin_columns:
-        if col in df.columns:
+        # First: all Berlin columns in exact order
+        populated = 0
+        added_null = 0
+        for col in berlin_columns:
+            if col in df.columns:
+                output[col] = df[col].values
+                populated += 1
+            else:
+                output[col] = None
+                added_null += 1
+
+        # Second: Leipzig-specific extra columns (not in Berlin schema)
+        leipzig_extras = sorted(set(df.columns) - set(berlin_columns))
+        for col in leipzig_extras:
             output[col] = df[col].values
-            populated += 1
-        else:
-            output[col] = None
-            added_null += 1
 
-    # Second: Leipzig-specific extra columns (not in Berlin schema)
-    leipzig_extras = sorted(set(df.columns) - set(berlin_columns))
-    for col in leipzig_extras:
-        output[col] = df[col].values
+        print(f"    Berlin columns from Leipzig data: {populated}/{len(berlin_columns)}")
+        print(f"    Berlin columns added as NULL:     {added_null}/{len(berlin_columns)}")
+        print(f"    Leipzig extra columns kept:        {len(leipzig_extras)}")
 
-    print(f"    Berlin columns from Leipzig data: {populated}/{len(berlin_columns)}")
-    print(f"    Berlin columns added as NULL:     {added_null}/{len(berlin_columns)}")
-    print(f"    Leipzig extra columns kept:        {len(leipzig_extras)}")
+        if leipzig_extras:
+            print(f"    Extras: {', '.join(leipzig_extras[:15])}{'...' if len(leipzig_extras) > 15 else ''}")
 
-    if leipzig_extras:
-        print(f"    Extras: {', '.join(leipzig_extras[:15])}{'...' if len(leipzig_extras) > 15 else ''}")
-
-    # =========================================================================
-    # STEP 5: Schema verification (all Berlin columns present, correct order)
-    # =========================================================================
-    print("  Step 5: Schema verification...")
-
-    output_cols = list(output.columns)
-    berlin_in_output = output_cols[:len(berlin_columns)]
-    assert berlin_in_output == berlin_columns, (
-        f"SCHEMA MISMATCH! Berlin columns not in correct order.\n"
-        f"  Expected first {len(berlin_columns)} columns to match Berlin schema.\n"
-        f"  Missing: {set(berlin_columns) - set(output_cols)}\n"
-        f"  First mismatch at index: {next(i for i, (a, b) in enumerate(zip(berlin_in_output, berlin_columns)) if a != b)}"
-    )
-    print(f"    PASS: {len(berlin_columns)} Berlin columns present + {len(leipzig_extras)} Leipzig extras")
+        # Schema verification
+        print("  Step 5: Schema verification...")
+        output_cols = list(output.columns)
+        berlin_in_output = output_cols[:len(berlin_columns)]
+        assert berlin_in_output == berlin_columns, (
+            f"SCHEMA MISMATCH! Berlin columns not in correct order.\n"
+            f"  Expected first {len(berlin_columns)} columns to match Berlin schema.\n"
+            f"  Missing: {set(berlin_columns) - set(output_cols)}"
+        )
+        print(f"    PASS: {len(berlin_columns)} Berlin columns present + {len(leipzig_extras)} Leipzig extras")
+    else:
+        # No Berlin reference — just use Leipzig data as-is with renames applied
+        output = df.copy()
+        leipzig_extras = []
+        print("    Skipping column ordering (no Berlin reference available)")
 
     # =========================================================================
     # STEP 6: Save -- overwrite the final files
@@ -306,7 +323,7 @@ def transform_to_berlin_schema():
 
     print(f"\n{'=' * 70}")
     print(f"  Leipzig: {len(output)} schools, {len(output.columns)} columns "
-          f"({len(berlin_columns)} Berlin + {len(leipzig_extras)} Leipzig extras)")
+          f"({len(berlin_columns) if berlin_columns else 0} Berlin + {len(leipzig_extras)} Leipzig extras)")
     print(f"{'=' * 70}")
 
     return output

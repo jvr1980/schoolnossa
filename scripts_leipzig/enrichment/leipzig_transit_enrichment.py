@@ -522,6 +522,9 @@ def enrich_schools_with_transit(schools_df: pd.DataFrame,
     stop_names = stops_df['stop_name'].values
     stop_lines = stops_df['lines'].values
 
+    # Normalize coordinate column names
+    if 'lat' in schools_df.columns and 'latitude' not in schools_df.columns:
+        schools_df = schools_df.rename(columns={'lat': 'latitude', 'lon': 'longitude'})
     schools_with_coords = schools_df[
         schools_df['latitude'].notna() & schools_df['longitude'].notna()
     ]
