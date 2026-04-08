@@ -361,8 +361,20 @@ def _apply_descriptions(df: pd.DataFrame, idx: int, desc_data: dict) -> bool:
 def _init_gemini_client():
     """Initialize the Gemini client."""
     api_key = os.environ.get("GEMINI_API_KEY")
+    # Try config.yaml if not in environment
     if not api_key:
-        raise ValueError("GEMINI_API_KEY not set in environment or .env file")
+        config_path = PROJECT_ROOT / "config.yaml"
+        if config_path.exists():
+            try:
+                import yaml
+                with open(config_path) as f:
+                    config = yaml.safe_load(f) or {}
+                api_keys = config.get("api_keys", {})
+                api_key = api_keys.get("gemini") or api_keys.get("GEMINI_API_KEY")
+            except Exception:
+                pass
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY not set in config.yaml, environment, or .env file")
     from google import genai
     return genai.Client(api_key=api_key)
 
