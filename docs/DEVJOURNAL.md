@@ -1,5 +1,31 @@
 # SchoolNossa Development Journal
 
+## 2026-04-08 — Bremen Pipeline: Full Implementation (All 9 Phases)
+
+**What:** Added Bremen as a new city to SchoolNossa. Completed all workflow phases: research, scaffold, and full implementation of all 9 pipeline scripts.
+
+**Why:** Bremen is a city-state (~200 schools) with good open data availability. Expands SchoolNossa coverage to 5 cities (Berlin, Hamburg, NRW, Munich, Bremen).
+
+**Technical approach:**
+- **Phase 1 (Research):** Documented 8 data categories. Key sources: Schulwegweiser Excel (bildung.bremen.de) + GeoBremen Shapefile (EPSG:25832) for school master data, Unfallatlas for traffic, Overpass API for transit, parliamentary PDFs for crime (22 Beiratsbereiche).
+- **Phase 2 (Scaffold):** Combined pipeline (all school types together, like Hamburg). NRW as template city.
+- **Phase 3 (Implementation):** All 9 phases implemented:
+  - Scraper: Downloads Excel + Shapefile, converts EPSG:25832→WGS84, joins sources, geocodes missing via Nominatim
+  - Traffic: Unfallatlas ULAND=04 (identical to NRW pattern)
+  - Transit: Overpass API with bbox splitting (identical to NRW pattern)
+  - Crime: Hardcoded 22 Beiratsbereiche data with tabula-py PDF parsing fallback, Stadtteil→Beirat mapping
+  - POI: Google Places API (New), 8 categories, threaded
+  - Website: Gemini + Google Search grounding for metadata extraction
+  - Combiner, Embeddings (OpenAI+Gemini fallback), Schema Transformer
+
+**Key files:**
+- `docs/bremen_data_availability_research.md`
+- `scripts_bremen/Bremen_school_data_asset_builder_orchestrator.py`
+- `scripts_bremen/{scrapers,enrichment,processing}/` (10 Python scripts)
+- `scripts_bremen/bremen_to_berlin_schema.py`
+
+**Next steps:** Run the pipeline end-to-end, then QA (Phase 4) and schema drift check (Phase 5).
+
 ## 2026-04-07 — Munich Primary School Pipeline: 148 Grundschulen
 
 **What:** Built the complete Munich primary school (Grundschule) pipeline by refactoring all 11 existing secondary-only scripts to support a `school_type` parameter. Ran all 9 phases producing 148 fully enriched Grundschulen.
