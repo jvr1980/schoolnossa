@@ -11,15 +11,15 @@
 - [x] Website metadata: School homepages in Schuldatenbank API `homepage` field
 
 ## Phase Implementation Status
-- [ ] Phase 1: School Master Data (Schuldatenbank API) — STUB
-- [ ] Phase 2: Traffic Enrichment (Unfallatlas ULAND=14) — STUB
-- [ ] Phase 3: Transit Enrichment (LVB GTFS) — STUB
-- [ ] Phase 4: Crime Enrichment (Ortsteil-Level API) — STUB
-- [ ] Phase 5: POI Enrichment (Google Places) — STUB
-- [ ] Phase 6: Website Metadata & Descriptions (Gemini) — STUB
-- [ ] Phase 7: Data Combination — STUB
-- [ ] Phase 8: Embeddings & Final Output — STUB
-- [ ] Phase 9: Berlin Schema Enforcement — STUB
+- [x] Phase 1: School Master Data (Schuldatenbank API) — IMPLEMENTED
+- [x] Phase 2: Traffic Enrichment (Unfallatlas ULAND=14) — IMPLEMENTED
+- [x] Phase 3: Transit Enrichment (LVB GTFS + Overpass) — IMPLEMENTED
+- [x] Phase 4: Crime Enrichment (Ortsteil-Level API) — IMPLEMENTED
+- [x] Phase 5: POI Enrichment (Google Places) — IMPLEMENTED
+- [x] Phase 6: Website Metadata & Descriptions (Gemini) — IMPLEMENTED
+- [x] Phase 7: Data Combination — IMPLEMENTED
+- [x] Phase 8: Embeddings & Final Output — IMPLEMENTED
+- [x] Phase 9: Berlin Schema Enforcement — IMPLEMENTED
 
 ## Expected School Counts (allgemeinbildende Schulen)
 - Grundschule: ~80
