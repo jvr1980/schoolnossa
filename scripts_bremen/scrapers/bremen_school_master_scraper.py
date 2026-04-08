@@ -489,6 +489,60 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df.rename(columns=rename_map)
 
+    # --- Bremen Excel specific: build schulname from Name1+Name2 ---
+    if 'schulname' not in df.columns and 'Name1' in df.columns:
+        name_parts = ['Name1']
+        if 'Name2' in df.columns:
+            name_parts.append('Name2')
+        df['schulname'] = df[name_parts].fillna('').apply(
+            lambda x: ' '.join(x.str.strip()).strip(), axis=1
+        )
+        logger.info(f"Built schulname from {name_parts}")
+
+    # --- Bremen Excel specific: Planbezirk -> stadtteil ---
+    if 'stadtteil' not in df.columns and 'Planbezirk' in df.columns:
+        df['stadtteil'] = df['Planbezirk'].str.strip()
+        logger.info(f"Mapped Planbezirk -> stadtteil ({df['stadtteil'].notna().sum()} values)")
+
+    # --- Bremen Excel specific: Region -> bezirk ---
+    if 'bezirk' not in df.columns and 'Region' in df.columns:
+        df['bezirk'] = df['Region'].str.strip()
+        logger.info(f"Mapped Region -> bezirk ({df['bezirk'].notna().sum()} values)")
+
+    # --- Bremen Excel specific: Internet -> website ---
+    if 'website' not in df.columns and 'Internet' in df.columns:
+        df['website'] = df['Internet']
+        logger.info("Mapped Internet -> website")
+
+    # --- Bremen Excel specific: build leitung from SchulleiterVorname + SchulleiterName ---
+    if 'leitung' not in df.columns and 'SchulleiterName' in df.columns:
+        parts = []
+        if 'SchulleiterTitel' in df.columns:
+            parts.append('SchulleiterTitel')
+        if 'SchulleiterVorname' in df.columns:
+            parts.append('SchulleiterVorname')
+        parts.append('SchulleiterName')
+        df['leitung'] = df[parts].fillna('').apply(
+            lambda x: ' '.join(x.str.strip()).strip(), axis=1
+        )
+        df.loc[df['leitung'] == '', 'leitung'] = None
+        logger.info(f"Built leitung from {parts}")
+
+    # --- Bremen Excel specific: build telefon from Vorwahl + Telefon ---
+    if 'telefon' not in df.columns and 'Vorwahl' in df.columns and 'Telefon' in df.columns:
+        df['telefon'] = df['Vorwahl'].fillna('').astype(str).str.strip() + df['Telefon'].fillna('').astype(str).str.strip()
+        df.loc[df['telefon'].str.strip() == '', 'telefon'] = None
+        logger.info("Built telefon from Vorwahl + Telefon")
+
+    # --- Bremen Excel specific: build sprachen from Schulart columns ---
+    schulart_cols = [c for c in df.columns if c.startswith('Schulart')]
+    if schulart_cols:
+        df['sprachen'] = df[schulart_cols].apply(
+            lambda row: ', '.join([str(v) for v in row if pd.notna(v) and str(v).strip()]),
+            axis=1
+        )
+        df.loc[df['sprachen'] == '', 'sprachen'] = None
+
     # Generate schulnummer if missing
     if 'schulnummer' not in df.columns:
         df['schulnummer'] = [f"HB{i:04d}" for i in range(1, len(df) + 1)]
