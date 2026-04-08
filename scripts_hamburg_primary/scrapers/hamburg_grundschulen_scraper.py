@@ -385,12 +385,10 @@ def filter_primary_schools(df: pd.DataFrame) -> pd.DataFrame:
     unique_types = df[type_col].unique()
     logger.info(f"Found school types: {list(unique_types)}")
 
-    # Create filter mask: must contain "Grundschule" but NOT "Stadtteilschule" or "Gymnasium"
-    contains_grundschule = df[type_col].str.lower().str.contains('grundschule', na=False)
-    contains_stadtteilschule = df[type_col].str.lower().str.contains('stadtteilschule', na=False)
-    contains_gymnasium = df[type_col].str.lower().str.contains('gymnasium', na=False)
-
-    mask = contains_grundschule & ~contains_stadtteilschule & ~contains_gymnasium
+    # Create filter mask: any school that contains "Grundschule" in its schulart
+    # This includes both standalone Grundschulen and combined schools
+    # (e.g., Grundschule|Stadtteilschule) that also serve primary grades
+    mask = df[type_col].str.lower().str.contains('grundschule', na=False)
 
     filtered_df = df[mask].copy()
 
