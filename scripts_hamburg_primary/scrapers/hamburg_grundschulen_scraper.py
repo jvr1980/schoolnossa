@@ -392,7 +392,22 @@ def filter_primary_schools(df: pd.DataFrame) -> pd.DataFrame:
 
     filtered_df = df[mask].copy()
 
-    logger.info(f"Filtered from {len(df)} to {len(filtered_df)} primary schools (Grundschulen)")
+    logger.info(f"Filtered from {len(df)} to {len(filtered_df)} rows with Grundschule")
+
+    # Remove Zweigstellen (branch campuses) — keep only Hauptstandort
+    if 'schultyp' in filtered_df.columns:
+        before = len(filtered_df)
+        filtered_df = filtered_df[filtered_df['schultyp'] != 'Zweigstelle'].copy()
+        logger.info(f"Removed {before - len(filtered_df)} Zweigstellen (branch campuses)")
+
+    # Deduplicate on schulnummer (WFS can return multiple entries per school)
+    if 'schulnummer' in filtered_df.columns:
+        before = len(filtered_df)
+        filtered_df = filtered_df.drop_duplicates(subset='schulnummer', keep='first')
+        if before > len(filtered_df):
+            logger.info(f"Removed {before - len(filtered_df)} duplicate schulnummer entries")
+
+    logger.info(f"Final count: {len(filtered_df)} unique primary schools")
 
     # Log breakdown by type
     type_counts = filtered_df[type_col].value_counts()
