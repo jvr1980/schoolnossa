@@ -486,6 +486,13 @@ def compute_safety_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
 
+    # Ensure numeric types for crime columns
+    for col in ["crime_total", "crime_beirat_population", "crime_sexual",
+                "crime_robbery", "crime_assault", "crime_burglary",
+                "crime_theft", "crime_drugs"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
     # Only compute for schools with crime data
     has_crime = df["crime_total"].notna()
 
@@ -497,11 +504,11 @@ def compute_safety_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
     # Compute rate per 100k for safety score
     # Use Beiratsbereich population to normalize
-    df["crime_rate_per_100k"] = None
+    df["crime_rate_per_100k"] = np.nan
     mask = has_crime & df["crime_beirat_population"].notna() & (df["crime_beirat_population"] > 0)
     if mask.any():
         df.loc[mask, "crime_rate_per_100k"] = (
-            df.loc[mask, "crime_total"] / df.loc[mask, "crime_beirat_population"] * 100_000
+            df.loc[mask, "crime_total"].astype(float) / df.loc[mask, "crime_beirat_population"].astype(float) * 100_000
         )
 
     # Safety score: invert and normalize to 0-100
@@ -535,10 +542,11 @@ def compute_safety_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
     # Safety rank (1 = safest)
     if mask.any():
+        rate_col = pd.to_numeric(df.loc[mask, "crime_rate_per_100k"], errors="coerce")
         df.loc[mask, "crime_safety_rank"] = (
-            df.loc[mask, "crime_rate_per_100k"]
+            rate_col
             .rank(method="min", ascending=True)
-            .astype(int)
+            .astype("Int64")
         )
 
     return df
