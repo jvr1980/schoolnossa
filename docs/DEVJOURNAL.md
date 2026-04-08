@@ -16,7 +16,14 @@
 
 **Files:** `scripts_dresden/` (10 scripts), `data_dresden/` (5 dirs), `docs/dresden_data_availability_research.md`
 
-**Status:** All scripts implemented except Phase 6 (website metadata/descriptions, needs API keys). Ready for pipeline execution.
+**Status:** Full pipeline executed. All phases complete including descriptions (159/159) and tuition (35/35 private schools). Embeddings skipped (no OPENAI_API_KEY in worktree).
+
+**Tuition results (35 private schools):**
+- 33 medium tier (€120-200/month), 1 ultra (Dresden International School: €1,300/month), 1 low (€65/month)
+- 16 income-based tuition, 13 confirmed flat-fee
+- Income matrices generated for all 35 schools
+
+**Final output:** 159 schools, 192 columns, `data_dresden/final/dresden_school_master_table_final.csv`
 
 ## 2026-04-07 — Munich Primary School Pipeline: 148 Grundschulen
 
