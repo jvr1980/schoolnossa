@@ -1,6 +1,34 @@
 # SchoolNossa Development Journal
 
-## 2026-04-08 — Bremen Pipeline: Full Implementation (All 9 Phases)
+## 2026-04-09 — Bremen Pipeline: Full Run + Descriptions + Tuition
+
+**What:** Ran the complete Bremen pipeline end-to-end, including description generation (Perplexity+OpenAI) for secondary schools and tuition extraction for private schools. Generated QA report and schema drift report.
+
+**Why:** All enrichment phases needed to be executed to produce a production-ready dataset for the frontend.
+
+**Results:**
+| Metric | Value |
+|--------|-------|
+| Total schools | 253 (113 primary, 65 secondary, 75 other) |
+| Coordinates | 252/253 (99.6%) |
+| Traffic (Unfallatlas) | 250/252 schools, 7,809 accidents across 3 years |
+| Transit (Overpass) | 7,194 stops, avg 14.1 within 500m |
+| Crime (PKS) | 206/253 matched (81%), 22 Beiratsbereiche |
+| POI (Google Places) | 252 schools, 83 columns, 8 categories, 2,751 API calls |
+| Descriptions (secondary) | 59/65 with bilingual DE+EN (Perplexity+OpenAI) |
+| Descriptions (primary) | In progress via shared pipeline |
+| Tuition (secondary) | 3 private: FEBB €150, Mentor €355, FGS €75-450 |
+| Tuition (primary) | 3 private: 2 high tier, 1 low tier |
+| Embeddings | 253/253 (text-embedding-3-large, 3072-dim) |
+| Berlin schema | 265 columns match exactly |
+| QA | 9/10 checks OK |
+
+**Key fixes during pipeline run:**
+- Scraper column mapping: `Name1`→`schulname`, `Planbezirk`→`stadtteil`, `Region`→`bezirk`, `Internet`→`website`
+- Crime enrichment dtype: added `pd.to_numeric()` before `.rank()/.round()` to fix object-type errors
+- Website metadata: added config.yaml key loading for Gemini API key
+
+## 2026-04-08 — Bremen Pipeline: Implementation (All 9 Phases)
 
 **What:** Added Bremen as a new city to SchoolNossa. Completed all workflow phases: research, scaffold, and full implementation of all 9 pipeline scripts.
 
@@ -23,8 +51,6 @@
 - `scripts_bremen/Bremen_school_data_asset_builder_orchestrator.py`
 - `scripts_bremen/{scrapers,enrichment,processing}/` (10 Python scripts)
 - `scripts_bremen/bremen_to_berlin_schema.py`
-
-**Next steps:** Run the pipeline end-to-end, then QA (Phase 4) and schema drift check (Phase 5).
 
 ## 2026-04-07 — Munich Primary School Pipeline: 148 Grundschulen
 
