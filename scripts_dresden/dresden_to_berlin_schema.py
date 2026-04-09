@@ -47,7 +47,7 @@ def get_berlin_schema(school_type: str) -> list:
         logger.warning(f"Berlin reference not found: {ref}")
         return []
 
-    berlin_df = pd.read_parquet(ref, columns=[])
+    berlin_df = pd.read_parquet(ref)
     cols = list(berlin_df.columns)
     logger.info(f"Berlin {school_type} schema: {len(cols)} columns")
     return cols
