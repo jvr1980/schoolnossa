@@ -181,6 +181,15 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
 
+    # Map traegerschaft from legal_status_key if still 'unbekannt'
+    if 'legal_status_key' in df.columns and 'traegerschaft' in df.columns:
+        legal_map = {1: 'oeffentlich', 2: 'frei/privat'}
+        mask = df['traegerschaft'].isin(['unbekannt', '', None]) | df['traegerschaft'].isna()
+        df.loc[mask, 'traegerschaft'] = df.loc[mask, 'legal_status_key'].map(legal_map)
+        mapped = mask.sum()
+        if mapped > 0:
+            logger.info(f"  Mapped {mapped} traegerschaft values from legal_status_key")
+
     # Clean PLZ
     if 'plz' in df.columns:
         df['plz'] = df['plz'].astype(str).str.strip().str.replace('.0', '', regex=False).str.zfill(5)
