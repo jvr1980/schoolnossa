@@ -3,16 +3,15 @@
 Phase 9: Dresden to Berlin Schema Transformer
 
 Transforms Dresden pipeline output to match the Berlin reference schema
-for frontend compatibility. Reads Berlin's parquet to get the exact column list,
-then ensures all Berlin columns exist (adds as NULL if missing), renames
-Dresden-specific columns to their Berlin equivalents, and preserves any
-Dresden-specific extras.
+for frontend compatibility. Processes BOTH primary and secondary files separately,
+using the correct Berlin reference schema for each.
 
 Reference: scripts_nrw/nrw_to_berlin_schema.py
 Berlin schema: data_berlin/final/school_master_table_final_with_embeddings.parquet
 
 Author: Dresden School Data Pipeline
 Created: 2026-04-07
+Updated: 2026-04-09 — process primary + secondary files separately
 """
 
 import pandas as pd
@@ -56,28 +55,29 @@ def get_berlin_schema(school_type: str) -> list:
 
 def transform_to_berlin_schema(df: pd.DataFrame, school_type: str) -> pd.DataFrame:
     """Transform Dresden data to Berlin schema."""
-    logger.info(f"Transforming {len(df)} schools to Berlin schema...")
+    logger.info(f"Transforming {len(df)} {school_type} schools to Berlin schema...")
 
     df = df.copy()
 
-    # Apply renames
-    df = df.rename(columns={k: v for k, v in COLUMN_RENAMES.items() if k in df.columns})
+    # Only rename if the target column doesn't already exist
+    for old, new in COLUMN_RENAMES.items():
+        if old in df.columns and new not in df.columns:
+            df = df.rename(columns={old: new})
+        elif old in df.columns and new in df.columns:
+            # Target already exists — drop the source column
+            df = df.drop(columns=[old])
 
-    # Set constant metadata
     df['metadata_source'] = 'Sächsische Schuldatenbank'
     df['stadt'] = 'Dresden'
     df['bundesland'] = 'Sachsen'
 
-    # Get Berlin column list
     berlin_cols = get_berlin_schema(school_type)
 
     if berlin_cols:
-        # Ensure all Berlin columns exist
         for col in berlin_cols:
             if col not in df.columns:
                 df[col] = None
 
-        # Order: Berlin columns first, then Dresden-specific extras
         extra_cols = [c for c in df.columns if c not in berlin_cols]
         ordered = [c for c in berlin_cols if c in df.columns] + extra_cols
         df = df[ordered]
@@ -85,7 +85,27 @@ def transform_to_berlin_schema(df: pd.DataFrame, school_type: str) -> pd.DataFra
         logger.info(f"Berlin columns present: {sum(1 for c in berlin_cols if c in df.columns)}/{len(berlin_cols)}")
         logger.info(f"Dresden extra columns: {len(extra_cols)}")
     else:
-        logger.warning("No Berlin reference available — keeping Dresden schema as-is")
+        logger.warning(f"No Berlin {school_type} reference available — keeping Dresden schema as-is")
+
+    return df
+
+
+def process_school_type(school_type: str):
+    """Process a single school type file."""
+    input_csv = FINAL_DIR / f"dresden_{school_type}_school_master_table_final.csv"
+    if not input_csv.exists():
+        logger.warning(f"File not found: {input_csv}")
+        return None
+
+    df = pd.read_csv(input_csv)
+    logger.info(f"Loaded {len(df)} {school_type} schools from {input_csv.name}")
+
+    df = transform_to_berlin_schema(df, school_type)
+
+    # Overwrite the _final files with Berlin-aligned schema
+    df.to_csv(input_csv, index=False, encoding='utf-8-sig')
+    df.to_parquet(input_csv.with_suffix('.parquet'), index=False)
+    logger.info(f"Saved: {input_csv} ({len(df)} schools, {len(df.columns)} cols)")
 
     return df
 
@@ -95,43 +115,28 @@ def main():
     logger.info("Starting Dresden → Berlin Schema Enforcement")
     logger.info("=" * 60)
 
-    # Process the combined file
-    final_csv = FINAL_DIR / "dresden_school_master_table_final.csv"
-    if not final_csv.exists():
-        raise FileNotFoundError(f"Final table not found: {final_csv}")
+    results = {}
 
-    df = pd.read_csv(final_csv)
-    logger.info(f"Loaded {len(df)} schools")
+    # Process primary and secondary files separately
+    for school_type in ['primary', 'secondary']:
+        df = process_school_type(school_type)
+        if df is not None:
+            results[school_type] = len(df)
 
-    # Determine school types present
-    if 'school_category' in df.columns:
-        categories = df['school_category'].unique()
-        logger.info(f"School categories: {list(categories)}")
-    else:
-        categories = ['secondary']
-
-    # Transform using secondary schema (covers most columns)
-    df = transform_to_berlin_schema(df, 'secondary')
-
-    # Save
-    out_csv = FINAL_DIR / "dresden_school_master_table_berlin_schema.csv"
-    df.to_csv(out_csv, index=False, encoding='utf-8-sig')
-    logger.info(f"Saved: {out_csv}")
-
-    out_parquet = FINAL_DIR / "dresden_school_master_table_berlin_schema.parquet"
-    df.to_parquet(out_parquet, index=False)
-    logger.info(f"Saved: {out_parquet}")
-
-    # Also overwrite the _final files so downstream tools find them
-    df.to_csv(final_csv, index=False, encoding='utf-8-sig')
-    final_parquet = FINAL_DIR / "dresden_school_master_table_final.parquet"
-    df.to_parquet(final_parquet, index=False)
+    # Also process the combined file (using secondary schema as it covers more columns)
+    combined_csv = FINAL_DIR / "dresden_school_master_table_final.csv"
+    if combined_csv.exists():
+        df = pd.read_csv(combined_csv)
+        df = transform_to_berlin_schema(df, 'secondary')
+        df.to_csv(combined_csv, index=False, encoding='utf-8-sig')
+        df.to_parquet(combined_csv.with_suffix('.parquet'), index=False)
+        results['combined'] = len(df)
 
     print(f"\n{'='*70}")
     print("DRESDEN → BERLIN SCHEMA ENFORCEMENT - COMPLETE")
     print(f"{'='*70}")
-    print(f"Schools: {len(df)}")
-    print(f"Columns: {len(df.columns)}")
+    for key, count in results.items():
+        print(f"  {key}: {count} schools")
     print(f"{'='*70}")
 
 
