@@ -61,6 +61,58 @@
 
 **Cross-level schools** (Waldorf, DIS, Gemeinschaftsschulen) duplicated into both files with appropriate schultyp
 
+## 2026-04-09 — Bremen Pipeline: Full Run + Descriptions + Tuition
+
+**What:** Ran the complete Bremen pipeline end-to-end, including description generation (Perplexity+OpenAI) for secondary schools and tuition extraction for private schools. Generated QA report and schema drift report.
+
+**Why:** All enrichment phases needed to be executed to produce a production-ready dataset for the frontend.
+
+**Results:**
+| Metric | Value |
+|--------|-------|
+| Total schools | 253 (113 primary, 65 secondary, 75 other) |
+| Coordinates | 252/253 (99.6%) |
+| Traffic (Unfallatlas) | 250/252 schools, 7,809 accidents across 3 years |
+| Transit (Overpass) | 7,194 stops, avg 14.1 within 500m |
+| Crime (PKS) | 206/253 matched (81%), 22 Beiratsbereiche |
+| POI (Google Places) | 252 schools, 83 columns, 8 categories, 2,751 API calls |
+| Descriptions (secondary) | 59/65 with bilingual DE+EN (Perplexity+OpenAI) |
+| Descriptions (primary) | In progress via shared pipeline |
+| Tuition (secondary) | 3 private: FEBB €150, Mentor €355, FGS €75-450 |
+| Tuition (primary) | 3 private: 2 high tier, 1 low tier |
+| Embeddings | 253/253 (text-embedding-3-large, 3072-dim) |
+| Berlin schema | 265 columns match exactly |
+| QA | 9/10 checks OK |
+
+**Key fixes during pipeline run:**
+- Scraper column mapping: `Name1`→`schulname`, `Planbezirk`→`stadtteil`, `Region`→`bezirk`, `Internet`→`website`
+- Crime enrichment dtype: added `pd.to_numeric()` before `.rank()/.round()` to fix object-type errors
+- Website metadata: added config.yaml key loading for Gemini API key
+
+## 2026-04-08 — Bremen Pipeline: Implementation (All 9 Phases)
+
+**What:** Added Bremen as a new city to SchoolNossa. Completed all workflow phases: research, scaffold, and full implementation of all 9 pipeline scripts.
+
+**Why:** Bremen is a city-state (~200 schools) with good open data availability. Expands SchoolNossa coverage to 5 cities (Berlin, Hamburg, NRW, Munich, Bremen).
+
+**Technical approach:**
+- **Phase 1 (Research):** Documented 8 data categories. Key sources: Schulwegweiser Excel (bildung.bremen.de) + GeoBremen Shapefile (EPSG:25832) for school master data, Unfallatlas for traffic, Overpass API for transit, parliamentary PDFs for crime (22 Beiratsbereiche).
+- **Phase 2 (Scaffold):** Combined pipeline (all school types together, like Hamburg). NRW as template city.
+- **Phase 3 (Implementation):** All 9 phases implemented:
+  - Scraper: Downloads Excel + Shapefile, converts EPSG:25832→WGS84, joins sources, geocodes missing via Nominatim
+  - Traffic: Unfallatlas ULAND=04 (identical to NRW pattern)
+  - Transit: Overpass API with bbox splitting (identical to NRW pattern)
+  - Crime: Hardcoded 22 Beiratsbereiche data with tabula-py PDF parsing fallback, Stadtteil→Beirat mapping
+  - POI: Google Places API (New), 8 categories, threaded
+  - Website: Gemini + Google Search grounding for metadata extraction
+  - Combiner, Embeddings (OpenAI+Gemini fallback), Schema Transformer
+
+**Key files:**
+- `docs/bremen_data_availability_research.md`
+- `scripts_bremen/Bremen_school_data_asset_builder_orchestrator.py`
+- `scripts_bremen/{scrapers,enrichment,processing}/` (10 Python scripts)
+- `scripts_bremen/bremen_to_berlin_schema.py`
+
 ## 2026-04-07 — Munich Primary School Pipeline: 148 Grundschulen
 
 **What:** Built the complete Munich primary school (Grundschule) pipeline by refactoring all 11 existing secondary-only scripts to support a `school_type` parameter. Ran all 9 phases producing 148 fully enriched Grundschulen.
