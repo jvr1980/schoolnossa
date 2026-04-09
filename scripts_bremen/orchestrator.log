@@ -693,3 +693,81 @@ Running Phase 9: Berlin Schema Enforcement
 2026-04-08 21:21:14,903 - INFO - ============================================================
 2026-04-08 21:21:14,903 - INFO - PHASE 9: Berlin Schema Enforcement
 2026-04-08 21:21:14,903 - INFO - ============================================================
+2026-04-09 10:15:18,730 - INFO - ======================================================================
+2026-04-09 10:15:18,731 - INFO - BREMEN SCHOOL DATA ASSET BUILDER - STARTING
+2026-04-09 10:15:18,731 - INFO - Start time: 2026-04-09 10:15:18.730962
+2026-04-09 10:15:18,731 - INFO - ======================================================================
+2026-04-09 10:15:18,731 - INFO - 
+Running Phase 7: Data Combination
+2026-04-09 10:15:18,731 - INFO - ============================================================
+2026-04-09 10:15:18,731 - INFO - PHASE 7: Data Combination
+2026-04-09 10:15:18,731 - INFO - ============================================================
+2026-04-09 10:15:19,136 - INFO - ============================================================
+2026-04-09 10:15:19,137 - INFO - Starting Bremen School Data Combiner
+2026-04-09 10:15:19,137 - INFO - ============================================================
+2026-04-09 10:15:19,142 - INFO - Loaded base data: 253 schools from bremen_school_master.csv
+2026-04-09 10:15:19,145 - INFO -   Loaded bremen_schools_with_traffic.csv: 253 rows, 73 columns
+2026-04-09 10:15:19,146 - INFO - Merging traffic data...
+2026-04-09 10:15:19,146 - INFO -   traffic: 11 new columns
+2026-04-09 10:15:19,152 - INFO -   Merged: 253 rows
+2026-04-09 10:15:19,166 - INFO -   Loaded bremen_schools_with_transit.csv: 253 rows, 122 columns
+2026-04-09 10:15:19,166 - INFO - Merging transit data...
+2026-04-09 10:15:19,170 - INFO -   transit: 49 new columns
+2026-04-09 10:15:19,176 - INFO -   Merged: 253 rows
+2026-04-09 10:15:19,186 - INFO -   Loaded bremen_schools_with_crime.csv: 253 rows, 136 columns
+2026-04-09 10:15:19,186 - INFO - Merging crime data...
+2026-04-09 10:15:19,186 - INFO -   crime: 14 new columns
+2026-04-09 10:15:19,190 - INFO -   Merged: 253 rows
+2026-04-09 10:15:19,200 - INFO -   Loaded bremen_schools_with_poi.csv: 253 rows, 219 columns
+2026-04-09 10:15:19,200 - INFO - Merging POI data...
+2026-04-09 10:15:19,201 - INFO -   POI: 83 new columns
+2026-04-09 10:15:19,202 - INFO -   Merged: 253 rows
+2026-04-09 10:15:19,210 - INFO -   Loaded bremen_schools_with_website_metadata.csv: 253 rows, 136 columns
+2026-04-09 10:15:19,210 - INFO - Merging website_metadata data...
+2026-04-09 10:15:19,210 - INFO -   website_metadata: no new columns to merge
+2026-04-09 10:15:19,210 - INFO - Cleaning combined data...
+2026-04-09 10:15:19,212 - INFO - Standardizing column order...
+2026-04-09 10:15:19,212 - INFO - Saving output files...
+2026-04-09 10:15:19,231 - INFO -   Saved: /Users/josevonroth/Documents/schoolnossa/.claude/worktrees/nice-joliot/data_bremen/final/bremen_school_master_table_final.csv
+2026-04-09 10:15:19,289 - INFO -   Saved: /Users/josevonroth/Documents/schoolnossa/.claude/worktrees/nice-joliot/data_bremen/final/bremen_school_master_table_final.parquet
+2026-04-09 10:15:19,297 - INFO - Data combination complete!
+2026-04-09 10:15:44,161 - INFO - ======================================================================
+2026-04-09 10:15:44,161 - INFO - BREMEN SCHOOL DATA ASSET BUILDER - STARTING
+2026-04-09 10:15:44,161 - INFO - Start time: 2026-04-09 10:15:44.161713
+2026-04-09 10:15:44,162 - INFO - ======================================================================
+2026-04-09 10:15:44,162 - INFO - 
+Running Phase 8: Embeddings & Final Output
+2026-04-09 10:15:44,162 - INFO - ============================================================
+2026-04-09 10:15:44,162 - INFO - PHASE 8: Embeddings & Final Output
+2026-04-09 10:15:44,162 - INFO - ============================================================
+2026-04-09 10:15:44,611 - INFO - ============================================================
+2026-04-09 10:15:44,611 - INFO - Starting Bremen Embeddings Generator
+2026-04-09 10:15:44,611 - INFO - ============================================================
+2026-04-09 10:15:44,679 - INFO - Loaded 253 schools from bremen_school_master_table_final.parquet
+2026-04-09 10:15:44,679 - INFO - Generating school descriptions...
+2026-04-09 10:15:44,687 - INFO -   Sample: Schule an der Admiralstraße ist eine Grundschule in Bremen. Die Schule liegt im Stadtteil Findorff / Walle. Adresse: Winterstr. 20, 28215 Bremen. Mittlere Anbindung an den oeffentlichen Nahverkehr. Si...
+2026-04-09 10:15:44,687 - INFO - OpenAI not available, trying Gemini...
+2026-04-09 10:15:44,687 - INFO - Generating embeddings with Gemini (models/gemini-embedding-001)...
+2026-04-09 10:15:45,732 - INFO -   Embedding batch 1-20/253
+2026-04-09 10:15:46,936 - INFO -   Embedding batch 21-40/253
+2026-04-09 10:15:47,957 - INFO -   Embedding batch 41-60/253
+2026-04-09 10:15:48,984 - INFO -   Embedding batch 61-80/253
+2026-04-09 10:15:50,022 - INFO -   Embedding batch 81-100/253
+2026-04-09 10:15:51,046 - INFO -   Embedding batch 101-120/253
+2026-04-09 10:15:52,067 - INFO -   Embedding batch 121-140/253
+2026-04-09 10:15:53,073 - INFO -   Embedding batch 141-160/253
+2026-04-09 10:15:54,138 - INFO -   Embedding batch 161-180/253
+2026-04-09 10:15:55,146 - INFO -   Embedding batch 181-200/253
+2026-04-09 10:15:56,162 - INFO -   Embedding batch 201-220/253
+2026-04-09 10:15:57,189 - INFO -   Embedding batch 221-240/253
+2026-04-09 10:15:58,212 - INFO -   Embedding batch 241-253/253
+2026-04-09 10:15:58,652 - INFO - Generated 253/253 Gemini embeddings (3072 dimensions)
+2026-04-09 10:15:58,652 - INFO - Computing similar schools...
+2026-04-09 10:15:58,704 - INFO -   Computed similarities for 253 schools
+2026-04-09 10:15:58,767 - INFO - Saved: /Users/josevonroth/Documents/schoolnossa/.claude/worktrees/nice-joliot/data_bremen/final/bremen_school_master_table_final_with_embeddings.parquet
+2026-04-09 10:15:58,788 - INFO - Saved: /Users/josevonroth/Documents/schoolnossa/.claude/worktrees/nice-joliot/data_bremen/final/bremen_school_master_table_final.csv
+2026-04-09 10:15:58,793 - INFO - 
+Running Phase 9: Berlin Schema Enforcement
+2026-04-09 10:15:58,793 - INFO - ============================================================
+2026-04-09 10:15:58,793 - INFO - PHASE 9: Berlin Schema Enforcement
+2026-04-09 10:15:58,793 - INFO - ============================================================
