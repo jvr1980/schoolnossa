@@ -30,6 +30,36 @@
 | Berlin Schema | PASS, 265 Berlin + 92 Leipzig extras |
 
 **Notable:** Leipzig International School correctly classified as "ultra" tier (€1,010-1,070/month). 7 of 30 private schools have income-based tuition.
+## 2026-04-07 — Dresden Pipeline: 159 Schools from Sächsische Schuldatenbank API
+
+**What:** Added Dresden (Sachsen) as a new city to SchoolNossa. Complete pipeline with 9 phases — from data source research through enrichment implementation.
+
+**Key findings:**
+- Sächsische Schuldatenbank has a free CSV API with WGS84 coords (easiest school data source so far)
+- 159 schools: 88 Grundschulen, 39 Oberschulen, 30 Gymnasien, 2 Förderschulen (124 public + 35 private)
+- 100% coordinate coverage, 97% website coverage
+- Dresden Open Data Portal has per-Stadtteil crime data (best granularity after Hamburg)
+- Traffic: Unfallatlas with ULAND=14 (same pattern as NRW)
+- No per-school Sozialindex in Sachsen — using GISD proxy
+
+**Template:** NRW pipeline (closest match for traffic/transit approach)
+
+**Files:** `scripts_dresden/` (10 scripts), `data_dresden/` (5 dirs), `docs/dresden_data_availability_research.md`
+
+**Status:** Full pipeline executed. All phases complete including descriptions (159/159) and tuition (35/35 private schools). Embeddings skipped (no OPENAI_API_KEY in worktree).
+
+**Tuition results (35 private schools):**
+- 33 medium tier (€120-200/month), 1 ultra (Dresden International School: €1,300/month), 1 low (€65/month)
+- 16 income-based tuition, 13 confirmed flat-fee
+- Income matrices generated for all 35 schools
+
+**Final output (split for frontend):**
+- `dresden_primary_school_master_table_final.csv` — 90 schools (88 GS + 6 cross-level)
+- `dresden_secondary_school_master_table_final.csv` — 75 schools (69 OS/Gym + 6 cross-level)
+- `dresden_school_master_table_final.csv` — 159 combined
+- Secondary file: 265/265 Berlin schema columns matched
+
+**Cross-level schools** (Waldorf, DIS, Gemeinschaftsschulen) duplicated into both files with appropriate schultyp
 
 ## 2026-04-07 — Munich Primary School Pipeline: 148 Grundschulen
 
