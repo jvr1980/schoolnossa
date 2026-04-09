@@ -254,22 +254,32 @@
 
 **Files changed:** `scripts_shared/generation/school_description_pipeline.py`
 
-## 2026-04-05 — Hamburg Primary School Pipeline Built
+## 2026-04-08 — Hamburg Full Rebuild: Primary Pipeline + Deduplication Fix
 
-**What:** Created a complete primary school (Grundschule) pipeline for Hamburg, following the Berlin pattern of separate `scripts_hamburg_primary/` and `data_hamburg_primary/` directories.
+**What:** Created a complete Hamburg primary school (Grundschule) pipeline and rebuilt both Hamburg pipelines from scratch with data quality fixes.
 
-**Why:** The existing Hamburg pipeline only covered secondary schools (Stadtteilschulen + Gymnasien). The same WFS data source contains standalone Grundschulen that were filtered out.
+**Why:** Hamburg only had secondary schools. Also discovered Zweigstellen (branch campuses) and duplicate WFS rows were inflating school counts in both pipelines.
 
-**Key results:**
-- **259 Grundschulen** extracted (230 state + 29 private), 100% coordinate coverage
-- Data source: same Transparenzportal WFS (`HH_WFS_Schulen`) — the `schulform` column distinguishes primary from secondary
-- Filter: `schulform` contains "Grundschule" AND does NOT contain "Stadtteilschule"/"Gymnasium"
-- 8-phase pipeline: Scraper → Traffic → Crime → Transit → POI → Combiner → Embeddings → Berlin Schema
-- No Abitur or website scraping phases (not applicable to Grundschulen)
-- Scripts in `scripts_hamburg_primary/` with orchestrator
-- Distribution by Bezirk: Wandsbek (58), Altona (46), Eimsbüttel (39), Hamburg-Nord (38), Hamburg-Mitte (35), Harburg (23), Bergedorf (20)
+**Key fixes:**
+- Removed Zweigstellen from both scrapers — these are satellite campuses, not separate schools
+- Deduplicated on `schulnummer` — WFS returned multiple rows per school from GeoJSON entrance points
+- Combined schools (Grund-/Stadtteilschule) now appear in **both** pipelines since they serve both levels
+- Secondary went from 286 → **170** schools; primary has **257** schools; 30 overlap
 
-**Branch:** `feature/munich-pipeline` (continuation of existing branch)
+**Results:**
+| | Secondary | Primary |
+|---|---|---|
+| Schools | 170 (84 STS + 80 Gym + 6 combined) | 257 Grundschulen |
+| Columns | 187 | 182 |
+| Coordinates | 100% | 100% |
+| Transit | 100% | 100% |
+| Traffic | 68% | 68% |
+| Crime | 100% | 100% |
+| POI | 100% (81 cols) | 100% (81 cols) |
+| Embeddings | 170/170 | 257/257 |
+| Berlin Schema | 265 cols | 265 cols |
+
+**Structure:** `scripts_hamburg_primary/` + `data_hamburg_primary/` (separate from secondary)
 
 ## 2026-04-01 — Munich Secondary School Pipeline Scaffolded and Implemented
 
