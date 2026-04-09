@@ -1,5 +1,36 @@
 # SchoolNossa Development Journal
 
+## 2026-04-09 — Leipzig Pipeline: 186 Schools Complete
+
+**What:** Built the complete Leipzig school data pipeline (all school types combined: 92 Grundschulen, 37 Oberschulen, 31 Gymnasien, 24 Sonstige, 2 Förderschulen). All 9 phases + tuition + description pipelines.
+
+**Data source:** Sachsen Schuldatenbank API (`schuldatenbank.sachsen.de`) — provides school metadata, coordinates, legal_status_key (1=public, 2=private). Crime data from Leipzig Kriminalstatistik (Ortsteil-level).
+
+**Key technical decisions:**
+- `legal_status_key` → `traegerschaft` mapping added to combiner's `clean_data()` — scraper returns "unbekannt" but has the key (1=oeffentlich, 2=frei/privat)
+- Berlin reference parquet not available in worktree — schema transformer made resilient with fallback to other cities or partial-only enforcement
+- Description and tuition pipelines write to cache files, then merged back into main CSV before embeddings/schema phases
+- Symlinked `config.yaml` to `scripts_shared/generation/` for API key access
+
+**Results:**
+| Field | Coverage |
+|---|---|
+| Schools | 186 (156 public, 30 private) |
+| Coordinates | 186/186 (100%) |
+| Traffic (Unfallatlas) | 186/186 (100%) |
+| Transit (Overpass) | 186/186, all scored |
+| Crime (Leipzig PKS) | 186/186, Ortsteil-level |
+| POI (Google Places) | 186/186 (100%) |
+| Descriptions (Perplexity+Gemini) | 178/186 (96%) |
+| Sprachen | 113/186 (61%) |
+| Besonderheiten | 185/186 (99%) |
+| Website | 185/186 (99%) |
+| Tuition (30 private) | 30/30 classified (22 medium, 4 low, 2 high, 2 ultra) |
+| Embeddings (OpenAI) | 186/186, 3072-dim |
+| Berlin Schema | PASS, 265 Berlin + 92 Leipzig extras |
+
+**Notable:** Leipzig International School correctly classified as "ultra" tier (€1,010-1,070/month). 7 of 30 private schools have income-based tuition.
+
 ## 2026-04-07 — Munich Primary School Pipeline: 148 Grundschulen
 
 **What:** Built the complete Munich primary school (Grundschule) pipeline by refactoring all 11 existing secondary-only scripts to support a `school_type` parameter. Ran all 9 phases producing 148 fully enriched Grundschulen.
