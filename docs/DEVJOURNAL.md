@@ -23,7 +23,13 @@
 - 16 income-based tuition, 13 confirmed flat-fee
 - Income matrices generated for all 35 schools
 
-**Final output:** 159 schools, 192 columns, `data_dresden/final/dresden_school_master_table_final.csv`
+**Final output (split for frontend):**
+- `dresden_primary_school_master_table_final.csv` — 90 schools (88 GS + 6 cross-level)
+- `dresden_secondary_school_master_table_final.csv` — 75 schools (69 OS/Gym + 6 cross-level)
+- `dresden_school_master_table_final.csv` — 159 combined
+- Secondary file: 265/265 Berlin schema columns matched
+
+**Cross-level schools** (Waldorf, DIS, Gemeinschaftsschulen) duplicated into both files with appropriate schultyp
 
 ## 2026-04-07 — Munich Primary School Pipeline: 148 Grundschulen
 
