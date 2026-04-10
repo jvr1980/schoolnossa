@@ -1,5 +1,30 @@
 # SchoolNossa Development Journal
 
+## 2026-04-09 — Abitur Predictions: Frankfurt, Munich, Stuttgart
+
+**What:** Extended the Ridge regression Abitur prediction pipeline to three new cities. Generated rebased predictions for all Abitur-eligible schools and merged results into master table parquets.
+
+**Why:** Frankfurt, Munich, and Stuttgart pipelines were complete but had no Abitur quality estimates. Model was trained on Berlin (128) + Hamburg (73) labeled schools; CV R²=0.417, MAE=0.179.
+
+**Key technical changes (scripts_shared/regression/):**
+- Removed Model B (Abitur erfolgsquote) — CV R²=−0.24, no improvement from Y-standardization or binary classification
+- Added FRANKFURT_COLUMN_MAP for different column naming in Frankfurt/Munich/Stuttgart
+- Expanded ABITUR_ELIGIBLE_TYPES to include Frankfurt types (IGS, KGS, Gemeinschaftsschule, Berufsoberschulen, etc.)
+- Added schulart fallback when school_type is generic "secondary" (Stuttgart/Munich pattern)
+- Implemented _impute_gisd_from_zensus(): OLS proxy for GISD quintile from Zensus features with R²<0.10 guard
+- Downloaded Zensus 100m grid: Frankfurt (16,380 cells), Munich (25,566), Stuttgart (13,546)
+
+**Stuttgart known issue:** PLZ column contains the numeric part of the Schulnummer instead of real postal codes — GISD imputation skipped. Needs fix in Stuttgart scraper.
+
+**Results:**
+| City | Predicted | Total | Rebase shift | State avg |
+|---|---|---|---|---|
+| Frankfurt | 56 | 99 | +0.030 | 2.38 (Hessen) |
+| Munich | 30 | 108 | −0.221 | 2.29 (Bayern) |
+| Stuttgart | 45 | 80 | −0.051 | 2.32 (BaWü) |
+
+**Output:** Prediction columns merged into {city}_{type}_school_master_table_final_with_embeddings.parquet for all three cities. Standalone prediction parquets also in data_{city}/final/.
+
 ## 2026-04-09 — Leipzig Pipeline: 186 Schools Complete
 
 **What:** Built the complete Leipzig school data pipeline (all school types combined: 92 Grundschulen, 37 Oberschulen, 31 Gymnasien, 24 Sonstige, 2 Förderschulen). All 9 phases + tuition + description pipelines.
