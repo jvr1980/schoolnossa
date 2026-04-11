@@ -175,9 +175,11 @@ def _call_gemini(
     schulnummer: str,
     schulname: str,
     retry_count: int = 0,
+    max_retries: int = 2,
 ) -> Optional[Dict]:
     """
     Call Gemini with URL context + Google Search grounding and parse JSON response.
+    Retries on transient failures (empty response, JSON parse error, 500 errors).
     """
     from google.genai import types
 
@@ -194,15 +196,27 @@ def _call_gemini(
             ),
         )
 
-        # Handle cases where response has no text
+        # Handle cases where response has no text (e.g., only tool call results)
         text = response.text
         if not text:
+            # Try to extract text from parts
             if response.candidates and response.candidates[0].content:
                 parts = response.candidates[0].content.parts
-                text_parts = [p.text for p in parts if hasattr(p, "text") and p.text]
+                text_parts = [p.text for p in parts if hasattr(p, 'text') and p.text]
                 text = "\n".join(text_parts) if text_parts else None
             if not text:
-                logger.warning(f"  Empty response for {schulnummer} ({schulname})")
+                if retry_count < max_retries:
+                    logger.info(
+                        f"  Empty response for {schulnummer} ({schulname}) — retry {retry_count + 1}/{max_retries}"
+                    )
+                    time.sleep(3)
+                    return _call_gemini(
+                        client, prompt, model, schulnummer, schulname,
+                        retry_count + 1, max_retries,
+                    )
+                logger.warning(
+                    f"  Empty response for {schulnummer} ({schulname}) — exhausted retries"
+                )
                 return None
 
         text = text.strip()
@@ -214,24 +228,47 @@ def _call_gemini(
         return data
 
     except json.JSONDecodeError as e:
-        logger.warning(f"  JSON parse error for {schulnummer} ({schulname}): {e}")
+        if retry_count < max_retries:
+            logger.info(
+                f"  JSON parse error for {schulnummer} ({schulname}) — retry {retry_count + 1}/{max_retries}"
+            )
+            time.sleep(3)
+            return _call_gemini(
+                client, prompt, model, schulnummer, schulname,
+                retry_count + 1, max_retries,
+            )
+        logger.warning(
+            f"  JSON parse error for {schulnummer} ({schulname}): {e} — exhausted retries"
+        )
         return None
     except Exception as e:
         error_msg = str(e)
         if "URL_RETRIEVAL_STATUS_ERROR" in error_msg:
-            logger.warning(f"  URL unreachable for {schulnummer} ({schulname})")
+            logger.warning(
+                f"  URL unreachable for {schulnummer} ({schulname})"
+            )
         elif ("RATE_LIMIT" in error_msg.upper() or "429" in error_msg) and retry_count < 3:
             wait_time = 30 * (retry_count + 1)
             logger.warning(f"  Rate limited — waiting {wait_time}s...")
             time.sleep(wait_time)
             return _call_gemini(
                 client, prompt, model, schulnummer, schulname,
-                retry_count + 1,
+                retry_count + 1, max_retries,
+            )
+        elif ("500" in error_msg or "INTERNAL" in error_msg) and retry_count < max_retries:
+            logger.info(
+                f"  Server error for {schulnummer} ({schulname}) — retry {retry_count + 1}/{max_retries}"
+            )
+            time.sleep(5)
+            return _call_gemini(
+                client, prompt, model, schulnummer, schulname,
+                retry_count + 1, max_retries,
             )
         else:
-            logger.warning(f"  Error for {schulnummer} ({schulname}): {e}")
+            logger.warning(
+                f"  Error for {schulnummer} ({schulname}): {e}"
+            )
         return None
-
 
 def _init_gemini_client():
     """Initialize the Gemini client."""

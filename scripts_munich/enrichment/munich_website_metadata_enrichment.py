@@ -77,7 +77,7 @@ except ImportError:
                     if key and key not in os.environ:
                         os.environ[key] = value
 
-METADATA_PROMPT = """Durchsuche diese Schulwebsite gründlich und extrahiere folgende Informationen.
+METADATA_PROMPT_WITH_URL = """Durchsuche diese Schulwebsite gründlich und extrahiere folgende Informationen.
 Suche auf der Hauptseite und allen verlinkten Unterseiten (Über uns, Unsere Schule,
 Kollegium, Schulprofil, Zahlen und Fakten, etc.).
 
@@ -101,6 +101,28 @@ Wenn eine Information nicht eindeutig gefunden werden kann, setze den Wert auf n
 Antworte NUR mit dem JSON-Objekt, kein Markdown.
 
 URL: {url}"""
+
+# Fallback prompt for schools without a website URL — uses Google Search grounding only
+METADATA_PROMPT_NO_URL = """Suche im Internet nach dieser Schule und extrahiere folgende Informationen.
+
+Schule: {schulname}
+Schulform: {schulform}
+Trägerschaft: {traegerschaft}
+Adresse: {strasse}, {plz} {stadt}
+
+Extrahiere als JSON:
+- schueler: Gesamtanzahl Schülerinnen und Schüler (int oder null). Suche nach "SuS", "Schülerinnen und Schüler", "ca. XXX Schüler", "lernen hier XXX Kinder"
+- lehrer: Anzahl Lehrkräfte/Kollegium (int oder null). Suche nach "Kollegium", "Lehrerinnen und Lehrer", "Lehrkräfte"
+- sprachen: Angebotene Fremdsprachen als Liste (z.B. ["Englisch", "Französisch"]) oder null
+- gruendungsjahr: Gründungsjahr der Schule (int, z.B. 1920) oder null
+- schulleitung: Name der Schulleitung (string) oder null. Suche nach "Schulleiter/in", "Rektor/in", "Direktor/in"
+- ganztag: Ist es eine Ganztagsschule? (true/false/null). Suche nach "Ganztag", "OGS", "Offene Ganztagsschule", "Betreuung"
+- besonderheiten: Besondere Programme oder Schwerpunkte, max 150 Zeichen (string oder null). Z.B. MINT, Musik, Sport, UNESCO, Inklusion, bilingual, Montessori
+- tuition_monthly_eur: Monatliches Schulgeld in Euro (int oder null). Nur für Privatschulen relevant. Suche nach "Schulgeld", "Beiträge", "Kosten", "Gebühren"
+- scholarship_available: Gibt es Stipendien oder Ermäßigungen? (true/false/null). Suche nach "Stipendium", "Ermäßigung", "einkommensabhängig"
+
+Wenn eine Information nicht eindeutig gefunden werden kann, setze den Wert auf null.
+Antworte NUR mit dem JSON-Objekt, kein Markdown."""
 
 DESCRIPTION_PROMPT = """Du bist ein Experte für Schulprofile. Basierend auf der Website dieser Schule
 und allen verfügbaren Informationen, erstelle ein umfassendes Schulprofil.
@@ -143,8 +165,19 @@ def _save_cache(cache: dict, cache_path: Path):
         json.dump(cache, f, indent=2, ensure_ascii=False)
 
 
-def _call_gemini(client, prompt: str, model: str, schulnummer: str, schulname: str,
-                 retry_count: int = 0) -> Optional[Dict]:
+def _call_gemini(
+    client,
+    prompt: str,
+    model: str,
+    schulnummer: str,
+    schulname: str,
+    retry_count: int = 0,
+    max_retries: int = 2,
+) -> Optional[Dict]:
+    """
+    Call Gemini with URL context + Google Search grounding and parse JSON response.
+    Retries on transient failures (empty response, JSON parse error, 500 errors).
+    """
     from google.genai import types
 
     try:
@@ -160,36 +193,78 @@ def _call_gemini(client, prompt: str, model: str, schulnummer: str, schulname: s
             ),
         )
 
+        # Handle cases where response has no text (e.g., only tool call results)
         text = response.text
         if not text:
+            # Try to extract text from parts
             if response.candidates and response.candidates[0].content:
                 parts = response.candidates[0].content.parts
                 text_parts = [p.text for p in parts if hasattr(p, 'text') and p.text]
                 text = "\n".join(text_parts) if text_parts else None
             if not text:
-                logger.warning(f"  Empty response for {schulnummer} ({schulname})")
+                if retry_count < max_retries:
+                    logger.info(
+                        f"  Empty response for {schulnummer} ({schulname}) — retry {retry_count + 1}/{max_retries}"
+                    )
+                    time.sleep(3)
+                    return _call_gemini(
+                        client, prompt, model, schulnummer, schulname,
+                        retry_count + 1, max_retries,
+                    )
+                logger.warning(
+                    f"  Empty response for {schulnummer} ({schulname}) — exhausted retries"
+                )
                 return None
 
         text = text.strip()
+        # Clean markdown code block if present
         if text.startswith("```"):
             text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 
-        return json.loads(text)
+        data = json.loads(text)
+        return data
 
     except json.JSONDecodeError as e:
-        logger.warning(f"  JSON parse error for {schulnummer} ({schulname}): {e}")
+        if retry_count < max_retries:
+            logger.info(
+                f"  JSON parse error for {schulnummer} ({schulname}) — retry {retry_count + 1}/{max_retries}"
+            )
+            time.sleep(3)
+            return _call_gemini(
+                client, prompt, model, schulnummer, schulname,
+                retry_count + 1, max_retries,
+            )
+        logger.warning(
+            f"  JSON parse error for {schulnummer} ({schulname}): {e} — exhausted retries"
+        )
         return None
     except Exception as e:
         error_msg = str(e)
         if "URL_RETRIEVAL_STATUS_ERROR" in error_msg:
-            logger.warning(f"  URL unreachable for {schulnummer} ({schulname})")
+            logger.warning(
+                f"  URL unreachable for {schulnummer} ({schulname})"
+            )
         elif ("RATE_LIMIT" in error_msg.upper() or "429" in error_msg) and retry_count < 3:
             wait_time = 30 * (retry_count + 1)
             logger.warning(f"  Rate limited — waiting {wait_time}s...")
             time.sleep(wait_time)
-            return _call_gemini(client, prompt, model, schulnummer, schulname, retry_count + 1)
+            return _call_gemini(
+                client, prompt, model, schulnummer, schulname,
+                retry_count + 1, max_retries,
+            )
+        elif ("500" in error_msg or "INTERNAL" in error_msg) and retry_count < max_retries:
+            logger.info(
+                f"  Server error for {schulnummer} ({schulname}) — retry {retry_count + 1}/{max_retries}"
+            )
+            time.sleep(5)
+            return _call_gemini(
+                client, prompt, model, schulnummer, schulname,
+                retry_count + 1, max_retries,
+            )
         else:
-            logger.warning(f"  Error for {schulnummer} ({schulname}): {e}")
+            logger.warning(
+                f"  Error for {schulnummer} ({schulname}): {e}"
+            )
         return None
 
 
@@ -348,13 +423,16 @@ def enrich_schools(school_type='secondary'):
              "meta_enriched": 0, "desc_enriched": 0, "errors": 0}
 
     has_website = df["website"].notna() & (df["website"].astype(str).str.strip() != "") & (df["website"].astype(str) != "nan")
-    website_indices = df[has_website].index
-    total = len(website_indices)
-    logger.info(f"  Schools with website: {total}/{len(df)}")
+    total_with_url = has_website.sum()
+    # Process ALL schools — those without URL use Google Search grounding only
+    all_indices = df.index
+    total = len(all_indices)
+    logger.info(f"  Schools with website: {total_with_url}/{total}")
+    logger.info(f"  Will process all {total} schools (Google Search fallback for those without URL)")
 
     # ===== PHASE A: Metadata extraction =====
     logger.info("  --- PHASE A: Metadata Extraction ---")
-    for i, idx in enumerate(website_indices):
+    for i, idx in enumerate(all_indices):
         info = _get_school_info(df.loc[idx])
         snr = info["schulnummer"]
 
@@ -362,11 +440,20 @@ def enrich_schools(school_type='secondary'):
             data = meta_cache[snr]
             stats["meta_cache"] += 1
         else:
-            prompt = METADATA_PROMPT.format(
-                schulname=info["schulname"], schulform=info["schulform"],
-                traegerschaft=info["traegerschaft"], strasse=info["strasse"],
-                plz=info["plz"], stadt=info["stadt"], url=info["url"],
-            )
+            url = info["url"]
+            has_url = url and url not in ("", "nan", "None")
+            if has_url:
+                prompt = METADATA_PROMPT_WITH_URL.format(
+                    schulname=info["schulname"], schulform=info["schulform"],
+                    traegerschaft=info["traegerschaft"], strasse=info["strasse"],
+                    plz=info["plz"], stadt=info["stadt"], url=url,
+                )
+            else:
+                prompt = METADATA_PROMPT_NO_URL.format(
+                    schulname=info["schulname"], schulform=info["schulform"],
+                    traegerschaft=info["traegerschaft"], strasse=info["strasse"],
+                    plz=info["plz"], stadt=info["stadt"],
+                )
             data = _call_gemini(client, prompt, METADATA_MODEL, snr, info["schulname"])
             if data:
                 meta_cache[snr] = data
@@ -389,7 +476,7 @@ def enrich_schools(school_type='secondary'):
 
     # ===== PHASE B: Description generation =====
     logger.info("  --- PHASE B: Description Generation ---")
-    for i, idx in enumerate(website_indices):
+    for i, idx in enumerate(all_indices):
         info = _get_school_info(df.loc[idx])
         snr = info["schulnummer"]
 
@@ -398,10 +485,13 @@ def enrich_schools(school_type='secondary'):
             stats["desc_cache"] += 1
         else:
             meta = meta_cache.get(snr, {})
+            url = info["url"]
+            has_url = url and url not in ("", "nan", "None")
             prompt = DESCRIPTION_PROMPT.format(
                 schulname=info["schulname"], schulform=info["schulform"],
                 traegerschaft=info["traegerschaft"], strasse=info["strasse"],
-                plz=info["plz"], stadt=info["stadt"], url=info["url"],
+                plz=info["plz"], stadt=info["stadt"],
+                url=url if has_url else "Nicht verfügbar",
                 schueler=meta.get("schueler", "unbekannt"),
                 lehrer=meta.get("lehrer", "unbekannt"),
                 sprachen=meta.get("sprachen", "unbekannt"),

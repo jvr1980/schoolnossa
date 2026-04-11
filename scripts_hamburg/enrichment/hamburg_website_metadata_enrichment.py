@@ -137,8 +137,19 @@ def _save_cache(cache: dict, cache_path: Path):
         json.dump(cache, f, indent=2, ensure_ascii=False)
 
 
-def _call_gemini(client, prompt: str, model: str, schulnummer: str, schulname: str,
-                 retry_count: int = 0) -> Optional[Dict]:
+def _call_gemini(
+    client,
+    prompt: str,
+    model: str,
+    schulnummer: str,
+    schulname: str,
+    retry_count: int = 0,
+    max_retries: int = 2,
+) -> Optional[Dict]:
+    """
+    Call Gemini with URL context + Google Search grounding and parse JSON response.
+    Retries on transient failures (empty response, JSON parse error, 500 errors).
+    """
     from google.genai import types
 
     try:
@@ -154,36 +165,78 @@ def _call_gemini(client, prompt: str, model: str, schulnummer: str, schulname: s
             ),
         )
 
+        # Handle cases where response has no text (e.g., only tool call results)
         text = response.text
         if not text:
+            # Try to extract text from parts
             if response.candidates and response.candidates[0].content:
                 parts = response.candidates[0].content.parts
-                text_parts = [p.text for p in parts if hasattr(p, "text") and p.text]
+                text_parts = [p.text for p in parts if hasattr(p, 'text') and p.text]
                 text = "\n".join(text_parts) if text_parts else None
             if not text:
-                logger.warning(f"  Empty response for {schulnummer} ({schulname})")
+                if retry_count < max_retries:
+                    logger.info(
+                        f"  Empty response for {schulnummer} ({schulname}) — retry {retry_count + 1}/{max_retries}"
+                    )
+                    time.sleep(3)
+                    return _call_gemini(
+                        client, prompt, model, schulnummer, schulname,
+                        retry_count + 1, max_retries,
+                    )
+                logger.warning(
+                    f"  Empty response for {schulnummer} ({schulname}) — exhausted retries"
+                )
                 return None
 
         text = text.strip()
+        # Clean markdown code block if present
         if text.startswith("```"):
             text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 
-        return json.loads(text)
+        data = json.loads(text)
+        return data
 
     except json.JSONDecodeError as e:
-        logger.warning(f"  JSON parse error for {schulnummer} ({schulname}): {e}")
+        if retry_count < max_retries:
+            logger.info(
+                f"  JSON parse error for {schulnummer} ({schulname}) — retry {retry_count + 1}/{max_retries}"
+            )
+            time.sleep(3)
+            return _call_gemini(
+                client, prompt, model, schulnummer, schulname,
+                retry_count + 1, max_retries,
+            )
+        logger.warning(
+            f"  JSON parse error for {schulnummer} ({schulname}): {e} — exhausted retries"
+        )
         return None
     except Exception as e:
         error_msg = str(e)
         if "URL_RETRIEVAL_STATUS_ERROR" in error_msg:
-            logger.warning(f"  URL unreachable for {schulnummer} ({schulname})")
+            logger.warning(
+                f"  URL unreachable for {schulnummer} ({schulname})"
+            )
         elif ("RATE_LIMIT" in error_msg.upper() or "429" in error_msg) and retry_count < 3:
             wait_time = 30 * (retry_count + 1)
             logger.warning(f"  Rate limited — waiting {wait_time}s...")
             time.sleep(wait_time)
-            return _call_gemini(client, prompt, model, schulnummer, schulname, retry_count + 1)
+            return _call_gemini(
+                client, prompt, model, schulnummer, schulname,
+                retry_count + 1, max_retries,
+            )
+        elif ("500" in error_msg or "INTERNAL" in error_msg) and retry_count < max_retries:
+            logger.info(
+                f"  Server error for {schulnummer} ({schulname}) — retry {retry_count + 1}/{max_retries}"
+            )
+            time.sleep(5)
+            return _call_gemini(
+                client, prompt, model, schulnummer, schulname,
+                retry_count + 1, max_retries,
+            )
         else:
-            logger.warning(f"  Error for {schulnummer} ({schulname}): {e}")
+            logger.warning(
+                f"  Error for {schulnummer} ({schulname}): {e}"
+            )
         return None
 
 
@@ -300,15 +353,26 @@ def _get_school_info(row) -> dict:
 
 
 def _find_input(school_type: str) -> Path:
-    candidates = [
-        INTERMEDIATE_DIR / f"hamburg_{school_type}_schools_with_pois.csv",
-        INTERMEDIATE_DIR / f"hamburg_{school_type}_schools_with_crime.csv",
-        INTERMEDIATE_DIR / f"hamburg_{school_type}_schools_with_transit.csv",
-        INTERMEDIATE_DIR / f"hamburg_{school_type}_schools_combined.csv",
-        INTERMEDIATE_DIR / f"hamburg_{school_type}_schools.csv",
-        RAW_DIR / f"hamburg_{school_type}_schools_raw.csv",
-        RAW_DIR / "hamburg_schools_raw.csv",
-    ]
+    # Hamburg primary data is in data_hamburg_primary/
+    if school_type == "primary":
+        pri_dir = PROJECT_ROOT / "data_hamburg_primary"
+        pri_int = pri_dir / "intermediate"
+        pri_raw = pri_dir / "raw"
+        candidates = [
+            pri_int / "hamburg_primary_schools_with_pois.csv",
+            pri_int / "hamburg_primary_schools_with_crime.csv",
+            pri_int / "hamburg_primary_schools_with_transit.csv",
+            pri_int / "hamburg_primary_combined_master.csv",
+            pri_raw / "hamburg_primary_schools_raw.csv",
+        ]
+    else:
+        candidates = [
+            INTERMEDIATE_DIR / "hamburg_schools_with_pois.csv",
+            INTERMEDIATE_DIR / "hamburg_schools_with_crime.csv",
+            INTERMEDIATE_DIR / "hamburg_schools_with_transit.csv",
+            INTERMEDIATE_DIR / "hamburg_combined_master.csv",
+            RAW_DIR / "hamburg_schools_raw.csv",
+        ]
     for f in candidates:
         if f.exists():
             return f
@@ -343,10 +407,30 @@ def enrich_schools(school_type: str = "secondary") -> pd.DataFrame:
     stats = {"meta_api": 0, "meta_cache": 0, "desc_api": 0, "desc_cache": 0,
              "meta_enriched": 0, "desc_enriched": 0, "errors": 0}
 
+    # Hamburg uses schul_homepage or homepage instead of website
+    url_col = None
+    for candidate in ["website", "schul_homepage", "homepage"]:
+        if candidate in df.columns:
+            has = df[candidate].notna() & (df[candidate].astype(str).str.strip() != "") & (df[candidate].astype(str) != "nan")
+            if has.sum() > 0:
+                url_col = candidate
+                break
+    if url_col is None:
+        logger.warning("  No website/homepage column with data found — skipping")
+        return df
+
+    # Normalize to 'website' column for downstream
+    if url_col != "website":
+        if "website" not in df.columns:
+            df["website"] = df[url_col]
+        else:
+            mask = df["website"].isna() | (df["website"].astype(str).str.strip() == "") | (df["website"].astype(str) == "nan")
+            df.loc[mask, "website"] = df.loc[mask, url_col]
+
     has_website = df["website"].notna() & (df["website"].astype(str).str.strip() != "") & (df["website"].astype(str) != "nan")
     website_indices = df[has_website].index
     total = len(website_indices)
-    logger.info(f"  Schools with website: {total}/{len(df)}")
+    logger.info(f"  Schools with website: {total}/{len(df)} (from column '{url_col}')")
 
     # ===== PHASE A: Metadata extraction =====
     logger.info("  --- PHASE A: Metadata Extraction ---")
