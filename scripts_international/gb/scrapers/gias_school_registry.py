@@ -46,11 +46,14 @@ HEADERS = {"User-Agent": "SchoolNossa/1.0 (school comparison platform)"}
 
 # URLs
 today = date.today().strftime("%Y%m%d")
+# GIAS: try the public download page first, then the dated API
+GIAS_DOWNLOAD_URL = "https://ea-edubase-api-prod.azurewebsites.net/edubase/downloads/public/allestablishmentscsv"
 URLS = {
-    "gias": f"https://ea-edubase-api-prod.azurewebsites.net/edubase/edubasealldata{today}.csv",
+    "gias": GIAS_DOWNLOAD_URL,
     "ks4": "https://explore-education-statistics.service.gov.uk/data-catalogue/data-set/5b3d308c-da72-467f-b2ef-ab77d576a455/csv",
     "ks5_va": "https://explore-education-statistics.service.gov.uk/data-catalogue/data-set/ea4d23d7-b46b-4b94-bdc8-93e2d866a2f3/csv",
-    "imd": "https://assets.publishing.service.gov.uk/media/691ded56d140bbbaa59a2a7d/File_7_-_All_IoD2025_Scores__Ranks__Deciles_and_Population_Denominators.csv",
+    # IMD 2019 (stable URL) — 2025 URL may change, fall back to 2019
+    "imd": "https://assets.publishing.service.gov.uk/media/5dc407b440f0b6379a7acc8d/File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv",
     "accidents": "https://data.dft.gov.uk/road-accidents-safety-data/dft-road-casualty-statistics-collision-last-5-years.csv",
 }
 
@@ -69,17 +72,24 @@ def download_file(url: str, output_path: Path, force: bool = False) -> Path:
         output_path.write_bytes(resp.content)
         logger.info(f"  Saved: {output_path.name} ({len(resp.content) / 1024:.0f} KB)")
         return output_path
-    except requests.HTTPError as e:
-        # GIAS URL with today's date may not exist yet — try yesterday
+    except (requests.HTTPError, requests.ConnectionError) as e:
+        # GIAS URL with today's date may not exist — try last 7 days
         if "gias" in str(output_path):
-            yesterday = (date.today().replace(day=date.today().day - 1)).strftime("%Y%m%d")
-            alt_url = f"https://ea-edubase-api-prod.azurewebsites.net/edubase/edubasealldata{yesterday}.csv"
-            logger.info(f"  Retrying with yesterday's date: {yesterday}")
-            resp = requests.get(alt_url, headers=HEADERS, timeout=120)
-            resp.raise_for_status()
-            output_path.write_bytes(resp.content)
-            logger.info(f"  Saved: {output_path.name} ({len(resp.content) / 1024:.0f} KB)")
-            return output_path
+            from datetime import timedelta
+            for days_back in range(1, 8):
+                try_date = (date.today() - timedelta(days=days_back)).strftime("%Y%m%d")
+                alt_url = f"https://ea-edubase-api-prod.azurewebsites.net/edubase/edubasealldata{try_date}.csv"
+                logger.info(f"  Retrying GIAS with date: {try_date}")
+                try:
+                    resp = requests.get(alt_url, headers=HEADERS, timeout=120)
+                    resp.raise_for_status()
+                    output_path.write_bytes(resp.content)
+                    logger.info(f"  Saved: {output_path.name} ({len(resp.content) / 1024:.0f} KB)")
+                    return output_path
+                except Exception:
+                    continue
+            # Last resort: try the GIAS download page scrape approach
+            logger.warning("  All GIAS date URLs failed. Try manual download from get-information-schools.service.gov.uk/Downloads")
         raise
 
 
@@ -112,12 +122,43 @@ def osgb_to_wgs84(easting, northing):
         return lat, lon
 
 
+def build_schools_from_ks4(files: dict) -> pd.DataFrame:
+    """Fallback: Build school list from KS4 performance data when GIAS unavailable."""
+    logger.info("\nGIAS unavailable — building school list from DfE KS4 data...")
+    path = files.get("ks4")
+    if path is None or not path.exists():
+        raise FileNotFoundError("Neither GIAS nor KS4 data available.")
+
+    df = pd.read_csv(path, low_memory=False, dtype=str)
+
+    # Filter to school-level, most recent year
+    if "geographic_level" in df.columns:
+        df = df[df["geographic_level"] == "School"]
+    if "time_period" in df.columns:
+        df = df[df["time_period"] == df["time_period"].max()]
+
+    # Deduplicate to one row per school
+    id_col = "school_urn" if "school_urn" in df.columns else "urn"
+    df = df.drop_duplicates(subset=[id_col])
+
+    result = pd.DataFrame()
+    result["urn"] = df[id_col]
+    result["school_name"] = df.get("school_name", df.get("school_name"))
+    result["local_authority"] = df.get("la_name", df.get("new_la_code"))
+    result["la_code"] = df.get("new_la_code", df.get("old_la_code"))
+
+    # KS4 doesn't have coordinates — we'll need to geocode from postcode later
+    logger.info(f"  Built school list from KS4: {len(result)} schools")
+    return result
+
+
 def load_gias(files: dict) -> pd.DataFrame:
     """Parse GIAS bulk extract into clean format."""
     logger.info("\nParsing GIAS data...")
     path = files.get("gias")
     if path is None or not path.exists():
-        raise FileNotFoundError("GIAS file not found")
+        logger.warning("GIAS file not found — using KS4 fallback")
+        return build_schools_from_ks4(files)
 
     # GIAS uses cp1252 encoding
     df = pd.read_csv(path, encoding="cp1252", low_memory=False, dtype=str)
