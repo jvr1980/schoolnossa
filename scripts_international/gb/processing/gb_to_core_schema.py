@@ -96,7 +96,7 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     # === COUNTRY METADATA ===
     output["country_code"] = "GB"
     output["country_name"] = "United Kingdom"
-    output["city"] = df["town"]
+    output["city"] = df.get("town")
     output["language"] = "en"
     output["currency"] = "GBP"
     output["data_source_version"] = pd.Timestamp.now().strftime("%Y-%m-%d")
@@ -104,20 +104,20 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     # === IDENTITY ===
     output["school_id"] = df["urn"].astype(str)
     output["school_id_national"] = df["urn"].astype(str)
-    output["school_name"] = df["school_name"]
+    output["school_name"] = df.get("school_name")
     output["school_type"] = "secondary"
-    output["school_type_national"] = df["establishment_type"]
-    output["school_subtype"] = df.get("phase", "Secondary")
-    output["ownership"] = df["establishment_type"].map(OWNERSHIP_MAP).fillna("public")
-    output["ownership_national"] = df["establishment_type"]
-    output["street_address"] = df["street"]
-    output["postal_code"] = df["postcode"]
-    output["district"] = df["town"]
-    output["region"] = df["local_authority"]
-    output["phone"] = df["phone"]
-    output["website"] = df["website"]
+    output["school_type_national"] = df.get("establishment_type")
+    output["school_subtype"] = df.get("phase")
+    output["ownership"] = df.get("establishment_type", pd.Series(dtype=str)).map(OWNERSHIP_MAP).fillna("public") if "establishment_type" in df.columns else "public"
+    output["ownership_national"] = df.get("establishment_type")
+    output["street_address"] = df.get("street")
+    output["postal_code"] = df.get("postcode")
+    output["district"] = df.get("town")
+    output["region"] = df.get("local_authority")
+    output["phone"] = df.get("phone")
+    output["website"] = df.get("website")
     output["principal"] = df.get("principal")
-    output["metadata_source"] = "GIAS + DfE"
+    output["metadata_source"] = "GIAS + DfE" if "establishment_type" in df.columns else "DfE KS4 (GIAS unavailable)"
 
     # === GEO ===
     output["latitude"] = pd.to_numeric(df.get("latitude"), errors="coerce")
@@ -163,9 +163,9 @@ def transform(input_path: Path = None) -> pd.DataFrame:
 
     # === GB EXTENSION ===
     output["gb_urn"] = df["urn"].astype(str)
-    output["gb_establishment_type"] = df["establishment_type"]
+    output["gb_establishment_type"] = df.get("establishment_type")
     output["gb_phase"] = df.get("phase")
-    output["gb_local_authority"] = df["local_authority"]
+    output["gb_local_authority"] = df.get("local_authority")
     output["gb_trust_name"] = df.get("trust_name")
     output["gb_lsoa_code"] = df.get("lsoa_code")
     output["gb_ofsted_overall"] = df.get("ofsted_rating")
