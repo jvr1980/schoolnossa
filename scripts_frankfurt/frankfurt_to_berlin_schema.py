@@ -78,6 +78,26 @@ def transform_to_berlin_schema(school_type):
 
     # Step 2: Derived / mapped columns from Schulwegweiser data
 
+    # Student count: map schueler_gesamt → schueler_2024_25 (fill gaps only)
+    if 'schueler_gesamt' in df.columns:
+        schueler_num = pd.to_numeric(df['schueler_gesamt'], errors='coerce')
+        if 'schueler_2024_25' not in df.columns:
+            df['schueler_2024_25'] = schueler_num
+        else:
+            mask = df['schueler_2024_25'].isna()
+            df.loc[mask, 'schueler_2024_25'] = schueler_num[mask]
+
+    # Teacher count: map lehrer_gesamt/lehrer_anzahl → lehrer_2024_25 (fill gaps only)
+    for src_col in ['lehrer_gesamt', 'lehrer_anzahl', 'lehrer_2024_25_raw']:
+        if src_col in df.columns:
+            lehrer_num = pd.to_numeric(df[src_col], errors='coerce')
+            if 'lehrer_2024_25' not in df.columns:
+                df['lehrer_2024_25'] = lehrer_num
+            else:
+                mask = df['lehrer_2024_25'].isna()
+                df.loc[mask, 'lehrer_2024_25'] = lehrer_num[mask]
+            break
+
     # schulart from school_type (Schulwegweiser already has proper Schulform)
     if 'school_type' in df.columns and 'schulart' not in df.columns:
         df['schulart'] = df['school_type']

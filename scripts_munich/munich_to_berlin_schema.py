@@ -62,7 +62,28 @@ def transform_to_berlin_schema(school_type='secondary'):
             applied += 1
     print(f"  Renames: {applied}")
 
-    # Step 2: Crime mappings (German → Berlin schema English)
+    # Step 2a: Student/teacher count passthrough (fill gaps only)
+    for src_col in ['schueler_gesamt', 'schueler_2024_25_raw']:
+        if src_col in df.columns:
+            num = pd.to_numeric(df[src_col], errors='coerce')
+            if 'schueler_2024_25' not in df.columns:
+                df['schueler_2024_25'] = num
+            else:
+                mask = df['schueler_2024_25'].isna()
+                df.loc[mask, 'schueler_2024_25'] = num[mask]
+            break
+
+    for src_col in ['lehrer_gesamt', 'lehrer_anzahl', 'lehrer_2024_25_raw']:
+        if src_col in df.columns:
+            num = pd.to_numeric(df[src_col], errors='coerce')
+            if 'lehrer_2024_25' not in df.columns:
+                df['lehrer_2024_25'] = num
+            else:
+                mask = df['lehrer_2024_25'].isna()
+                df.loc[mask, 'lehrer_2024_25'] = num[mask]
+            break
+
+    # Step 2b: Crime mappings (German → Berlin schema English)
     crime_map = {
         'crime_straftaten_2023': 'crime_total_crimes_2023',
         'crime_strassenraub_2023': 'crime_street_robbery_2023',

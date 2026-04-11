@@ -86,6 +86,27 @@ def transform_to_berlin_schema(school_type):
         df['crime_safety_category'] = df['crime_bezirk_index'].apply(idx_to_cat)
         df['crime_safety_rank'] = df['crime_bezirk_index'].rank(method='dense', ascending=True)
 
+    # Student/teacher count passthrough (fill gaps only)
+    for src_col in ['schueler_gesamt', 'schueler_2024_25_raw']:
+        if src_col in df.columns:
+            num = pd.to_numeric(df[src_col], errors='coerce')
+            if 'schueler_2024_25' not in df.columns:
+                df['schueler_2024_25'] = num
+            else:
+                mask = df['schueler_2024_25'].isna()
+                df.loc[mask, 'schueler_2024_25'] = num[mask]
+            break
+
+    for src_col in ['lehrer_gesamt', 'lehrer_anzahl', 'lehrer_2024_25_raw']:
+        if src_col in df.columns:
+            num = pd.to_numeric(df[src_col], errors='coerce')
+            if 'lehrer_2024_25' not in df.columns:
+                df['lehrer_2024_25'] = num
+            else:
+                mask = df['lehrer_2024_25'].isna()
+                df.loc[mask, 'lehrer_2024_25'] = num[mask]
+            break
+
     # Metadata
     if 'schulart' not in df.columns and 'schulform_name' in df.columns:
         df['schulart'] = df['schulform_name']

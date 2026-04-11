@@ -2,33 +2,45 @@
 """
 Phase 6: Munich Website Metadata & Descriptions Enrichment
 
-Scrapes school websites for metadata and generates bilingual descriptions
-using Gemini API with Google Search grounding.
+Scrapes school websites using Gemini with URL context and Google Search
+grounding to extract metadata (student/teacher counts, languages, etc.)
+and generate bilingual descriptions.
 
 Adapted from NRW pipeline (scripts_nrw/enrichment/nrw_website_metadata_enrichment.py).
 
-Input: data_munich/intermediate/munich_secondary_schools_with_pois.csv
-       (fallback chain: earlier intermediate files)
-Output: data_munich/intermediate/munich_secondary_schools_with_metadata.csv
+Phase A - Metadata extraction:
+- schueler_2024_25: Number of students
+- lehrer_2024_25: Number of teachers
+- sprachen: Languages offered
+- gruendungsjahr: Founding year
+- schulleitung: Principal's name
+- ganztag: Ganztagsschule flag
+- besonderheiten: Special programs (max 150 chars)
+- tuition_monthly_eur: Monthly tuition (private schools)
+- scholarship_available: Scholarship availability
+
+Phase B - Rich description generation:
+- description: English description (250-400 words)
+- description_de: German description (250-400 words)
+- summary_en: Short English summary
+- summary_de: Short German summary
+
+Input: data_munich/intermediate/munich_{type}_schools_with_pois.csv
+Output: data_munich/intermediate/munich_{type}_schools_with_metadata.csv
 
 Author: Munich School Data Pipeline
 Created: 2026-04-01
+Updated: 2026-04-11 — upgraded to NRW pattern with student/teacher extraction
 """
 
-import pandas as pd
-import requests
-import os
 import json
-import time
 import logging
+import os
+import time
 from pathlib import Path
-from datetime import datetime
+from typing import Dict, Optional
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -38,84 +50,254 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent
 DATA_DIR = PROJECT_ROOT / "data_munich"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 CACHE_DIR = DATA_DIR / "cache"
+ENV_FILE = PROJECT_ROOT / ".env"
 
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_AI_API_KEY')
-GEMINI_MODEL = "gemini-2.5-flash"
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+WEBSITE_CACHE_FILE = CACHE_DIR / "website_metadata_cache.json"
+DESCRIPTION_CACHE_FILE = CACHE_DIR / "website_description_cache.json"
 
-HEADERS = {
-    'User-Agent': 'SchoolNossa/1.0 (Munich school data pipeline, educational project)',
-}
+REQUEST_DELAY = 1.5
+SAVE_INTERVAL = 10
+
+METADATA_MODEL = "gemini-2.5-flash"
+DESCRIPTION_MODEL = "gemini-2.5-flash"
+
+# Load .env
+try:
+    from dotenv import load_dotenv
+    load_dotenv(ENV_FILE)
+except ImportError:
+    if ENV_FILE.exists():
+        with open(ENV_FILE) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, _, value = line.partition("=")
+                    key = key.strip()
+                    value = value.strip()
+                    if key and key not in os.environ:
+                        os.environ[key] = value
+
+METADATA_PROMPT = """Durchsuche diese Schulwebsite gründlich und extrahiere folgende Informationen.
+Suche auf der Hauptseite und allen verlinkten Unterseiten (Über uns, Unsere Schule,
+Kollegium, Schulprofil, Zahlen und Fakten, etc.).
+
+Schule: {schulname}
+Schulform: {schulform}
+Trägerschaft: {traegerschaft}
+Adresse: {strasse}, {plz} {stadt}
+
+Extrahiere als JSON:
+- schueler: Gesamtanzahl Schülerinnen und Schüler (int oder null). Suche nach "SuS", "Schülerinnen und Schüler", "ca. XXX Schüler", "lernen hier XXX Kinder"
+- lehrer: Anzahl Lehrkräfte/Kollegium (int oder null). Suche nach "Kollegium", "Lehrerinnen und Lehrer", "Lehrkräfte"
+- sprachen: Angebotene Fremdsprachen als Liste (z.B. ["Englisch", "Französisch"]) oder null
+- gruendungsjahr: Gründungsjahr der Schule (int, z.B. 1920) oder null
+- schulleitung: Name der Schulleitung (string) oder null. Suche nach "Schulleiter/in", "Rektor/in", "Direktor/in"
+- ganztag: Ist es eine Ganztagsschule? (true/false/null). Suche nach "Ganztag", "OGS", "Offene Ganztagsschule", "Betreuung"
+- besonderheiten: Besondere Programme oder Schwerpunkte, max 150 Zeichen (string oder null). Z.B. MINT, Musik, Sport, UNESCO, Inklusion, bilingual, Montessori
+- tuition_monthly_eur: Monatliches Schulgeld in Euro (int oder null). Nur für Privatschulen relevant. Suche nach "Schulgeld", "Beiträge", "Kosten", "Gebühren"
+- scholarship_available: Gibt es Stipendien oder Ermäßigungen? (true/false/null). Suche nach "Stipendium", "Ermäßigung", "einkommensabhängig"
+
+Wenn eine Information nicht eindeutig gefunden werden kann, setze den Wert auf null.
+Antworte NUR mit dem JSON-Objekt, kein Markdown.
+
+URL: {url}"""
+
+DESCRIPTION_PROMPT = """Du bist ein Experte für Schulprofile. Basierend auf der Website dieser Schule
+und allen verfügbaren Informationen, erstelle ein umfassendes Schulprofil.
+
+Schule: {schulname}
+Schulform: {schulform}
+Trägerschaft: {traegerschaft}
+Adresse: {strasse}, {plz} {stadt}
+Website: {url}
+
+Zusätzliche Daten (falls verfügbar):
+- Schüler: {schueler}
+- Lehrkräfte: {lehrer}
+- Sprachen: {sprachen}
+- Gründungsjahr: {gruendungsjahr}
+- Schulleitung: {schulleitung}
+- Besonderheiten: {besonderheiten}
+
+Antworte als JSON mit genau diesen Feldern:
+- description_de: Umfassende deutsche Beschreibung der Schule (250-400 Wörter). Beschreibe Schulprofil,
+  pädagogisches Konzept, besondere Angebote, Ausstattung, Lage und Umgebung, Betreuungsangebote.
+  Schreibe sachlich-informativ, wie für einen Schulführer.
+- description: Englische Übersetzung der deutschen Beschreibung (250-400 Wörter).
+- summary_de: Kurze deutsche Zusammenfassung (2-3 Sätze, max 100 Wörter).
+- summary_en: Kurze englische Zusammenfassung (2-3 Sätze, max 100 Wörter).
+
+Antworte NUR mit dem JSON-Objekt, kein Markdown."""
 
 
-def fetch_website_content(url, timeout=15):
-    """Fetch and extract text content from a school website."""
+def _load_cache(cache_path: Path) -> dict:
+    if cache_path.exists():
+        with open(cache_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def _save_cache(cache: dict, cache_path: Path):
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    with open(cache_path, "w", encoding="utf-8") as f:
+        json.dump(cache, f, indent=2, ensure_ascii=False)
+
+
+def _call_gemini(client, prompt: str, model: str, schulnummer: str, schulname: str,
+                 retry_count: int = 0) -> Optional[Dict]:
+    from google.genai import types
+
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=timeout, allow_redirects=True)
-        resp.raise_for_status()
-        from html.parser import HTMLParser
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[
+                    types.Tool(url_context=types.UrlContext()),
+                    types.Tool(google_search=types.GoogleSearch()),
+                ],
+                temperature=0,
+            ),
+        )
 
-        class TextExtractor(HTMLParser):
-            def __init__(self):
-                super().__init__()
-                self.texts = []
-                self.skip = False
+        text = response.text
+        if not text:
+            if response.candidates and response.candidates[0].content:
+                parts = response.candidates[0].content.parts
+                text_parts = [p.text for p in parts if hasattr(p, 'text') and p.text]
+                text = "\n".join(text_parts) if text_parts else None
+            if not text:
+                logger.warning(f"  Empty response for {schulnummer} ({schulname})")
+                return None
 
-            def handle_starttag(self, tag, attrs):
-                if tag in ('script', 'style', 'nav', 'footer', 'header'):
-                    self.skip = True
+        text = text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 
-            def handle_endtag(self, tag):
-                if tag in ('script', 'style', 'nav', 'footer', 'header'):
-                    self.skip = False
+        return json.loads(text)
 
-            def handle_data(self, data):
-                if not self.skip:
-                    text = data.strip()
-                    if text:
-                        self.texts.append(text)
-
-        parser = TextExtractor()
-        parser.feed(resp.text)
-        return ' '.join(parser.texts)[:5000]
+    except json.JSONDecodeError as e:
+        logger.warning(f"  JSON parse error for {schulnummer} ({schulname}): {e}")
+        return None
     except Exception as e:
-        logger.debug(f"Failed to fetch {url}: {e}")
+        error_msg = str(e)
+        if "URL_RETRIEVAL_STATUS_ERROR" in error_msg:
+            logger.warning(f"  URL unreachable for {schulnummer} ({schulname})")
+        elif ("RATE_LIMIT" in error_msg.upper() or "429" in error_msg) and retry_count < 3:
+            wait_time = 30 * (retry_count + 1)
+            logger.warning(f"  Rate limited — waiting {wait_time}s...")
+            time.sleep(wait_time)
+            return _call_gemini(client, prompt, model, schulnummer, schulname, retry_count + 1)
+        else:
+            logger.warning(f"  Error for {schulnummer} ({schulname}): {e}")
         return None
 
 
-def generate_description(school_name, school_type, website_text, city="München"):
-    """Generate bilingual description using Gemini API."""
-    if not GEMINI_API_KEY:
-        return None, None
+def _apply_metadata(df: pd.DataFrame, idx: int, data: dict) -> bool:
+    """Apply extracted metadata fields to a DataFrame row (fill gaps only)."""
+    any_filled = False
 
-    prompt = f"""Generate a concise school description (2-3 sentences each) in German and English for:
-School: {school_name}
-Type: {school_type}
-City: {city}, Bayern
+    if data.get("schueler") is not None and pd.isna(df.at[idx, "schueler_2024_25"]):
+        try:
+            df.at[idx, "schueler_2024_25"] = int(data["schueler"])
+            any_filled = True
+        except (ValueError, TypeError):
+            pass
 
-Website content excerpt: {website_text[:2000] if website_text else 'No website content available'}
+    if data.get("lehrer") is not None and pd.isna(df.at[idx, "lehrer_2024_25"]):
+        try:
+            df.at[idx, "lehrer_2024_25"] = int(data["lehrer"])
+            any_filled = True
+        except (ValueError, TypeError):
+            pass
 
-Return JSON: {{"description_de": "...", "description_en": "..."}}
-Focus on: academic profile, special programs, languages offered, notable features."""
+    if data.get("sprachen") is not None and pd.isna(df.at[idx, "sprachen"]):
+        if isinstance(data["sprachen"], list):
+            df.at[idx, "sprachen"] = ", ".join(data["sprachen"])
+        else:
+            df.at[idx, "sprachen"] = str(data["sprachen"])
+        any_filled = True
 
-    try:
-        resp = requests.post(
-            f"{GEMINI_URL}?key={GEMINI_API_KEY}",
-            json={"contents": [{"parts": [{"text": prompt}]}],
-                  "generationConfig": {"temperature": 0.3, "maxOutputTokens": 2048}},
-            timeout=30,
-        )
-        resp.raise_for_status()
-        text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-        # Try to parse JSON from response
-        text = text.strip()
-        if text.startswith('```'):
-            text = text.split('\n', 1)[1].rsplit('```', 1)[0]
-        data = json.loads(text)
-        return data.get("description_de"), data.get("description_en")
-    except Exception as e:
-        logger.debug(f"Gemini API error: {e}")
-        return None, None
+    if data.get("gruendungsjahr") is not None and pd.isna(df.at[idx, "gruendungsjahr"]):
+        try:
+            year = int(data["gruendungsjahr"])
+            if 1800 <= year <= 2026:
+                df.at[idx, "gruendungsjahr"] = year
+                any_filled = True
+        except (ValueError, TypeError):
+            pass
+
+    if data.get("schulleitung") is not None and pd.isna(df.at[idx, "leitung"]):
+        df.at[idx, "leitung"] = str(data["schulleitung"])
+        any_filled = True
+
+    if data.get("ganztag") is not None:
+        existing = str(df.at[idx, "besonderheiten"] or "")
+        if existing == "nan":
+            existing = ""
+        ganztag_str = "Ganztagsschule" if data["ganztag"] else ""
+        if ganztag_str and ganztag_str not in existing:
+            df.at[idx, "besonderheiten"] = (
+                f"{existing}, {ganztag_str}".strip(", ") if existing else ganztag_str
+            )
+            any_filled = True
+
+    if data.get("besonderheiten") is not None:
+        existing = str(df.at[idx, "besonderheiten"] or "")
+        if existing == "nan":
+            existing = ""
+        new_besond = str(data["besonderheiten"])
+        if not existing or existing == "Ganztagsschule":
+            df.at[idx, "besonderheiten"] = new_besond
+        elif new_besond not in existing:
+            df.at[idx, "besonderheiten"] = f"{existing}; {new_besond}"[:200]
+        any_filled = True
+
+    if data.get("tuition_monthly_eur") is not None and pd.isna(df.at[idx, "tuition_monthly_eur"]):
+        try:
+            df.at[idx, "tuition_monthly_eur"] = int(data["tuition_monthly_eur"])
+            any_filled = True
+        except (ValueError, TypeError):
+            pass
+
+    if data.get("scholarship_available") is not None and pd.isna(df.at[idx, "scholarship_available"]):
+        df.at[idx, "scholarship_available"] = bool(data["scholarship_available"])
+        any_filled = True
+
+    return any_filled
+
+
+def _apply_descriptions(df: pd.DataFrame, idx: int, desc_data: dict) -> bool:
+    """Apply generated descriptions (fill gaps only)."""
+    any_filled = False
+    for field in ["description", "description_de", "summary_en", "summary_de"]:
+        if desc_data.get(field):
+            val = str(desc_data[field]).strip()
+            if val and val != "null" and pd.isna(df.at[idx, field]):
+                df.at[idx, field] = val
+                any_filled = True
+    return any_filled
+
+
+def _init_gemini_client():
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY not set")
+    from google import genai
+    return genai.Client(api_key=api_key)
+
+
+def _get_school_info(row) -> dict:
+    return {
+        "schulnummer": str(row.get('schulnummer', '')),
+        "schulname": str(row.get('schulname', '')),
+        "url": str(row.get('website', '')).strip(),
+        "strasse": str(row.get('strasse', '')),
+        "plz": str(row.get('plz', '')),
+        "stadt": str(row.get('stadt', row.get('ort', 'München'))),
+        "schulform": str(row.get('schulform_name', row.get('school_type', ''))),
+        "traegerschaft": str(row.get('traegerschaft', '')),
+    }
 
 
 def find_input_file(school_type='secondary'):
@@ -133,80 +315,151 @@ def find_input_file(school_type='secondary'):
 
 
 def enrich_schools(school_type='secondary'):
-    logger.info(f"Enriching {school_type} schools with website metadata...")
+    logger.info(f"Enriching {school_type} schools with website metadata + descriptions...")
 
     input_file = find_input_file(school_type)
     df = pd.read_csv(input_file, dtype=str)
-    logger.info(f"Loaded {len(df)} schools from {input_file.name}")
+    logger.info(f"  Loaded {len(df)} schools from {input_file.name}")
 
-    # Initialize columns
-    for col in ['website_content_summary', 'description_de', 'description_en',
-                'school_programs', 'languages_offered']:
+    # Initialize Gemini client
+    try:
+        client = _init_gemini_client()
+    except (ValueError, ImportError) as e:
+        logger.error(str(e))
+        return df
+
+    # Ensure columns exist
+    for col in ["schueler_2024_25", "lehrer_2024_25", "sprachen", "gruendungsjahr",
+                 "leitung", "besonderheiten", "tuition_monthly_eur", "scholarship_available",
+                 "description", "description_de", "summary_en", "summary_de"]:
         if col not in df.columns:
             df[col] = None
 
-    # Load description cache (separate per school type)
-    desc_cache_file = CACHE_DIR / f"description_cache_{school_type}.json"
-    # Also check legacy cache file for backward compat
-    legacy_cache_file = CACHE_DIR / "description_cache.json"
-    desc_cache = {}
-    if desc_cache_file.exists():
-        with open(desc_cache_file) as f:
-            desc_cache = json.load(f)
-    elif school_type == 'secondary' and legacy_cache_file.exists():
-        with open(legacy_cache_file) as f:
-            desc_cache = json.load(f)
+    # Load caches
+    meta_cache = _load_cache(WEBSITE_CACHE_FILE)
+    desc_cache = _load_cache(DESCRIPTION_CACHE_FILE)
 
-    processed = 0
-    for idx, row in df.iterrows():
-        schulnummer = str(row.get('schulnummer', idx))
-        if schulnummer in desc_cache:
-            cached = desc_cache[schulnummer]
-            df.at[idx, 'description_de'] = cached.get('de')
-            df.at[idx, 'description_en'] = cached.get('en')
-            processed += 1
-            continue
+    # Migrate legacy description cache
+    legacy_cache = CACHE_DIR / f"description_cache_{school_type}.json"
+    if legacy_cache.exists() and not desc_cache:
+        desc_cache = _load_cache(legacy_cache)
 
-        website = str(row.get('website', '')).strip()
-        website_text = None
-        if website and website not in ('nan', 'None', ''):
-            website_text = fetch_website_content(website)
-            if website_text:
-                df.at[idx, 'website_content_summary'] = website_text[:500]
+    stats = {"meta_api": 0, "meta_cache": 0, "desc_api": 0, "desc_cache": 0,
+             "meta_enriched": 0, "desc_enriched": 0, "errors": 0}
 
-        school_name = str(row.get('schulname', '')).strip()
-        school_type_str = str(row.get('school_type', row.get('schulart', ''))).strip()
+    has_website = df["website"].notna() & (df["website"].astype(str).str.strip() != "") & (df["website"].astype(str) != "nan")
+    website_indices = df[has_website].index
+    total = len(website_indices)
+    logger.info(f"  Schools with website: {total}/{len(df)}")
 
-        if not school_name or school_name == 'nan':
-            continue
+    # ===== PHASE A: Metadata extraction =====
+    logger.info("  --- PHASE A: Metadata Extraction ---")
+    for i, idx in enumerate(website_indices):
+        info = _get_school_info(df.loc[idx])
+        snr = info["schulnummer"]
 
-        desc_de, desc_en = generate_description(school_name, school_type_str, website_text)
-        if desc_de:
-            df.at[idx, 'description_de'] = desc_de
-            df.at[idx, 'description_en'] = desc_en
-            desc_cache[schulnummer] = {'de': desc_de, 'en': desc_en}
-            processed += 1
+        if snr in meta_cache:
+            data = meta_cache[snr]
+            stats["meta_cache"] += 1
+        else:
+            prompt = METADATA_PROMPT.format(
+                schulname=info["schulname"], schulform=info["schulform"],
+                traegerschaft=info["traegerschaft"], strasse=info["strasse"],
+                plz=info["plz"], stadt=info["stadt"], url=info["url"],
+            )
+            data = _call_gemini(client, prompt, METADATA_MODEL, snr, info["schulname"])
+            if data:
+                meta_cache[snr] = data
+            else:
+                stats["errors"] += 1
+            stats["meta_api"] += 1
+            time.sleep(REQUEST_DELAY)
 
-        time.sleep(0.5)
+            if stats["meta_api"] % SAVE_INTERVAL == 0:
+                _save_cache(meta_cache, WEBSITE_CACHE_FILE)
+                logger.info(f"  Metadata progress: {i + 1}/{total} "
+                            f"(API: {stats['meta_api']}, cache: {stats['meta_cache']})")
 
-        if processed % 20 == 0:
-            CACHE_DIR.mkdir(parents=True, exist_ok=True)
-            with open(desc_cache_file, 'w') as f:
-                json.dump(desc_cache, f, ensure_ascii=False)
-            logger.info(f"  Processed {processed}/{len(df)} descriptions")
+        if data and _apply_metadata(df, idx, data):
+            stats["meta_enriched"] += 1
 
-    # Save cache
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    with open(desc_cache_file, 'w') as f:
-        json.dump(desc_cache, f, ensure_ascii=False)
+    _save_cache(meta_cache, WEBSITE_CACHE_FILE)
+    logger.info(f"  Metadata phase complete: {stats['meta_enriched']} enriched, "
+                f"{stats['meta_api']} API calls, {stats['meta_cache']} cache hits")
 
+    # ===== PHASE B: Description generation =====
+    logger.info("  --- PHASE B: Description Generation ---")
+    for i, idx in enumerate(website_indices):
+        info = _get_school_info(df.loc[idx])
+        snr = info["schulnummer"]
+
+        if snr in desc_cache:
+            desc_data = desc_cache[snr]
+            stats["desc_cache"] += 1
+        else:
+            meta = meta_cache.get(snr, {})
+            prompt = DESCRIPTION_PROMPT.format(
+                schulname=info["schulname"], schulform=info["schulform"],
+                traegerschaft=info["traegerschaft"], strasse=info["strasse"],
+                plz=info["plz"], stadt=info["stadt"], url=info["url"],
+                schueler=meta.get("schueler", "unbekannt"),
+                lehrer=meta.get("lehrer", "unbekannt"),
+                sprachen=meta.get("sprachen", "unbekannt"),
+                gruendungsjahr=meta.get("gruendungsjahr", "unbekannt"),
+                schulleitung=meta.get("schulleitung", "unbekannt"),
+                besonderheiten=meta.get("besonderheiten", "unbekannt"),
+            )
+            desc_data = _call_gemini(client, prompt, DESCRIPTION_MODEL, snr, info["schulname"])
+            if desc_data:
+                desc_cache[snr] = desc_data
+            else:
+                stats["errors"] += 1
+            stats["desc_api"] += 1
+            time.sleep(REQUEST_DELAY)
+
+            if stats["desc_api"] % SAVE_INTERVAL == 0:
+                _save_cache(desc_cache, DESCRIPTION_CACHE_FILE)
+                logger.info(f"  Description progress: {i + 1}/{total} "
+                            f"(API: {stats['desc_api']}, cache: {stats['desc_cache']})")
+
+        if desc_data and _apply_descriptions(df, idx, desc_data):
+            stats["desc_enriched"] += 1
+
+    _save_cache(desc_cache, DESCRIPTION_CACHE_FILE)
+
+    # Save output
     output_path = INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_metadata.csv"
     df.to_csv(output_path, index=False, encoding='utf-8-sig')
-    logger.info(f"Saved: {output_path}")
+    logger.info(f"  Saved: {output_path}")
 
-    desc_count = df['description_de'].notna().sum()
-    print(f"\nWebsite metadata enrichment ({school_type}): {desc_count}/{len(df)} schools with descriptions")
+    # Summary
+    print(f"\n{'=' * 70}")
+    print(f"MUNICH WEBSITE METADATA ENRICHMENT ({school_type.upper()}) - COMPLETE")
+    print(f"{'=' * 70}")
+    print(f"  Total schools: {len(df)}")
+    print(f"  With website: {total}")
+    print(f"  Metadata: {stats['meta_api']} API / {stats['meta_cache']} cache / {stats['meta_enriched']} enriched")
+    print(f"  Descriptions: {stats['desc_api']} API / {stats['desc_cache']} cache / {stats['desc_enriched']} enriched")
+    print(f"  Errors: {stats['errors']}")
+    print()
 
+    for field, col in [
+        ("Schüler", "schueler_2024_25"), ("Lehrer", "lehrer_2024_25"),
+        ("Sprachen", "sprachen"), ("Gründungsjahr", "gruendungsjahr"),
+        ("Schulleitung", "leitung"), ("Besonderheiten", "besonderheiten"),
+        ("Description (EN)", "description"), ("Description (DE)", "description_de"),
+        ("Summary (EN)", "summary_en"), ("Summary (DE)", "summary_de"),
+        ("Tuition", "tuition_monthly_eur"),
+    ]:
+        if col in df.columns:
+            filled = df[col].notna().sum()
+            if df[col].dtype == object:
+                filled = (df[col].notna() & (df[col].astype(str).str.strip() != "")
+                          & (df[col].astype(str) != "nan")).sum()
+            pct = filled / len(df) * 100
+            print(f"  {field}: {filled}/{len(df)} ({pct:.1f}%)")
+
+    print(f"{'=' * 70}")
     return df
 
 
@@ -214,12 +467,24 @@ def main(school_type='secondary'):
     logger.info("=" * 60)
     logger.info(f"Phase 6: Munich Website Metadata & Descriptions ({school_type})")
     logger.info("=" * 60)
-    return enrich_schools(school_type)
+
+    for st in ["secondary", "primary"]:
+        try:
+            enrich_schools(st)
+        except FileNotFoundError as e:
+            logger.warning(f"  Skipping {st}: {e}")
+        except Exception as e:
+            logger.error(f"  Error enriching {st}: {e}")
+            import traceback
+            traceback.print_exc()
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--school-type", default="secondary", choices=["primary", "secondary"])
+    parser.add_argument("--school-type", default="all", choices=["primary", "secondary", "all"])
     args = parser.parse_args()
-    main(args.school_type)
+    if args.school_type == "all":
+        main()
+    else:
+        main(args.school_type)

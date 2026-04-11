@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-Phase 6: Dresden Website Metadata & Description Enrichment
+Phase 6: Hamburg Website Metadata & Description Enrichment
 ============================================================
 
 Scrapes school websites using Gemini with URL context and Google Search
-grounding to extract metadata (student/teacher counts, languages, etc.)
-and generate bilingual descriptions.
+grounding to extract metadata (especially teacher counts — Hamburg source
+CSV has 97% student data but 0% teachers) and generate descriptions.
 
-Adapted from Leipzig pipeline (same Sachsen Schuldatenbank data model).
+IMPORTANT: Fill gaps only — never overwrite existing values from the
+Hamburg CSV source data (especially schueler_2024_25).
 
 Phase A - Metadata extraction:
     schueler_2024_25, lehrer_2024_25, sprachen, gruendungsjahr,
@@ -18,14 +19,13 @@ Phase B - Rich description generation:
     description (EN), description_de (DE),
     summary_en, summary_de
 
-Results cached per schulnummer to data_dresden/cache/website_metadata/
+Results cached per schulnummer.
 
-Input: data_dresden/intermediate/dresden_schools_with_poi.csv (fallback chain)
-Output: data_dresden/intermediate/dresden_schools_with_website_metadata.csv
+Input: data_hamburg/intermediate/hamburg_{type}_schools_with_pois.csv (fallback chain)
+Output: data_hamburg/intermediate/hamburg_{type}_schools_with_metadata.csv
 
-Author: Dresden School Data Pipeline
-Created: 2026-04-07
-Updated: 2026-04-11 — full implementation from Leipzig template
+Author: Hamburg School Data Pipeline
+Created: 2026-04-11
 """
 
 import json
@@ -37,15 +37,12 @@ from typing import Dict, Optional
 
 import pandas as pd
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
-DATA_DIR = PROJECT_ROOT / "data_dresden"
+DATA_DIR = PROJECT_ROOT / "data_hamburg"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 RAW_DIR = DATA_DIR / "raw"
 CACHE_DIR = DATA_DIR / "cache" / "website_metadata"
@@ -59,24 +56,6 @@ SAVE_INTERVAL = 10
 
 METADATA_MODEL = "gemini-2.5-flash"
 DESCRIPTION_MODEL = "gemini-2.5-flash"
-
-# Fallback input chain (most enriched first)
-INPUT_FALLBACKS_SECONDARY = [
-    INTERMEDIATE_DIR / "dresden_secondary_schools_with_pois.csv",
-    INTERMEDIATE_DIR / "dresden_secondary_schools_with_crime.csv",
-    INTERMEDIATE_DIR / "dresden_secondary_schools_with_transit.csv",
-    INTERMEDIATE_DIR / "dresden_schools_with_poi.csv",
-    INTERMEDIATE_DIR / "dresden_schools_with_crime.csv",
-    INTERMEDIATE_DIR / "dresden_schools_with_transit.csv",
-    RAW_DIR / "dresden_schools_raw.csv",
-]
-
-INPUT_FALLBACKS_PRIMARY = [
-    INTERMEDIATE_DIR / "dresden_primary_schools_with_pois.csv",
-    INTERMEDIATE_DIR / "dresden_primary_schools_with_crime.csv",
-    INTERMEDIATE_DIR / "dresden_primary_schools_with_transit.csv",
-    RAW_DIR / "dresden_primary_schools_raw.csv",
-]
 
 # Load .env
 try:
@@ -99,17 +78,17 @@ Suche auf der Hauptseite und allen verlinkten Unterseiten (Über uns, Unsere Sch
 Kollegium, Schulprofil, Zahlen und Fakten, etc.).
 
 Schule: {schulname}
-Schulform: {schultyp}
+Schulform: {schulform}
 Trägerschaft: {traegerschaft}
 Adresse: {strasse}, {plz} {stadt}
 
 Extrahiere als JSON:
 - schueler: Gesamtanzahl Schülerinnen und Schüler (int oder null). Suche nach "SuS", "Schülerinnen und Schüler", "ca. XXX Schüler", "lernen hier XXX Kinder"
-- lehrer: Anzahl Lehrkräfte/Kollegium (int oder null). Suche nach "Kollegium", "Lehrerinnen und Lehrer", "Lehrkräfte"
+- lehrer: Anzahl Lehrkräfte/Kollegium (int oder null). Suche nach "Kollegium", "Lehrerinnen und Lehrer", "Lehrkräfte", "Pädagogen"
 - sprachen: Angebotene Fremdsprachen als Liste (z.B. ["Englisch", "Französisch"]) oder null
 - gruendungsjahr: Gründungsjahr der Schule (int, z.B. 1920) oder null
 - schulleitung: Name der Schulleitung (string) oder null. Suche nach "Schulleiter/in", "Rektor/in", "Direktor/in"
-- ganztag: Ist es eine Ganztagsschule? (true/false/null). Suche nach "Ganztag", "GTA", "Ganztagsangebote", "Hort", "Betreuung"
+- ganztag: Ist es eine Ganztagsschule? (true/false/null). Suche nach "Ganztag", "GBS", "GTS", "Betreuung"
 - besonderheiten: Besondere Programme oder Schwerpunkte, max 150 Zeichen (string oder null). Z.B. MINT, Musik, Sport, UNESCO, Inklusion, bilingual, Montessori
 - tuition_monthly_eur: Monatliches Schulgeld in Euro (int oder null). Nur für Privatschulen relevant.
 - scholarship_available: Gibt es Stipendien oder Ermäßigungen? (true/false/null).
@@ -123,7 +102,7 @@ DESCRIPTION_PROMPT = """Du bist ein Experte für Schulprofile. Basierend auf der
 und allen verfügbaren Informationen, erstelle ein umfassendes Schulprofil.
 
 Schule: {schulname}
-Schulform: {schultyp}
+Schulform: {schulform}
 Trägerschaft: {traegerschaft}
 Adresse: {strasse}, {plz} {stadt}
 Website: {url}
@@ -209,7 +188,7 @@ def _call_gemini(client, prompt: str, model: str, schulnummer: str, schulname: s
 
 
 def _apply_metadata(df: pd.DataFrame, idx: int, data: dict) -> bool:
-    """Apply extracted metadata fields (fill gaps only)."""
+    """Apply extracted metadata fields (fill gaps only — never overwrite)."""
     any_filled = False
 
     if data.get("schueler") is not None and pd.isna(df.at[idx, "schueler_2024_25"]):
@@ -311,29 +290,36 @@ def _get_school_info(row) -> dict:
     return {
         "schulnummer": snr,
         "schulname": str(row.get("schulname", "")),
-        "url": str(row.get("website", row.get("homepage", ""))).strip(),
+        "url": str(row.get("website", "")).strip(),
         "strasse": str(row.get("strasse", "")),
         "plz": str(row.get("plz", "")),
-        "stadt": str(row.get("stadt", row.get("ort", "Dresden"))),
-        "schultyp": str(row.get("schultyp", row.get("school_type", row.get("school_type_name", "")))),
+        "stadt": str(row.get("stadt", "Hamburg")),
+        "schulform": str(row.get("schulform", row.get("school_type", ""))),
         "traegerschaft": str(row.get("traegerschaft", "")),
     }
 
 
+def _find_input(school_type: str) -> Path:
+    candidates = [
+        INTERMEDIATE_DIR / f"hamburg_{school_type}_schools_with_pois.csv",
+        INTERMEDIATE_DIR / f"hamburg_{school_type}_schools_with_crime.csv",
+        INTERMEDIATE_DIR / f"hamburg_{school_type}_schools_with_transit.csv",
+        INTERMEDIATE_DIR / f"hamburg_{school_type}_schools_combined.csv",
+        INTERMEDIATE_DIR / f"hamburg_{school_type}_schools.csv",
+        RAW_DIR / f"hamburg_{school_type}_schools_raw.csv",
+        RAW_DIR / "hamburg_schools_raw.csv",
+    ]
+    for f in candidates:
+        if f.exists():
+            return f
+    raise FileNotFoundError(f"No input file found for Hamburg {school_type}")
+
+
 def enrich_schools(school_type: str = "secondary") -> pd.DataFrame:
-    """Enrich Dresden schools with metadata and descriptions from school websites."""
-    logger.info(f"Enriching Dresden {school_type} schools with website metadata + descriptions...")
+    """Enrich Hamburg schools with metadata and descriptions from school websites."""
+    logger.info(f"Enriching Hamburg {school_type} schools with website metadata...")
 
-    fallbacks = INPUT_FALLBACKS_PRIMARY if school_type == "primary" else INPUT_FALLBACKS_SECONDARY
-    input_file = None
-    for candidate in fallbacks:
-        if candidate.exists():
-            input_file = candidate
-            break
-
-    if not input_file:
-        raise FileNotFoundError(f"No input file found for Dresden {school_type}")
-
+    input_file = _find_input(school_type)
     df = pd.read_csv(input_file)
     logger.info(f"  Loaded {len(df)} schools from {input_file.name}")
 
@@ -349,28 +335,15 @@ def enrich_schools(school_type: str = "secondary") -> pd.DataFrame:
         if col not in df.columns:
             df[col] = None
 
-    # Use school_type-specific cache keys
     meta_cache_file = CACHE_DIR / f"metadata_cache_{school_type}.json"
     desc_cache_file = CACHE_DIR / f"description_cache_{school_type}.json"
     meta_cache = _load_cache(meta_cache_file)
     desc_cache = _load_cache(desc_cache_file)
 
-    # Also check shared cache
-    if not meta_cache and WEBSITE_CACHE.exists():
-        meta_cache = _load_cache(WEBSITE_CACHE)
-    if not desc_cache and DESCRIPTION_CACHE.exists():
-        desc_cache = _load_cache(DESCRIPTION_CACHE)
-
     stats = {"meta_api": 0, "meta_cache": 0, "desc_api": 0, "desc_cache": 0,
              "meta_enriched": 0, "desc_enriched": 0, "errors": 0}
 
-    # Determine website column
-    url_col = "website" if "website" in df.columns else "homepage"
-    if url_col not in df.columns:
-        logger.warning(f"  No website/homepage column found — skipping")
-        return df
-
-    has_website = df[url_col].notna() & (df[url_col].astype(str).str.strip() != "") & (df[url_col].astype(str) != "nan")
+    has_website = df["website"].notna() & (df["website"].astype(str).str.strip() != "") & (df["website"].astype(str) != "nan")
     website_indices = df[has_website].index
     total = len(website_indices)
     logger.info(f"  Schools with website: {total}/{len(df)}")
@@ -386,7 +359,7 @@ def enrich_schools(school_type: str = "secondary") -> pd.DataFrame:
             stats["meta_cache"] += 1
         else:
             prompt = METADATA_PROMPT.format(
-                schulname=info["schulname"], schultyp=info["schultyp"],
+                schulname=info["schulname"], schulform=info["schulform"],
                 traegerschaft=info["traegerschaft"], strasse=info["strasse"],
                 plz=info["plz"], stadt=info["stadt"], url=info["url"],
             )
@@ -419,7 +392,7 @@ def enrich_schools(school_type: str = "secondary") -> pd.DataFrame:
         else:
             meta = meta_cache.get(snr, {})
             prompt = DESCRIPTION_PROMPT.format(
-                schulname=info["schulname"], schultyp=info["schultyp"],
+                schulname=info["schulname"], schulform=info["schulform"],
                 traegerschaft=info["traegerschaft"], strasse=info["strasse"],
                 plz=info["plz"], stadt=info["stadt"], url=info["url"],
                 schueler=meta.get("schueler", "unbekannt"),
@@ -446,16 +419,12 @@ def enrich_schools(school_type: str = "secondary") -> pd.DataFrame:
 
     _save_cache(desc_cache, desc_cache_file)
 
-    output_file = INTERMEDIATE_DIR / f"dresden_{school_type}_schools_with_website_metadata.csv"
-    # Also keep backward-compat name for secondary
-    if school_type == "secondary":
-        alt_output = INTERMEDIATE_DIR / "dresden_schools_with_website_metadata.csv"
-        df.to_csv(alt_output, index=False, encoding="utf-8-sig")
+    output_file = INTERMEDIATE_DIR / f"hamburg_{school_type}_schools_with_metadata.csv"
     df.to_csv(output_file, index=False, encoding="utf-8-sig")
     logger.info(f"  Saved: {output_file}")
 
     print(f"\n{'=' * 70}")
-    print(f"DRESDEN WEBSITE METADATA ENRICHMENT ({school_type.upper()}) - COMPLETE")
+    print(f"HAMBURG WEBSITE METADATA ENRICHMENT ({school_type.upper()}) - COMPLETE")
     print(f"{'=' * 70}")
     print(f"  Total: {len(df)} | Website: {total} | Enriched: {stats['meta_enriched']}")
     print(f"  Meta API: {stats['meta_api']} | Desc API: {stats['desc_api']} | Errors: {stats['errors']}")
@@ -471,7 +440,7 @@ def enrich_schools(school_type: str = "secondary") -> pd.DataFrame:
 
 def main():
     logger.info("=" * 60)
-    logger.info("Starting Dresden Website Metadata Enrichment")
+    logger.info("Starting Hamburg Website Metadata Enrichment")
     logger.info("=" * 60)
 
     for school_type in ["secondary", "primary"]:
