@@ -73,56 +73,44 @@ def run_phase_2():
 
 def run_phase_3():
     """Phase 3: Traffic/road safety enrichment (BRON accident data)."""
-    raise NotImplementedError(
-        "NL traffic enrichment not yet implemented. "
-        "Data source: BRON accident register via data.overheid.nl"
-    )
+    from scripts_international.nl.enrichment.nl_traffic_enrichment import main
+    main()
 
 
 def run_phase_4():
     """Phase 4: Transit enrichment via OVapi GTFS."""
-    raise NotImplementedError(
-        "NL transit enrichment not yet implemented. "
-        "Data source: OVapi GTFS at gtfs.ovapi.nl"
-    )
+    from scripts_international.nl.enrichment.nl_transit_enrichment import main
+    main()
 
 
 def run_phase_5():
     """Phase 5: Crime enrichment via CBS OData API."""
-    raise NotImplementedError(
-        "NL crime enrichment not yet implemented. "
-        "Data source: CBS table 83648NED via cbsodata package"
-    )
+    from scripts_international.nl.enrichment.nl_crime_enrichment import main
+    main()
 
 
 def run_phase_6():
-    """Phase 6: POI enrichment (CBS Nabijheidsstatistiek + Google Places)."""
-    raise NotImplementedError(
-        "NL POI enrichment not yet implemented. "
-        "Data source: CBS table 85560NED + Google Places API"
-    )
+    """Phase 6: POI enrichment (Google Places API)."""
+    from scripts_international.nl.enrichment.nl_poi_enrichment import main
+    main()
 
 
 def run_phase_7():
     """Phase 7: Demographics enrichment via CBS Kerncijfers."""
-    raise NotImplementedError(
-        "NL demographics enrichment not yet implemented. "
-        "Data source: CBS Kerncijfers Wijken en Buurten (table 86165NED)"
-    )
+    from scripts_international.nl.enrichment.nl_demographics_enrichment import main
+    main()
 
 
 def run_phase_8():
-    """Phase 8: Website metadata + school descriptions."""
-    raise NotImplementedError(
-        "NL descriptions not yet implemented. "
-        "Can reuse scripts_shared/generation/school_description_pipeline.py"
-    )
+    """Phase 8: Data combination + schema transform + Berlin output."""
+    from scripts_international.nl.processing.nl_combine_and_finalize import main
+    main()
 
 
 def run_phase_9():
-    """Phase 9: Transform to core + NL extension schema."""
-    from scripts_international.nl.processing.nl_to_core_schema import main
-    main()
+    """Phase 9: Berlin schema transform (standalone, if phase 8 wasn't run)."""
+    from scripts_international.international_to_berlin_schema import transform_file
+    transform_file("NL")
 
 
 # =============================================================================
