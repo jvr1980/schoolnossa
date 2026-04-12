@@ -44,12 +44,12 @@ from scripts_shared.schema.country_extensions import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# Model config — Gemini for web research + descriptions, GPT for precision extraction
-# Pass 0: Gemini 2.5 Flash + Google Search grounding (web research)
-# Pass 1: Gemini 2.5 Flash (description generation — fast, cheap, good quality)
+# Model config — Gemini Flash for bulk work, GPT for precision extraction
+# Pass 0: Gemini Flash (latest) + Google Search grounding (web research)
+# Pass 1: Gemini Flash (latest) (description generation — fast, cheap)
 # Pass 2: GPT 5.4 mini with reasoning (structured extraction — needs precision)
 DEFAULT_MODELS = {
-    "gemini": "gemini-2.5-flash",         # Pass 0 + Pass 1
+    "gemini": "gemini-flash-latest",      # Pass 0 + Pass 1 (resolves to newest flash)
     "openai": "gpt-5.4-mini",            # Pass 2: structured data extraction
 }
 
