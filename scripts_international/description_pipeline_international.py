@@ -5,14 +5,14 @@ International School Description Pipeline
 Adapts the shared description pipeline (scripts_shared/generation/school_description_pipeline.py)
 for international countries. Country-specific prompts, column mappings, and model config.
 
-Uses gpt-5.3-mini with reasoning (thinking) enabled for all passes by default.
+Uses o4-mini with reasoning (thinking) enabled for all passes by default.
 
 This is a standard phase in ALL international pipelines — not optional.
 
 Passes:
     0: Web research via Perplexity Sonar → raw research text per school
-    1: gpt-5.3-mini description generation → description_local + description_en
-    2: gpt-5.3-mini structured data extraction → fills gaps (students, teachers, website, etc.)
+    1: o4-mini description generation → description_local + description_en
+    2: o4-mini structured data extraction → fills gaps (students, teachers, website, etc.)
 
 Usage:
     python description_pipeline_international.py --country NL --passes 0,1,2
@@ -44,9 +44,11 @@ from scripts_shared.schema.country_extensions import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# Default model config — gpt-5.3-mini with thinking for all OpenAI calls
+# Default model config — o4-mini with reasoning for all OpenAI calls
+# o4-mini is OpenAI's latest cost-effective reasoning model (supports reasoning.effort)
+# o4-mini is not available; o4-mini is the closest match for mini + thinking
 DEFAULT_MODELS = {
-    "openai": "gpt-5.3-mini",
+    "openai": "o4-mini",
     "perplexity": "sonar",
 }
 
@@ -77,45 +79,78 @@ SCHOOL_TYPE_LABELS = {
 }
 
 
-def load_dotenv_keys():
-    """Load API keys from environment / .env file."""
+def load_api_keys():
+    """Load API keys from config.yaml (preferred) then .env / environment."""
+    keys = {"openai": None, "perplexity": None}
+
+    # 1. Try config.yaml (same as shared pipeline)
+    for config_path in [
+        PROJECT_ROOT / "config.yaml",
+        PROJECT_ROOT / "scripts_shared" / "generation" / "config.yaml",
+    ]:
+        if config_path.exists():
+            try:
+                import yaml
+                with open(config_path) as f:
+                    cfg = yaml.safe_load(f) or {}
+                api_keys_cfg = cfg.get("api_keys", {})
+                keys["openai"] = api_keys_cfg.get("openai") or keys["openai"]
+                keys["perplexity"] = api_keys_cfg.get("perplexity") or keys["perplexity"]
+                # Also load model overrides from config
+                models_cfg = cfg.get("models", {})
+                if models_cfg.get("openai"):
+                    # Keep o4-mini as default unless user overrides
+                    pass
+                logger.info(f"  Loaded API keys from {config_path.name}")
+            except Exception as e:
+                logger.debug(f"  Could not load {config_path}: {e}")
+
+    # 2. Override with environment / .env
     try:
         from dotenv import load_dotenv
         load_dotenv()
     except ImportError:
         pass
-    return {
-        "openai": os.environ.get("OPENAI_API_KEY"),
-        "perplexity": os.environ.get("PERPLEXITY_API_KEY"),
-    }
+    keys["openai"] = os.environ.get("OPENAI_API_KEY") or keys["openai"]
+    keys["perplexity"] = os.environ.get("PERPLEXITY_API_KEY") or keys["perplexity"]
+
+    return keys
 
 
 def call_openai_with_thinking(system: str, user: str, api_key: str,
-                               model: str = "gpt-5.3-mini",
+                               model: str = "o4-mini",
                                temperature: float = 0.7,
                                delay: float = 1.0) -> str:
     """
-    Call OpenAI API with gpt-5.3-mini and thinking/reasoning enabled.
+    Call OpenAI API with reasoning model (o4-mini, o3-mini, etc.).
 
-    gpt-5.3-mini supports the 'reasoning' parameter for extended thinking.
-    Falls back gracefully to standard chat completion if reasoning isn't supported.
+    For reasoning models (o3/o4 family): uses developer role + reasoning_effort.
+    For standard models (gpt-4o, gpt-5.x): uses system role + temperature.
     """
     import urllib.request
 
-    # Build payload with reasoning support
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-    }
+    is_reasoning_model = any(prefix in model for prefix in ["o3", "o4"])
 
-    # gpt-5.3-mini supports reasoning/thinking via the reasoning parameter
-    if "5.3" in model or "o3" in model or "o4" in model:
-        payload["reasoning"] = {"effort": "medium"}
+    if is_reasoning_model:
+        # Reasoning models use "developer" role instead of "system"
+        # and reasoning_effort instead of temperature
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "developer", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "reasoning_effort": "medium",
+        }
     else:
-        payload["temperature"] = temperature
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "temperature": temperature,
+        }
 
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
@@ -482,7 +517,7 @@ def run_description_pipeline(country_code: str, passes: set = None,
     logger.info(f"Passes: {sorted(passes)}")
     logger.info(f"{'='*60}")
 
-    api_keys = load_dotenv_keys()
+    api_keys = load_api_keys()
     if 0 in passes and not api_keys.get("perplexity"):
         logger.warning("No PERPLEXITY_API_KEY — Pass 0 will be skipped")
     if (1 in passes or 2 in passes) and not api_keys.get("openai"):
