@@ -107,26 +107,30 @@ def run_phase_6():
 
 
 def run_phase_7():
-    """Phase 7: Website metadata + school descriptions."""
-    # Can reuse scripts_shared/generation/school_description_pipeline.py
+    """Phase 7: Demographics enrichment."""
     raise NotImplementedError(
-        f"Implement website/description generation for {COUNTRY_NAME}. "
-        "Consider reusing scripts_shared/generation/school_description_pipeline.py"
+        f"Implement demographics enrichment for {COUNTRY_NAME}."
     )
 
 
-def run_phase_8(skip_embeddings: bool = False):
-    """Phase 8: Combine all enrichments + generate embeddings."""
-    raise NotImplementedError(
-        f"Implement data combination for {COUNTRY_NAME}. "
-        "Merge all enrichment CSVs into final master table, generate embeddings."
-    )
+def run_phase_8():
+    """Phase 8: School descriptions + structured data extraction (gpt-5.3-mini with thinking).
+
+    This is a DEFAULT phase for all international pipelines.
+    Uses the shared international description pipeline with:
+    - Pass 0: Perplexity Sonar web research
+    - Pass 1: gpt-5.3-mini bilingual description generation
+    - Pass 2: gpt-5.3-mini structured data extraction (fills gaps in students, teachers, etc.)
+    """
+    from scripts_international.description_pipeline_international import run_description_pipeline
+    run_description_pipeline(COUNTRY_CODE, passes={0, 1, 2})
 
 
 def run_phase_9():
-    """Phase 9: Transform to Berlin schema for frontend compatibility."""
-    from scripts_international.international_to_berlin_schema import transform_file
-    transform_file(COUNTRY_CODE)
+    """Phase 9: Data combination + schema transform + Berlin output."""
+    raise NotImplementedError(
+        f"Implement data combination + schema transform for {COUNTRY_NAME}."
+    )
 
 
 # =============================================================================
@@ -140,9 +144,9 @@ AVAILABLE_PHASES = {
     4: ("Crime Enrichment", run_phase_4),
     5: ("POI Enrichment", run_phase_5),
     6: ("Demographics Enrichment", run_phase_6),
-    7: ("Website & Descriptions", run_phase_7),
-    8: ("Data Combination & Embeddings", lambda: run_phase_8(skip_embeddings="--skip-embeddings" in sys.argv)),
-    9: ("Berlin Schema Transform", run_phase_9),
+    7: ("Demographics Enrichment", run_phase_7),
+    8: ("Descriptions + Data Extraction (gpt-5.3-mini)", run_phase_8),
+    9: ("Schema Transform + Berlin Output", run_phase_9),
 }
 
 

@@ -71,7 +71,6 @@ def run_phase_5():
 
 def run_phase_6():
     """Phase 6: POI enrichment (Google Places)."""
-    # Reuse NL pattern — skip if no API key
     logger.info("POI enrichment — requires GOOGLE_PLACES_API_KEY in .env")
     import os
     from dotenv import load_dotenv
@@ -83,7 +82,13 @@ def run_phase_6():
 
 
 def run_phase_8():
-    """Phase 8: Data combination + schema transform."""
+    """Phase 8: School descriptions + structured data extraction (gpt-5.3-mini with thinking)."""
+    from scripts_international.description_pipeline_international import run_description_pipeline
+    run_description_pipeline("GB", passes={0, 1, 2})
+
+
+def run_phase_9():
+    """Phase 9: Data combination + schema transform + Berlin output."""
     from scripts_international.gb.processing.gb_to_core_schema import main
     main()
 
@@ -94,7 +99,8 @@ AVAILABLE_PHASES = {
     4: ("Transit Enrichment (NaPTAN)", run_phase_4),
     5: ("Crime Enrichment (police.uk)", run_phase_5),
     6: ("POI Enrichment (Google Places)", run_phase_6),
-    8: ("Schema Transform + Berlin Output", run_phase_8),
+    8: ("Descriptions + Data Extraction (gpt-5.3-mini)", run_phase_8),
+    9: ("Schema Transform + Berlin Output", run_phase_9),
 }
 
 

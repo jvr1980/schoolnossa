@@ -102,15 +102,15 @@ def run_phase_7():
 
 
 def run_phase_8():
-    """Phase 8: Data combination + schema transform + Berlin output."""
-    from scripts_international.nl.processing.nl_combine_and_finalize import main
-    main()
+    """Phase 8: School descriptions + structured data extraction (gpt-5.3-mini with thinking)."""
+    from scripts_international.description_pipeline_international import run_description_pipeline
+    run_description_pipeline("NL", passes={0, 1, 2})
 
 
 def run_phase_9():
-    """Phase 9: Berlin schema transform (standalone, if phase 8 wasn't run)."""
-    from scripts_international.international_to_berlin_schema import transform_file
-    transform_file("NL")
+    """Phase 9: Data combination + schema transform + Berlin output."""
+    from scripts_international.nl.processing.nl_combine_and_finalize import main
+    main()
 
 
 # =============================================================================
@@ -125,8 +125,8 @@ AVAILABLE_PHASES = {
     5: ("Crime Enrichment", run_phase_5),
     6: ("POI Enrichment", run_phase_6),
     7: ("Demographics Enrichment", run_phase_7),
-    8: ("Website & Descriptions", run_phase_8),
-    9: ("Schema Transform", run_phase_9),
+    8: ("Descriptions + Data Extraction (gpt-5.3-mini)", run_phase_8),
+    9: ("Schema Transform + Berlin Output", run_phase_9),
 }
 
 
