@@ -44,11 +44,11 @@ from scripts_shared.schema.country_extensions import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# Default model config — o4-mini with reasoning for all OpenAI calls
-# o4-mini is OpenAI's latest cost-effective reasoning model (supports reasoning.effort)
-# o4-mini is not available; o4-mini is the closest match for mini + thinking
+# Default model config — gpt-5.4-mini with reasoning for all OpenAI calls
+# Latest mini model with thinking support (reasoning_effort=medium, ~33 reasoning tokens)
+# gpt-5.3-mini doesn't exist in API; gpt-5.4-mini is the latest available mini
 DEFAULT_MODELS = {
-    "openai": "o4-mini",
+    "openai": "gpt-5.4-mini",
     "perplexity": "sonar",
 }
 
@@ -118,7 +118,7 @@ def load_api_keys():
 
 
 def call_openai_with_thinking(system: str, user: str, api_key: str,
-                               model: str = "o4-mini",
+                               model: str = "gpt-5.4-mini",
                                temperature: float = 0.7,
                                delay: float = 1.0) -> str:
     """
@@ -129,7 +129,7 @@ def call_openai_with_thinking(system: str, user: str, api_key: str,
     """
     import urllib.request
 
-    is_reasoning_model = any(prefix in model for prefix in ["o3", "o4"])
+    is_reasoning_model = any(prefix in model for prefix in ["o3", "o4", "gpt-5.3", "gpt-5.4", "gpt-5.5"])
 
     if is_reasoning_model:
         # Reasoning models use "developer" role instead of "system"
