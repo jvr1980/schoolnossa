@@ -44,13 +44,12 @@ from scripts_shared.schema.country_extensions import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# Model config — cost-optimized: Gemini for bulk work, GPT for precision extraction
-# Pass 0: Perplexity Sonar (web research with citations — no substitute)
+# Model config — Gemini for web research + descriptions, GPT for precision extraction
+# Pass 0: Gemini 2.5 Flash + Google Search grounding (web research)
 # Pass 1: Gemini 2.5 Flash (description generation — fast, cheap, good quality)
 # Pass 2: GPT 5.4 mini with reasoning (structured extraction — needs precision)
 DEFAULT_MODELS = {
-    "perplexity": "sonar",               # Pass 0: web research
-    "gemini": "gemini-2.5-flash",         # Pass 1: description generation
+    "gemini": "gemini-2.5-flash",         # Pass 0 + Pass 1
     "openai": "gpt-5.4-mini",            # Pass 2: structured data extraction
 }
 
@@ -221,30 +220,45 @@ def call_gemini(system: str, user: str, api_key: str,
     return raw
 
 
-def call_perplexity(prompt: str, api_key: str, model: str = "sonar",
-                    delay: float = 2.0) -> tuple:
-    """Call Perplexity API for web research. Returns (content, citations)."""
+def call_gemini_with_search(prompt: str, api_key: str,
+                            model: str = "gemini-2.5-flash",
+                            delay: float = 1.0) -> tuple:
+    """
+    Call Gemini API with Google Search grounding for web research (Pass 0).
+    Returns (content_text, grounding_sources_list).
+    Replaces Perplexity Sonar — same interface.
+    """
     import urllib.request
 
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     payload = json.dumps({
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}]
+        "contents": [{"parts": [{"text": prompt}]}],
+        "tools": [{"googleSearch": {}}],
     }).encode("utf-8")
 
-    req = urllib.request.Request(
-        "https://api.perplexity.ai/chat/completions",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
-    )
-    with urllib.request.urlopen(req, timeout=60) as resp:
+    req = urllib.request.Request(url, data=payload,
+                                headers={"Content-Type": "application/json"})
+
+    with urllib.request.urlopen(req, timeout=120) as resp:
         result = json.loads(resp.read().decode("utf-8"))
 
     time.sleep(delay)
-    content = result["choices"][0]["message"]["content"]
-    citations = result.get("citations", [])
+
+    # Extract text content
+    content = result["candidates"][0]["content"]["parts"][0]["text"]
+
+    # Extract grounding sources (equivalent to Perplexity citations)
+    citations = []
+    grounding = result.get("candidates", [{}])[0].get("groundingMetadata", {})
+    for chunk in grounding.get("groundingChunks", []):
+        web = chunk.get("web", {})
+        if web.get("uri"):
+            citations.append(web["uri"])
+    # Also check groundingSupports for additional sources
+    for support in grounding.get("groundingSupports", []):
+        for idx in support.get("groundingChunkIndices", []):
+            pass  # Already captured above
+
     return content, citations
 
 
@@ -462,19 +476,23 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
     else:
         active_passes = passes
 
-    # --- Pass 0: Web Research ---
+    # --- Pass 0: Web Research (Gemini + Google Search grounding) ---
     if 0 in active_passes:
         if "pass0_raw" not in entry or force_rerun:
-            pkey = api_keys.get("perplexity")
-            if pkey:
+            gkey = api_keys.get("gemini")
+            if gkey:
                 prompt = build_pass0_prompt(row, country_code)
                 try:
-                    raw, citations = call_perplexity(prompt, pkey, model=DEFAULT_MODELS["perplexity"])
+                    raw, citations = call_gemini_with_search(
+                        prompt, gkey, model=DEFAULT_MODELS["gemini"]
+                    )
                     entry["pass0_raw"] = raw
                     entry["pass0_citations"] = citations
-                    logger.info(f"  [{school_id}] Pass 0: {len(raw)} chars, {len(citations)} citations")
+                    logger.info(f"  [{school_id}] Pass 0: {len(raw)} chars, {len(citations)} sources")
                 except Exception as e:
                     logger.warning(f"  [{school_id}] Pass 0 failed: {e}")
+            else:
+                logger.warning(f"  [{school_id}] No Gemini key — skipping Pass 0")
 
     # --- Pass 1: Description Generation (Gemini — cheaper than GPT) ---
     if 1 in active_passes:
@@ -631,15 +649,13 @@ def run_description_pipeline(country_code: str, passes: set = None,
     code = country_code.upper()
     logger.info(f"{'='*60}")
     logger.info(f"International Description Pipeline — {COUNTRY_NAMES.get(code, code)}")
-    logger.info(f"Pass 0: Perplexity {DEFAULT_MODELS['perplexity']} | Pass 1: Gemini {DEFAULT_MODELS['gemini']} | Pass 2: GPT {DEFAULT_MODELS['openai']}")
+    logger.info(f"Pass 0+1: Gemini {DEFAULT_MODELS['gemini']} (+ Google Search) | Pass 2: GPT {DEFAULT_MODELS['openai']} (reasoning)")
     logger.info(f"Passes: {sorted(passes)}")
     logger.info(f"{'='*60}")
 
     api_keys = load_api_keys()
-    if 0 in passes and not api_keys.get("perplexity"):
-        logger.warning("No PERPLEXITY_API_KEY — Pass 0 will be skipped")
-    if 1 in passes and not api_keys.get("gemini") and not api_keys.get("openai"):
-        logger.warning("No GEMINI or OPENAI key — Pass 1 will be skipped")
+    if (0 in passes or 1 in passes) and not api_keys.get("gemini"):
+        logger.warning("No GEMINI_API_KEY — Passes 0+1 will be skipped")
     if 2 in passes and not api_keys.get("openai"):
         logger.warning("No OPENAI_API_KEY — Pass 2 will be skipped")
 
