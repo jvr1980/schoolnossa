@@ -1,5 +1,43 @@
 # SchoolNossa Development Journal
 
+## 2026-04-12 — NRW Pipeline Retrigger: Köln & Düsseldorf Data Regenerated
+
+**What:** Full NRW pipeline re-execution for Köln (155 primary + 103 secondary) and Düsseldorf (91 primary + 58 secondary). Data had been lost and needed regeneration from scratch. All 11 phases completed for both school types.
+
+**Why:** Previously generated NRW data files were missing from `data_nrw/`. Pipeline scripts and some cache files (transit, website metadata, anmeldezahlen matches) were intact, allowing partial reuse.
+
+**Pipeline phases executed:**
+1. School Master Data (NRW Schulministerium Open Data → filter Köln+Düsseldorf)
+2. Traffic Accidents (Unfallatlas 2022–2024, 500m radius)
+3. Transit Accessibility (Overpass API, fresh query — old cache expired)
+4. Crime Statistics (PKS NRW, Bezirk-level)
+5. POI Enrichment (Google Places API)
+5b. Anmeldezahlen (Düsseldorf only — re-downloaded CSV + 4 PDFs from city open data)
+5c. Website Metadata & Descriptions (Gemini 2.5 Flash, ~380 school websites)
+6. Data Combination
+7. Embeddings (Gemini fallback, 768-dim — no OPENAI_API_KEY)
+8. Berlin Schema Enforcement
+
+**Düsseldorf Anmeldezahlen recovery:**
+- Primary CSV: `opendata.duesseldorf.de` — 85/91 schools matched (2026/27 data)
+- Secondary PDFs: 4 school-type PDFs from `duesseldorf.de/fileadmin/` — 46/58 schools matched
+- 13 primary + 20 secondary schools oversubscribed (>100% demand/capacity)
+
+**Firecrawl tuition extraction (new):**
+- Built `scripts_nrw/enrichment/nrw_tuition_firecrawl_enrichment.py`
+- Deep-crawls ~30 private school websites via Firecrawl map+scrape
+- Extracts structured tuition data (11 schema columns) via Gemini
+- Result: Most German private schools don't publish fees online — 5/35 had any info (free schools identified, income-based models noted, "auf Anfrage" captured in tuition_notes)
+- Added `FIRECRAWL_API_KEY` to `.env`
+
+**Output files** (`data_nrw/final/`):
+- `nrw_{primary,secondary}_school_master_table_final_with_embeddings.parquet`
+- `nrw_{primary,secondary}_school_master_table_final.csv`
+- `{koeln,duesseldorf}_{primary,secondary}_school_master_table_final_with_embeddings.parquet`
+- Berlin schema parquets for frontend compatibility
+
+**Key fix:** Berlin primary reference parquet was missing from `data_berlin_primary/final/` — copied from worktree `.claude/worktrees/condescending-haslett/` to unblock Phase 8.
+
 ## 2026-04-09 — Abitur Predictions: Frankfurt, Munich, Stuttgart
 
 **What:** Extended the Ridge regression Abitur prediction pipeline to three new cities. Generated rebased predictions for all Abitur-eligible schools and merged results into master table parquets.
