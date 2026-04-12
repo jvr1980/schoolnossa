@@ -1,5 +1,58 @@
 # SchoolNossa Development Journal
 
+## 2026-04-12 — Fix Student/Teacher Data Gaps Across All German Cities
+
+**What:** Investigated and fixed missing student/teacher counts (`schueler_2024_25`, `lehrer_2024_25`) across all German city pipelines. Previously only Berlin had good coverage; most other cities were at 0%.
+
+**Why:** Lovable.Dev dashboard showed that slider filters for student/teacher counts only worked for Berlin. Root cause analysis revealed two issues: (1) website enrichment scripts for most cities only generated descriptions, not student/teacher counts; (2) schema transformers didn't map available source data to the canonical Berlin fields.
+
+**Phase 1 — Schema transformer fixes (zero API cost):**
+- `scripts_frankfurt/frankfurt_to_berlin_schema.py` — added `schueler_gesamt` → `schueler_2024_25` mapping (data existed but was only used for ndH ratio calculation)
+- `scripts_munich/munich_to_berlin_schema.py` — added student/teacher passthrough mappings
+- `scripts_dresden/dresden_to_berlin_schema.py` — added student/teacher passthrough mappings
+- `scripts_stuttgart/stuttgart_to_berlin_schema.py` — added student/teacher passthrough mappings
+- All mappings use fill-gaps-only guards (`pd.isna()` check before writing)
+
+**Phase 2 — Website enrichment scripts (Gemini 2.5 Flash + URL context + Google Search grounding):**
+- `scripts_munich/enrichment/munich_website_metadata_enrichment.py` — upgraded from description-only to full NRW-style metadata extraction. Added Google Search fallback for schools without website URLs (Bayern API doesn't provide them)
+- `scripts_dresden/enrichment/dresden_website_metadata_enrichment.py` — fully implemented (was a `NotImplementedError` stub)
+- `scripts_hamburg/enrichment/hamburg_website_metadata_enrichment.py` — new script, targeting teacher data gap. Fixed `schul_homepage` column mapping and separate `data_hamburg_primary/` path handling
+- `scripts_stuttgart/enrichment/stuttgart_website_metadata_enrichment.py` — new script
+- `scripts_frankfurt/enrichment/frankfurt_website_metadata_enrichment.py` — new script, prioritizes final files over intermediate (intermediate lacked website URLs)
+- `scripts_shared/verify_coverage.py` — new coverage reporting script
+
+**Phase 3 — Retry logic added to all `_call_gemini` functions (all 7 city scripts + NRW):**
+- Empty responses: retry up to 2x with 3s delay
+- JSON parse errors: retry up to 2x with 3s delay
+- 500 INTERNAL server errors: retry up to 2x with 5s delay
+- Improved coverage by ~10-20% on second pass
+
+**Results after 2 passes:**
+
+| City | Schools | Schüler (before → after) | Lehrer (before → after) |
+|------|---------|------------------------|----------------------|
+| Munich | 148 pri | 0% → **93%** | 0% → **94%** |
+| Hamburg sec | 170 | 97% (kept) | 0% → **56%** |
+| Hamburg pri | 257 | 98% (kept) | 0% → **40%** |
+| Dresden | 75+90 | 0% → **65%** | 0% → **50%** |
+| Stuttgart sec | 80 | 0% → **66%** | 0% → **56%** |
+| Stuttgart pri | 95 | 0% → **54%** | 0% → **39%** |
+| Frankfurt sec | 99 | 0% → **52%** | 0% → **33%** |
+| Frankfurt pri | 100 | 97% (kept) | 8% → **32%** |
+| Leipzig | 186 | 0% → **45%** | 0% → **32%** |
+| Bremen | 253 | 0% → **49%** | 0% → **30%** |
+| NRW (D'dorf+Köln) | 407 | 60% (kept) | 31-46% (kept) |
+
+**Bonus coverage gained:** 80-98% `description_de` across all cities (was 0% for most), plus `schulleitung`, `besonderheiten`, `sprachen` filled.
+
+**Key technical decisions:**
+- All enrichment follows NRW template: `google.genai` with `UrlContext` + `GoogleSearch` grounding
+- Fill-gaps-only semantics everywhere — never overwrite existing source data
+- JSON caching per schulnummer avoids repeated API calls on re-runs
+- Munich uses Google Search grounding alone (no URL context) since Bayern API provides almost no website URLs — still achieved 93% coverage
+
+**Files changed:** 14 scripts modified/created across 8 city pipelines + shared utils
+
 ## 2026-04-12 — NRW Pipeline Retrigger: Köln & Düsseldorf Data Regenerated
 
 **What:** Full NRW pipeline re-execution for Köln (155 primary + 103 secondary) and Düsseldorf (91 primary + 58 secondary). Data had been lost and needed regeneration from scratch. All 11 phases completed for both school types.
