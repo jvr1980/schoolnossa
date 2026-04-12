@@ -44,12 +44,14 @@ from scripts_shared.schema.country_extensions import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# Default model config — gpt-5.4-mini with reasoning for all OpenAI calls
-# Latest mini model with thinking support (reasoning_effort=medium, ~33 reasoning tokens)
-# gpt-5.3-mini doesn't exist in API; gpt-5.4-mini is the latest available mini
+# Model config — cost-optimized: Gemini for bulk work, GPT for precision extraction
+# Pass 0: Perplexity Sonar (web research with citations — no substitute)
+# Pass 1: Gemini 2.5 Flash (description generation — fast, cheap, good quality)
+# Pass 2: GPT 5.4 mini with reasoning (structured extraction — needs precision)
 DEFAULT_MODELS = {
-    "openai": "gpt-5.4-mini",
-    "perplexity": "sonar",
+    "perplexity": "sonar",               # Pass 0: web research
+    "gemini": "gemini-2.5-flash",         # Pass 1: description generation
+    "openai": "gpt-5.4-mini",            # Pass 2: structured data extraction
 }
 
 # Columns that Pass 2 can populate for international schools
@@ -96,6 +98,7 @@ def load_api_keys():
                 api_keys_cfg = cfg.get("api_keys", {})
                 keys["openai"] = api_keys_cfg.get("openai") or keys["openai"]
                 keys["perplexity"] = api_keys_cfg.get("perplexity") or keys["perplexity"]
+                keys["gemini"] = api_keys_cfg.get("gemini") or keys.get("gemini")
                 # Also load model overrides from config
                 models_cfg = cfg.get("models", {})
                 if models_cfg.get("openai"):
@@ -113,6 +116,7 @@ def load_api_keys():
         pass
     keys["openai"] = os.environ.get("OPENAI_API_KEY") or keys["openai"]
     keys["perplexity"] = os.environ.get("PERPLEXITY_API_KEY") or keys["perplexity"]
+    keys["gemini"] = os.environ.get("GEMINI_API_KEY") or keys.get("gemini")
 
     return keys
 
@@ -167,6 +171,45 @@ def call_openai_with_thinking(system: str, user: str, api_key: str,
 
     time.sleep(delay)
     raw = result["choices"][0]["message"]["content"].strip()
+
+    # Strip markdown fences
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+
+    return raw
+
+
+def call_gemini(system: str, user: str, api_key: str,
+                model: str = "gemini-2.5-flash",
+                delay: float = 0.5) -> str:
+    """
+    Call Gemini API for description generation (Pass 1).
+    Uses the REST API directly (no SDK dependency).
+    """
+    import urllib.request
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    payload = json.dumps({
+        "contents": [
+            {"role": "user", "parts": [{"text": f"{system}\n\n{user}"}]}
+        ],
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 2048,
+        },
+    }).encode("utf-8")
+
+    req = urllib.request.Request(url, data=payload,
+                                headers={"Content-Type": "application/json"})
+
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+
+    time.sleep(delay)
+    raw = result["candidates"][0]["content"]["parts"][0]["text"].strip()
 
     # Strip markdown fences
     if raw.startswith("```"):
@@ -369,6 +412,35 @@ Return JSON with exactly these fields (null if not found):
 # Pipeline Core
 # ===========================================================================
 
+def school_needs_processing(row: dict, passes: set) -> tuple:
+    """
+    Check if a school actually needs API calls based on existing data.
+
+    Returns (needs_pass0, needs_pass1, needs_pass2) booleans.
+    Skip expensive API calls for schools that already have all the data.
+    """
+    def is_empty(val):
+        return val is None or (isinstance(val, float) and pd.isna(val)) or str(val).strip() in ("", "nan", "None")
+
+    # Pass 1 needed if description is missing
+    needs_pass1 = is_empty(row.get("description")) or is_empty(row.get("description_local"))
+
+    # Pass 2 needed if ANY extractable field is empty
+    pass2_fields = ["website", "students_current", "teachers_current",
+                    "languages_offered", "special_features", "principal",
+                    "phone", "email", "founding_year"]
+    needs_pass2 = any(is_empty(row.get(f)) for f in pass2_fields)
+
+    # Pass 0 (web research) needed if Pass 1 or Pass 2 need to run
+    needs_pass0 = needs_pass1 or needs_pass2
+
+    return (
+        needs_pass0 and 0 in passes,
+        needs_pass1 and 1 in passes,
+        needs_pass2 and 2 in passes,
+    )
+
+
 def process_school(row: dict, country_code: str, passes: set, cache: dict,
                    api_keys: dict, force_rerun: bool = False) -> dict:
     """Process a single school through all requested passes."""
@@ -377,8 +449,21 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
         cache[school_id] = {}
     entry = cache[school_id]
 
+    # Check if this school actually needs processing
+    if not force_rerun:
+        needs_p0, needs_p1, needs_p2 = school_needs_processing(row, passes)
+        if not needs_p0 and not needs_p1 and not needs_p2:
+            logger.debug(f"  [{school_id}] All data present — skipping")
+            return entry
+        active_passes = set()
+        if needs_p0: active_passes.add(0)
+        if needs_p1: active_passes.add(1)
+        if needs_p2: active_passes.add(2)
+    else:
+        active_passes = passes
+
     # --- Pass 0: Web Research ---
-    if 0 in passes:
+    if 0 in active_passes:
         if "pass0_raw" not in entry or force_rerun:
             pkey = api_keys.get("perplexity")
             if pkey:
@@ -391,31 +476,64 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
                 except Exception as e:
                     logger.warning(f"  [{school_id}] Pass 0 failed: {e}")
 
-    # --- Pass 1: Description Generation ---
-    if 1 in passes:
+    # --- Pass 1: Description Generation (Gemini — cheaper than GPT) ---
+    if 1 in active_passes:
         if ("pass1_local" not in entry or "pass1_en" not in entry) or force_rerun:
-            okey = api_keys.get("openai")
-            if okey:
-                raw_research = entry.get("pass0_raw")
-                if raw_research:
-                    system, user = build_pass1_prompt(row, country_code, raw_research)
-                else:
-                    system, user = build_pass1_fallback_prompt(row, country_code)
+            gkey = api_keys.get("gemini")
+            okey = api_keys.get("openai")  # fallback
+            raw_research = entry.get("pass0_raw")
+            if raw_research:
+                system, user = build_pass1_prompt(row, country_code, raw_research)
+            else:
+                system, user = build_pass1_fallback_prompt(row, country_code)
+
+            raw_resp = None
+            if gkey:
+                # Primary: Gemini (fast + cheap)
+                try:
+                    raw_resp = call_gemini(
+                        system, user, gkey, model=DEFAULT_MODELS["gemini"]
+                    )
+                except Exception as e:
+                    logger.warning(f"  [{school_id}] Pass 1 Gemini failed: {e}, trying GPT fallback")
+            if raw_resp is None and okey:
+                # Fallback: GPT
                 try:
                     raw_resp = call_openai_with_thinking(
                         system, user, okey, model=DEFAULT_MODELS["openai"]
                     )
+                except Exception as e:
+                    logger.warning(f"  [{school_id}] Pass 1 GPT fallback also failed: {e}")
+
+            if raw_resp:
+                try:
                     result = json.loads(raw_resp)
+                except json.JSONDecodeError:
+                    # Gemini sometimes puts real newlines inside JSON strings — fix them
+                    import re
+                    fixed = re.sub(r'(?<=": ")(.*?)(?="[,}])', lambda m: m.group(0).replace('\n', ' '), raw_resp, flags=re.DOTALL)
+                    try:
+                        result = json.loads(fixed)
+                    except json.JSONDecodeError:
+                        # Last resort: extract with regex
+                        local_match = re.search(r'"description_local"\s*:\s*"(.*?)"(?:\s*,|\s*})', raw_resp, re.DOTALL)
+                        en_match = re.search(r'"description_en"\s*:\s*"(.*?)"(?:\s*,|\s*})', raw_resp, re.DOTALL)
+                        result = {}
+                        if local_match:
+                            result["description_local"] = local_match.group(1).replace('\n', ' ')
+                        if en_match:
+                            result["description_en"] = en_match.group(1).replace('\n', ' ')
+                        if not result:
+                            logger.warning(f"  [{school_id}] Pass 1 JSON parse failed completely")
+                            result = None
+
+                if result:
                     entry["pass1_local"] = result.get("description_local", "")
                     entry["pass1_en"] = result.get("description_en", "")
                     logger.info(f"  [{school_id}] Pass 1: descriptions generated")
-                except json.JSONDecodeError as e:
-                    logger.warning(f"  [{school_id}] Pass 1 JSON parse failed: {e}")
-                except Exception as e:
-                    logger.warning(f"  [{school_id}] Pass 1 failed: {e}")
 
     # --- Pass 2: Structured Extraction ---
-    if 2 in passes:
+    if 2 in active_passes:
         if "pass2" not in entry or force_rerun:
             okey = api_keys.get("openai")
             raw_research = entry.get("pass0_raw")
@@ -513,15 +631,17 @@ def run_description_pipeline(country_code: str, passes: set = None,
     code = country_code.upper()
     logger.info(f"{'='*60}")
     logger.info(f"International Description Pipeline — {COUNTRY_NAMES.get(code, code)}")
-    logger.info(f"Model: {DEFAULT_MODELS['openai']} (with thinking)")
+    logger.info(f"Pass 0: Perplexity {DEFAULT_MODELS['perplexity']} | Pass 1: Gemini {DEFAULT_MODELS['gemini']} | Pass 2: GPT {DEFAULT_MODELS['openai']}")
     logger.info(f"Passes: {sorted(passes)}")
     logger.info(f"{'='*60}")
 
     api_keys = load_api_keys()
     if 0 in passes and not api_keys.get("perplexity"):
         logger.warning("No PERPLEXITY_API_KEY — Pass 0 will be skipped")
-    if (1 in passes or 2 in passes) and not api_keys.get("openai"):
-        logger.warning("No OPENAI_API_KEY — Passes 1+2 will be skipped")
+    if 1 in passes and not api_keys.get("gemini") and not api_keys.get("openai"):
+        logger.warning("No GEMINI or OPENAI key — Pass 1 will be skipped")
+    if 2 in passes and not api_keys.get("openai"):
+        logger.warning("No OPENAI_API_KEY — Pass 2 will be skipped")
 
     # Load input
     csv_path = find_input_csv(code)
@@ -550,8 +670,18 @@ def run_description_pipeline(country_code: str, passes: set = None,
             cache = json.load(f)
     logger.info(f"Cache: {len(cache)} existing entries")
 
-    # Process
+    # Pre-scan: count how many schools actually need processing
     total = len(df)
+    needs_count = 0
+    for _, row in df.iterrows():
+        p0, p1, p2 = school_needs_processing(row.to_dict(), passes)
+        if p0 or p1 or p2:
+            needs_count += 1
+    skipped = total - needs_count
+    logger.info(f"Schools needing API calls: {needs_count}/{total} (skipping {skipped} already complete)")
+
+    # Process
+    processed = 0
     for i, (_, row) in enumerate(df.iterrows()):
         row_dict = row.to_dict()
         # Normalize school_name for the prompt
@@ -559,7 +689,13 @@ def run_description_pipeline(country_code: str, passes: set = None,
             row_dict["school_name"] = row_dict.get("schulname", row_dict.get("school_name", "Unknown"))
 
         school_id = str(row_dict.get(id_col, row_dict.get("school_name", "")))
-        logger.info(f"[{i+1}/{total}] {row_dict.get('school_name', school_id)}")
+
+        # Check if this school needs work (log at different levels)
+        p0, p1, p2 = school_needs_processing(row_dict, passes)
+        if not force_rerun and not p0 and not p1 and not p2:
+            continue  # Skip silently — already complete
+        processed += 1
+        logger.info(f"[{processed}/{needs_count}] {row_dict.get('school_name', school_id)}")
         process_school(row_dict, code, passes, cache, api_keys, force_rerun)
 
         if (i + 1) % 10 == 0:
