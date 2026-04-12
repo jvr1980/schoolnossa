@@ -49,24 +49,27 @@ def download_and_parse_bron(cache_path: Path) -> pd.DataFrame:
         logger.info(f"Loading cached BRON data: {cache_path.name}")
         return pd.read_csv(cache_path)
 
-    # Download to disk in chunks (file is ~300MB, too large for in-memory)
+    # Download to disk — file is ~300MB, use curl for reliable resume
     zip_path = CACHE_DIR / "bron_2023.zip"
-    if not zip_path.exists():
-        logger.info(f"Downloading BRON accident data to {zip_path.name}...")
-        resp = requests.get(BRON_URL, timeout=600, stream=True,
-                           headers={"User-Agent": "SchoolNossa/1.0"})
-        resp.raise_for_status()
-        total_size = int(resp.headers.get("Content-Length", 0))
-        downloaded = 0
-        with open(zip_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=8192 * 1024):  # 8MB chunks
-                f.write(chunk)
-                downloaded += len(chunk)
-                if downloaded % (50 * 1024 * 1024) == 0 or downloaded == total_size:
-                    logger.info(f"  Downloaded: {downloaded / 1024 / 1024:.0f}/{total_size / 1024 / 1024:.0f} MB")
-        logger.info(f"  Saved: {zip_path.name} ({zip_path.stat().st_size / 1024 / 1024:.0f} MB)")
+    expected_min_size = 250 * 1024 * 1024  # At least 250MB for a valid file
+
+    if not zip_path.exists() or zip_path.stat().st_size < expected_min_size:
+        logger.info(f"Downloading BRON accident data with curl (supports resume)...")
+        import subprocess
+        result = subprocess.run(
+            ["curl", "-L", "-C", "-", "--retry", "5", "--retry-delay", "5",
+             "-o", str(zip_path), BRON_URL],
+            capture_output=True, text=True, timeout=600,
+        )
+        if result.returncode != 0:
+            logger.warning(f"  curl failed: {result.stderr[:200]}")
+            if zip_path.exists() and zip_path.stat().st_size < expected_min_size:
+                logger.warning(f"  Incomplete download ({zip_path.stat().st_size / 1024 / 1024:.0f} MB). "
+                               f"Run manually: curl -L -C - --retry 5 -o {zip_path} {BRON_URL}")
+                return pd.DataFrame()
+        logger.info(f"  Downloaded: {zip_path.stat().st_size / 1024 / 1024:.0f} MB")
     else:
-        logger.info(f"  Using cached ZIP: {zip_path.name}")
+        logger.info(f"  Using cached ZIP: {zip_path.name} ({zip_path.stat().st_size / 1024 / 1024:.0f} MB)")
 
     # Extract CSV from ZIP
     with zipfile.ZipFile(zip_path) as zf:
