@@ -46,8 +46,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 
 def run_phase_1():
-    """Phase 1: Download GIAS + DfE + IMD data."""
-    from scripts_international.gb.scrapers.gias_school_registry import main
+    """Phase 1: School data — OSM locations + DfE KS4 + IMD.
+
+    GIAS API is returning 500 errors. Uses OpenStreetMap Overpass as
+    alternative source for school locations + postcodes, then matches
+    to DfE KS4 performance data by URN/name.
+    """
+    from scripts_international.gb.scrapers.osm_school_locations import main
     main()
 
 
