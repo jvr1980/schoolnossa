@@ -188,6 +188,58 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     output["nl_brin_code"] = df["brin_code"]
     output["nl_gemeente_code"] = df["gemeente_code"]
 
+    # === DESCRIPTIONS from cache ===
+    import json
+    desc_cache_path = PROJECT_ROOT / "data_nl" / "cache" / "description_pipeline.json"
+    if desc_cache_path.exists():
+        with open(desc_cache_path) as f:
+            desc_cache = json.load(f)
+        desc_applied = 0
+        for idx, row in df.iterrows():
+            sid = str(row.get("vestiging_code", row.get("school_id", "")))
+            entry = desc_cache.get(sid, {})
+            if entry.get("pass1_en"):
+                output.at[idx, "description"] = entry["pass1_en"]
+                desc_applied += 1
+            if entry.get("pass1_local"):
+                output.at[idx, "description_local"] = entry["pass1_local"]
+        logger.info(f"  Descriptions applied from cache: {desc_applied}/{len(df)}")
+
+        # Apply Pass 2 extracted data to fill gaps
+        extract_applied = 0
+        extract_map = {
+            "website": "website", "founding_year": "founding_year",
+            "teachers_current": "teachers_current", "students_current": "students_current",
+            "languages_offered": "languages_offered", "special_features": "special_features",
+            "principal": "principal", "phone": "phone", "email": "email",
+        }
+        for idx, row in df.iterrows():
+            sid = str(row.get("vestiging_code", row.get("school_id", "")))
+            p2 = desc_cache.get(sid, {}).get("pass2", {})
+            for src_key, dst_col in extract_map.items():
+                val = p2.get(src_key)
+                if val is not None and dst_col in output.columns:
+                    current = output.at[idx, dst_col]
+                    if pd.isna(current) or current is None or str(current).strip() in ("", "nan"):
+                        output.at[idx, dst_col] = val
+                        extract_applied += 1
+        logger.info(f"  Pass 2 extraction applied: {extract_applied} field fills")
+
+    # === PASS-THROUGH: copy enrichment columns that already match core schema names ===
+    # Transit, crime, demographics, traffic columns have identical names in intermediate
+    # and core schema — just copy them directly if not already set.
+    passthrough_prefixes = ["transit_", "crime_", "traffic_", "area_", "deprivation_",
+                            "poi_", "description", "woz_", "enrollment_"]
+    copied = 0
+    for col in full_schema:
+        if col in output.columns and output[col].notna().any():
+            continue  # Already populated by explicit mapping above
+        if col in df.columns and any(col.startswith(p) for p in passthrough_prefixes):
+            output[col] = df[col].values
+            copied += 1
+    if copied:
+        logger.info(f"  Pass-through: copied {copied} enrichment columns from intermediate")
+
     # Ensure all schema columns exist
     for col in full_schema:
         if col not in output.columns:
