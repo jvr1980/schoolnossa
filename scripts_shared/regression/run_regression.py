@@ -87,7 +87,7 @@ def _load_zensus(city: str) -> "pd.DataFrame | None":
     if city in _zensus_cache:
         return _zensus_cache[city]
 
-    city_map = {"berlin": "berlin", "hamburg": "hamburg", "nrw_koeln": "koeln", "nrw_duesseldorf": "duesseldorf", "frankfurt": "frankfurt", "munich": "munich", "stuttgart": "stuttgart"}
+    city_map = {"berlin": "berlin", "hamburg": "hamburg", "nrw_koeln": "koeln", "nrw_duesseldorf": "duesseldorf", "frankfurt": "frankfurt", "munich": "munich", "stuttgart": "stuttgart", "bremen": "bremen", "dresden": "dresden", "leipzig": "leipzig"}
 
     # NRW covers two cities — load and merge both
     if city == "nrw":
@@ -259,6 +259,26 @@ FRANKFURT_COLUMN_MAP = {
     # Demographics
     "belastungsstufe": "belastungsstufe",
 }
+
+BREMEN_COLUMN_MAP = {
+    # Crime — Bremen uses short names without year suffix
+    "crime_total": "crime_index",
+    "crime_assault": "crime_violent",
+    "crime_drugs": "crime_drug_offenses",
+    "crime_safety_rank": "crime_safety_rank",
+    # Transit
+    "transit_stop_count_1000m": "transit_stop_count",
+    "transit_accessibility_score": "transit_accessibility",
+    "transit_rail_01_distance_m": "transit_nearest_m",
+    # POIs
+    "poi_supermarket_count_500m": "supermarket_count",
+    "poi_restaurant_count_500m": "poi_restaurant_count",
+    "poi_kita_count_500m": "poi_kita_count",
+}
+
+# Dresden + Leipzig use same column pattern as Frankfurt after Berlin schema enforcement
+DRESDEN_COLUMN_MAP = FRANKFURT_COLUMN_MAP.copy()
+LEIPZIG_COLUMN_MAP = FRANKFURT_COLUMN_MAP.copy()
 
 # Abitur column preference (try most recent first)
 ABITUR_COLUMNS = [
@@ -510,6 +530,27 @@ def load_all_data(
             str(PROJECT_ROOT / "data_stuttgart" / "final" / "stuttgart_secondary_school_master_table_final.csv"),
             FRANKFURT_COLUMN_MAP,  # same column pattern as Frankfurt
             "stuttgart",
+        ))
+
+    if city in ("bremen", "all"):
+        datasets.append((
+            str(PROJECT_ROOT / "data_bremen" / "final" / "bremen_school_master_table_final.csv"),
+            BREMEN_COLUMN_MAP,
+            "bremen",
+        ))
+
+    if city in ("dresden", "all"):
+        datasets.append((
+            str(PROJECT_ROOT / "data_dresden" / "final" / "dresden_secondary_school_master_table_final.csv"),
+            DRESDEN_COLUMN_MAP,
+            "dresden",
+        ))
+
+    if city in ("leipzig", "all"):
+        datasets.append((
+            str(PROJECT_ROOT / "data_leipzig" / "final" / "leipzig_school_master_table_final.csv"),
+            LEIPZIG_COLUMN_MAP,
+            "leipzig",
         ))
 
     for path, col_map, label in datasets:

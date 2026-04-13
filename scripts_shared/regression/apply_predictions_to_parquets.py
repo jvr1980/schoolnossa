@@ -42,6 +42,7 @@ ABITUR_ELIGIBLE_TYPES = {
     "Gymnasiale Oberstufe",                                        # Frankfurt (Hessen)
     "Gymnasien", "Berufsoberschulen",                              # Munich (Bayern)
     "Gemeinschaftsschule",                                         # Stuttgart (BaWü)
+    "Oberschule",                                                     # Bremen, Dresden, Leipzig (can lead to Abitur in Bremen)
 }
 
 # City-specific dims to exclude (not portable)
@@ -123,6 +124,29 @@ OFFICIAL_STATE_AVERAGES = {
         "source": "Kultusministerium Baden-Württemberg, Abiturstatistik 2024",
         "rebase": True,
     },
+    "bremen": {
+        # Senator für Kinder und Bildung, Bremen 2025.
+        # 2024 average not officially published; using 2025 figure.
+        "overall": 2.37,
+        "year": 2025,
+        "source": "Senator für Kinder und Bildung, Bremen 2025",
+        "rebase": True,
+    },
+    "dresden": {
+        # Sächsisches Staatsministerium für Kultus, Abitur 2024.
+        # Sachsen state average; rebasing applied.
+        "overall": 2.18,
+        "year": 2024,
+        "source": "Sächsisches Staatsministerium für Kultus, Abitur 2024",
+        "rebase": True,
+    },
+    "leipzig": {
+        # Same state as Dresden: Sachsen 2024.
+        "overall": 2.18,
+        "year": 2024,
+        "source": "Sächsisches Staatsministerium für Kultus, Abitur 2024",
+        "rebase": True,
+    },
 }
 
 # Files to update
@@ -156,6 +180,21 @@ CITY_FILES = [
         "city_prefix": "stuttgart",
         "parquet": "data_stuttgart/final/stuttgart_secondary_school_master_table_final_with_embeddings.parquet",
         "csv": "data_stuttgart/final/stuttgart_secondary_school_master_table_final.csv",
+    },
+    {
+        "city_prefix": "bremen",
+        "parquet": "data_bremen/final/bremen_school_master_table_final_with_embeddings.parquet",
+        "csv": "data_bremen/final/bremen_school_master_table_final.csv",
+    },
+    {
+        "city_prefix": "dresden",
+        "parquet": "data_dresden/final/dresden_secondary_school_master_table_final_with_embeddings.parquet",
+        "csv": "data_dresden/final/dresden_secondary_school_master_table_final.csv",
+    },
+    {
+        "city_prefix": "leipzig",
+        "parquet": "data_leipzig/final/leipzig_school_master_table_final_with_embeddings.parquet",
+        "csv": "data_leipzig/final/leipzig_school_master_table_final.csv",
     },
 ]
 
@@ -481,8 +520,11 @@ def main():
                   f"range=[{ci_width.min():.3f}, {ci_width.max():.3f}]")
 
         # Spot-check: compare rebased predictions vs actuals where both exist
-        both = df_csv[df_csv["abitur_durchschnitt_estimated_rebased"].notna() &
-                     df_csv["abitur_durchschnitt_2024"].notna()].copy()
+        if "abitur_durchschnitt_2024" not in df_csv.columns:
+            both = pd.DataFrame()  # no actuals to compare
+        else:
+            both = df_csv[df_csv["abitur_durchschnitt_estimated_rebased"].notna() &
+                         df_csv["abitur_durchschnitt_2024"].notna()].copy()
         if len(both) > 0:
             resids_raw = both["abitur_durchschnitt_2024"] - both["abitur_durchschnitt_estimated"]
             resids_reb = both["abitur_durchschnitt_2024"] - both["abitur_durchschnitt_estimated_rebased"]

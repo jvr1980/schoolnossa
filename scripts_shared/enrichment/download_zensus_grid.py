@@ -71,6 +71,9 @@ CITY_BBOXES = {
     "frankfurt": (50.01, 50.23, 8.47, 8.80),
     "munich": (47.99, 48.25, 11.35, 11.75),
     "stuttgart": (48.69, 48.87, 9.04, 9.33),
+    "bremen": (53.00, 53.20, 8.68, 8.99),
+    "dresden": (50.97, 51.13, 13.57, 13.90),
+    "leipzig": (51.26, 51.43, 12.24, 12.54),
 }
 
 # Transformers (cached)
@@ -294,7 +297,7 @@ def process_city(city, force=False):
 def main():
     parser = argparse.ArgumentParser(description="Download Zensus 2022 grid data")
     parser.add_argument("--city", default="all",
-                        choices=["berlin", "hamburg", "koeln", "duesseldorf", "frankfurt", "munich", "stuttgart", "all"])
+                        choices=list(CITY_BBOXES.keys()) + ["all"])
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
