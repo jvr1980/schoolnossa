@@ -127,7 +127,20 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     output["students_current"] = pd.to_numeric(df.get("number_of_pupils"), errors="coerce")
 
     # === ACADEMIC ===
-    output["academic_performance_score"] = df.apply(compute_academic_score, axis=1)
+    # KS4 data may be in different column names depending on data source
+    att8_col = next((c for c in ["ks4_attainment8", "attainment8_average"] if c in df.columns), None)
+    if att8_col:
+        df["_att8"] = pd.to_numeric(df[att8_col], errors="coerce")
+        output["academic_performance_score"] = (df["_att8"] / 90 * 100).clip(0, 100).round(1)
+        output["gb_ks4_attainment8"] = df["_att8"]
+    else:
+        output["academic_performance_score"] = df.apply(compute_academic_score, axis=1)
+
+    prog8_col = next((c for c in ["ks4_progress8", "progress8_average"] if c in df.columns), None)
+    if prog8_col:
+        output["gb_ks4_progress8"] = pd.to_numeric(df[prog8_col], errors="coerce")
+        output["academic_value_added"] = output["gb_ks4_progress8"]
+
     scores = output["academic_performance_score"]
     output["academic_performance_percentile"] = scores.rank(pct=True).multiply(100).round(1)
     output["academic_data_source"] = "DfE KS4 Performance Tables"
@@ -179,6 +192,52 @@ def transform(input_path: Path = None) -> pd.DataFrame:
         output["gb_imd_decile"] = pd.to_numeric(df["imd_decile"], errors="coerce")
     if "fsm_pct" in df.columns:
         output["gb_fsm_pct"] = pd.to_numeric(df["fsm_pct"], errors="coerce")
+
+    # === DESCRIPTIONS from cache ===
+    import json
+    desc_cache_path = PROJECT_ROOT / "data_gb" / "cache" / "description_pipeline.json"
+    if desc_cache_path.exists():
+        with open(desc_cache_path) as f:
+            desc_cache = json.load(f)
+        desc_applied = 0
+        extract_applied = 0
+        extract_map = {
+            "website": "website", "founding_year": "founding_year",
+            "teachers_current": "teachers_current", "students_current": "students_current",
+            "languages_offered": "languages_offered", "special_features": "special_features",
+            "principal": "principal", "phone": "phone", "email": "email",
+        }
+        for idx, row in df.iterrows():
+            sid = str(row.get("urn", row.get("school_id", "")))
+            entry = desc_cache.get(sid, {})
+            if entry.get("pass1_en"):
+                output.at[idx, "description"] = entry["pass1_en"]
+                desc_applied += 1
+            if entry.get("pass1_local"):
+                output.at[idx, "description_local"] = entry["pass1_local"]
+            # Pass 2 extraction
+            p2 = entry.get("pass2", {})
+            for src_key, dst_col in extract_map.items():
+                val = p2.get(src_key)
+                if val is not None and dst_col in output.columns:
+                    current = output.at[idx, dst_col]
+                    if pd.isna(current) or current is None or str(current).strip() in ("", "nan"):
+                        output.at[idx, dst_col] = val
+                        extract_applied += 1
+        logger.info(f"  Descriptions: {desc_applied}/{len(df)} | Extractions: {extract_applied} fills")
+
+    # === PASS-THROUGH: copy enrichment columns matching core schema ===
+    passthrough_prefixes = ["transit_", "crime_", "traffic_", "area_", "deprivation_",
+                            "poi_", "woz_", "enrollment_"]
+    copied = 0
+    for col in full_schema:
+        if col in output.columns and output[col].notna().any():
+            continue
+        if col in df.columns and any(col.startswith(p) for p in passthrough_prefixes):
+            output[col] = df[col].values
+            copied += 1
+    if copied:
+        logger.info(f"  Pass-through: {copied} enrichment columns from intermediate")
 
     # Ensure all columns present
     for col in full_schema:
