@@ -183,8 +183,8 @@ CITY_FILES = [
     },
     {
         "city_prefix": "bremen",
-        "parquet": "data_bremen/final/bremen_school_master_table_final_with_embeddings.parquet",
-        "csv": "data_bremen/final/bremen_school_master_table_final.csv",
+        "parquet": "data_bremen/final/bremen_secondary_school_master_table_final_with_embeddings.parquet",
+        "csv": "data_bremen/final/bremen_secondary_school_master_table_final.csv",
     },
     {
         "city_prefix": "dresden",
