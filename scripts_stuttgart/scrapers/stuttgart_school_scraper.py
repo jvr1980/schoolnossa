@@ -292,7 +292,7 @@ def build_dataframes(schools: List[Dict]) -> Tuple[pd.DataFrame, pd.DataFrame]:
         record = {
             'schulnummer': f"STG-{school.get('id', 0)}",
             'schulname': school.get('name', ''),
-            'school_type': classification,
+            'school_type': schulart,
             'schulart': schulart,
             'strasse': school.get('strasse', ''),
             'plz': school.get('plz', ''),
@@ -335,7 +335,7 @@ def build_dataframes(schools: List[Dict]) -> Tuple[pd.DataFrame, pd.DataFrame]:
             record = {
                 'schulnummer': f"STG-{school.get('id', 0)}-GS",
                 'schulname': school.get('name', '') + ' (Grundschule)',
-                'school_type': 'primary',
+                'school_type': 'Grundschule',
                 'schulart': 'Grundschule',
                 'strasse': school.get('strasse', ''),
                 'plz': school.get('plz', ''),

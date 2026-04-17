@@ -1,5 +1,22 @@
 # SchoolNossa Development Journal
 
+## 2026-04-17 — Fix school_type Mapping Bug (Stuttgart + Frankfurt)
+
+**What:** Fixed school_type containing generic placeholders ("secondary", "Weiterführende Schule") instead of specific German school types. Added validation guard to prevent recurrence.
+
+**Why:** Lovable frontend filter UI relies on school_type being a canonical German type (Gymnasium, Realschule, etc.). Stuttgart had `school_type = 'secondary'` for all 80 rows despite having correct `schulart` values. Frankfurt had a fallback path that could produce "Weiterführende Schule" for unmatched categories.
+
+**Fixes:**
+- `scripts_stuttgart/scrapers/stuttgart_school_scraper.py` — changed `school_type: classification` → `school_type: schulart` so schools get their actual German type (Gymnasium, Realschule, Gemeinschaftsschule, etc.) instead of generic "secondary"/"primary"
+- `scripts_frankfurt/scrapers/frankfurt_schulwegweiser_scraper.py` — added `weiterfuehrende-allgemeinbildende-schulen` → `Gesamtschule` to category fallback mapping, preventing "Weiterführende Schule" placeholder
+- `scripts_shared/schema/core_schema.py` — added `CANONICAL_DE_SCHOOL_TYPES`, `GENERIC_SCHOOL_TYPE_PLACEHOLDERS`, and `validate_school_types()` guard function
+- `scripts_stuttgart/stuttgart_to_berlin_schema.py` — wired in `validate_school_types(strict=True)` as CI guard
+- `scripts_frankfurt/frankfurt_to_berlin_schema.py` — wired in `validate_school_types(strict=True)` as CI guard
+
+**Audit results:** All other cities (Berlin, Hamburg, NRW, Munich, Bremen, Dresden, Leipzig) already use specific German types correctly. The regression script (`run_regression.py:391-398`) already had a band-aid workaround preferring `schulart` when `school_type` is generic — this is now redundant but harmless.
+
+**Convention documented:** `school_type` must always be one of the canonical German types used by the filter UI. Never the generic "secondary"/"primary" placeholders.
+
 ## 2026-04-12 — Fix Student/Teacher Data Gaps Across All German Cities
 
 **What:** Investigated and fixed missing student/teacher counts (`schueler_2024_25`, `lehrer_2024_25`) across all German city pipelines. Previously only Berlin had good coverage; most other cities were at 0%.

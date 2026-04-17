@@ -270,6 +270,74 @@ def validate_core_schema(df):
     return len(missing) == 0, missing, extra
 
 
+# Canonical German school types accepted by the filter UI.
+# school_type must always be one of these — never generic "secondary"/"primary".
+CANONICAL_DE_SCHOOL_TYPES = {
+    # Secondary
+    "Gymnasium", "Gesamtschule", "Stadtteilschule", "Realschule",
+    "Gemeinschaftsschule", "Waldorfschule", "Internationale Schule",
+    "ISS-Gymnasium", "Grund- und Werkrealschule", "Werkrealschule",
+    "Berufsoberschulen", "Fachoberschulen", "Wirtschaftsschulen",
+    "Oberschule", "Hauptschule", "Mittelschulen",
+    # Gesamtschule variants
+    "Integrierte Gesamtschule (IGS)", "Kooperative Gesamtschule (KGS)",
+    "Integrierte Sekundarschule",
+    # Combined / special
+    "Stadtteilschule_Gymnasium",
+    # Primary
+    "Grundschule",
+    # Förderschule / SBBZ
+    "Förderschule", "Förderzentrum", "Förderzentren",
+    # Other
+    "Berufliche Schule", "Berufsbildende Schule",
+    "Sonstige",
+}
+
+# Generic placeholders that should NEVER appear as school_type.
+GENERIC_SCHOOL_TYPE_PLACEHOLDERS = {"secondary", "primary", "Weiterführende Schule", ""}
+
+
+def validate_school_types(df, city: str = "unknown", strict: bool = False):
+    """
+    Guard: fail-fast if any row has a generic/missing school_type.
+
+    Args:
+        df: DataFrame with a 'school_type' column
+        city: city name for error messages
+        strict: if True, raise AssertionError; if False, log warnings
+
+    Returns:
+        DataFrame of bad rows (empty if all valid)
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    if "school_type" not in df.columns:
+        msg = f"[{city}] school_type column missing entirely"
+        if strict:
+            raise AssertionError(msg)
+        logger.warning(msg)
+        return df.head(0)
+
+    bad = df[
+        df["school_type"].isin(GENERIC_SCHOOL_TYPE_PLACEHOLDERS)
+        | df["school_type"].isna()
+    ]
+
+    if not bad.empty:
+        sample_vals = bad["school_type"].value_counts().to_dict()
+        msg = (
+            f"[{city}] {len(bad)} rows have generic/missing school_type: {sample_vals}. "
+            f"school_type must be a specific German school type (Gymnasium, Realschule, etc.), "
+            f"never 'secondary'/'primary'/''."
+        )
+        if strict:
+            raise AssertionError(msg)
+        logger.warning(msg)
+
+    return bad
+
+
 def schema_coverage_report(df):
     """Print a coverage report showing populated columns per group."""
     total = len(df)

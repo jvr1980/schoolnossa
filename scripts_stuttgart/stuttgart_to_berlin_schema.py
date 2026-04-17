@@ -139,9 +139,13 @@ def transform_to_berlin_schema(school_type):
     print(f"  Berlin as NULL: {added_null}/{len(berlin_columns)}")
     print(f"  Stuttgart extras: {len(extras)}")
 
-    # Verify
+    # Verify schema column order
     assert list(output.columns)[:len(berlin_columns)] == berlin_columns, "SCHEMA MISMATCH!"
     print(f"  PASS: schema verified")
+
+    # Guard: school_type must be a specific German type, never 'secondary'/'primary'
+    from scripts_shared.schema.core_schema import validate_school_types
+    validate_school_types(output, city="Stuttgart", strict=True)
 
     # Save
     out_pq = STG_DATA_DIR / f"stuttgart_{school_type}_school_master_table_berlin_schema.parquet"
