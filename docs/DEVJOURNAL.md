@@ -1,5 +1,31 @@
 # SchoolNossa Development Journal
 
+## 2026-04-17 — Cross-City Admission Criteria + Open Day Enrichment
+
+**What:** Built and ran a new cross-city Gemini enrichment that visits every German school's website to extract structured admission criteria and upcoming open day dates. Two scripts:
+1. `scripts_shared/enrichment/enrich_german_schools_with_admission_and_open_days.py` — main enrichment, feeds homepage URL to Gemini 2.5 Flash with URL-context + Google-Search grounding
+2. `scripts_shared/enrichment/reenrich_admission_open_days_via_sitemap.py` — fix pass that discovers the site's sitemap.xml, picks admission/events subpage URLs by keyword scoring, and re-calls Gemini with those URLs for schools where the homepage-only pass failed
+
+**Why:** SchoolNossa had rich enrichments (traffic, transit, crime, POIs, descriptions) but no structured fields for the two things parents care about most at decision time: how to apply and when to visit. Both exist on every school website in unstructured form.
+
+**Scope:** 2,578 rows across 15 city-tables (9 German cities). 2,229 schools had a usable website URL; 349 (mostly Munich) had none.
+
+**Results after both passes:**
+- 1,932 success (83% of URL-having schools)
+- 1,851 schools with admission bullets (83%)
+- 729 schools with application windows (33%)
+- 420 schools with upcoming open days (19% — expected for mid-April, most are Oct–Feb)
+- 1,452 schools with past open day dates (65% — useful for next-cycle predictions)
+- 36 remaining parse_error (1.6%), 261 no_admission_info (12%)
+
+**Sitemap re-enrichment impact:** Recovered 107 schools (from 114 parse_error down to 36, a 68% reduction). Discovery methods: sitemap (117), homepage anchors (14), canonical probing (2).
+
+**Key design decisions:**
+- Shared URL-keyed cache (`data_shared/cache/admission_open_days/cache.json`, sha1 of normalized URL) so duplicate URLs across primary/secondary tables hit Gemini once. Hamburg Primary got 257 cache hits and 0 API calls.
+- 60-day TTL because open-day calendars are seasonal
+- German prompt; structured JSON output with ISO dates, bullet lists
+- Scripts are standalone (not wired into per-city orchestrators) — run after all city pipelines produce final master tables
+
 ## 2026-04-17 — Fix school_type Mapping Bug (Stuttgart + Frankfurt)
 
 **What:** Fixed school_type containing generic placeholders ("secondary", "Weiterführende Schule") instead of specific German school types. Added validation guard to prevent recurrence.
