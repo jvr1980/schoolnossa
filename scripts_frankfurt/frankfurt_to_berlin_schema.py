@@ -213,6 +213,10 @@ def transform_to_berlin_schema(school_type):
 
     print(f"  Saved: {out_pq.name}")
 
+    # Guard: school_type must be a specific German type, never 'secondary'/'primary'
+    from scripts_shared.schema.core_schema import validate_school_types
+    validate_school_types(output, city="Frankfurt", strict=True)
+
     # Data quality
     print("\n  Data quality:")
     for col in ['schulnummer', 'schulname', 'school_type', 'ortsteil',

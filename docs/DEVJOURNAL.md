@@ -1,5 +1,48 @@
 # SchoolNossa Development Journal
 
+## 2026-04-17 — Cross-City Admission Criteria + Open Day Enrichment
+
+**What:** Built and ran a new cross-city Gemini enrichment that visits every German school's website to extract structured admission criteria and upcoming open day dates. Two scripts:
+1. `scripts_shared/enrichment/enrich_german_schools_with_admission_and_open_days.py` — main enrichment, feeds homepage URL to Gemini 2.5 Flash with URL-context + Google-Search grounding
+2. `scripts_shared/enrichment/reenrich_admission_open_days_via_sitemap.py` — fix pass that discovers the site's sitemap.xml, picks admission/events subpage URLs by keyword scoring, and re-calls Gemini with those URLs for schools where the homepage-only pass failed
+
+**Why:** SchoolNossa had rich enrichments (traffic, transit, crime, POIs, descriptions) but no structured fields for the two things parents care about most at decision time: how to apply and when to visit. Both exist on every school website in unstructured form.
+
+**Scope:** 2,578 rows across 15 city-tables (9 German cities). 2,229 schools had a usable website URL; 349 (mostly Munich) had none.
+
+**Results after both passes:**
+- 1,932 success (83% of URL-having schools)
+- 1,851 schools with admission bullets (83%)
+- 729 schools with application windows (33%)
+- 420 schools with upcoming open days (19% — expected for mid-April, most are Oct–Feb)
+- 1,452 schools with past open day dates (65% — useful for next-cycle predictions)
+- 36 remaining parse_error (1.6%), 261 no_admission_info (12%)
+
+**Sitemap re-enrichment impact:** Recovered 107 schools (from 114 parse_error down to 36, a 68% reduction). Discovery methods: sitemap (117), homepage anchors (14), canonical probing (2).
+
+**Key design decisions:**
+- Shared URL-keyed cache (`data_shared/cache/admission_open_days/cache.json`, sha1 of normalized URL) so duplicate URLs across primary/secondary tables hit Gemini once. Hamburg Primary got 257 cache hits and 0 API calls.
+- 60-day TTL because open-day calendars are seasonal
+- German prompt; structured JSON output with ISO dates, bullet lists
+- Scripts are standalone (not wired into per-city orchestrators) — run after all city pipelines produce final master tables
+
+## 2026-04-17 — Fix school_type Mapping Bug (Stuttgart + Frankfurt)
+
+**What:** Fixed school_type containing generic placeholders ("secondary", "Weiterführende Schule") instead of specific German school types. Added validation guard to prevent recurrence.
+
+**Why:** Lovable frontend filter UI relies on school_type being a canonical German type (Gymnasium, Realschule, etc.). Stuttgart had `school_type = 'secondary'` for all 80 rows despite having correct `schulart` values. Frankfurt had a fallback path that could produce "Weiterführende Schule" for unmatched categories.
+
+**Fixes:**
+- `scripts_stuttgart/scrapers/stuttgart_school_scraper.py` — changed `school_type: classification` → `school_type: schulart` so schools get their actual German type (Gymnasium, Realschule, Gemeinschaftsschule, etc.) instead of generic "secondary"/"primary"
+- `scripts_frankfurt/scrapers/frankfurt_schulwegweiser_scraper.py` — added `weiterfuehrende-allgemeinbildende-schulen` → `Gesamtschule` to category fallback mapping, preventing "Weiterführende Schule" placeholder
+- `scripts_shared/schema/core_schema.py` — added `CANONICAL_DE_SCHOOL_TYPES`, `GENERIC_SCHOOL_TYPE_PLACEHOLDERS`, and `validate_school_types()` guard function
+- `scripts_stuttgart/stuttgart_to_berlin_schema.py` — wired in `validate_school_types(strict=True)` as CI guard
+- `scripts_frankfurt/frankfurt_to_berlin_schema.py` — wired in `validate_school_types(strict=True)` as CI guard
+
+**Audit results:** All other cities (Berlin, Hamburg, NRW, Munich, Bremen, Dresden, Leipzig) already use specific German types correctly. The regression script (`run_regression.py:391-398`) already had a band-aid workaround preferring `schulart` when `school_type` is generic — this is now redundant but harmless.
+
+**Convention documented:** `school_type` must always be one of the canonical German types used by the filter UI. Never the generic "secondary"/"primary" placeholders.
+
 ## 2026-04-12 — Fix Student/Teacher Data Gaps Across All German Cities
 
 **What:** Investigated and fixed missing student/teacher counts (`schueler_2024_25`, `lehrer_2024_25`) across all German city pipelines. Previously only Berlin had good coverage; most other cities were at 0%.

@@ -280,6 +280,7 @@ def extract_record(raw: dict, school_name: str, category_slug: str, portal_url: 
             "grundschulen": "Grundschule",
             "foerderschulen": "Förderschule",
             "weiterfuehrende-berufliche-schulen": "Berufliche Schule",
+            "weiterfuehrende-allgemeinbildende-schulen": "Gesamtschule",
         }.get(category_slug, "Weiterführende Schule")
 
     # Combine all Fremdsprachen into a single sprachen column
