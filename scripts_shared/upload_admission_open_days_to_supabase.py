@@ -144,6 +144,23 @@ def build_patch_body(row: pd.Series) -> dict:
     if fetched_at:
         body["admission_fetched_at"] = fetched_at
 
+    # English translations
+    bullets_en = _safe_json(row.get("admission_criteria_bullets_en"), [])
+    if bullets_en:
+        body["admission_criteria_bullets_en"] = bullets_en
+
+    window_en = _safe_json(row.get("admission_application_window_en"))
+    if window_en:
+        body["admission_application_window_en"] = window_en
+
+    notes_en = _safe_str(row.get("admission_notes_en"))
+    if notes_en:
+        body["admission_notes_en"] = notes_en
+
+    open_days_en = _safe_json(row.get("open_days_en"), [])
+    if open_days_en:
+        body["open_days_en"] = open_days_en
+
     return body
 
 
