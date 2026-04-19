@@ -1,5 +1,44 @@
 # SchoolNossa Development Journal
 
+## 2026-04-19 — Schema Mapper Gaps + Supabase Backfill (1,512 rows)
+
+**What:** Audited a Supabase coverage report that flagged many 0%-populated columns across cities, tracked each gap to either a mapper bug or a genuine source gap, fixed the mappers, extended the Supabase uploader, and filled the resulting cells.
+
+**Why:** The audit showed columns like Dresden `email` and `bezirk` at 0/75, Frankfurt `leitung` at 0/99, Stuttgart `schueler_2024_25` at 0/80, Bremen `description_en` at 0/140, Leipzig `ortsteil` at 0/94. Most were mapping bugs — the data existed locally under a different column name or was being silently dropped by a combiner/schema-mapper save-order issue. Only the truly un-fixable gaps turned out to be external source limits (Munich jedeschule only returns addresses, Leipzig Saxon source lacks Stadtbezirk, Hamburg crime ships categories instead of counts).
+
+**Pipeline fixes (permanent, committed):**
+- **Dresden `dresden_to_berlin_schema.py`:** new `_fill_from_saxon_source` helper populates Berlin-canonical columns from raw Saxon names — `mail`→`email`, `phone_code_1+phone_number_1`→`telefon`, `headmaster_firstname+lastname`→`leitung`, `community_part`→`ortsteil`, `crime_stadtbezirk`→`bezirk` (with "StB N " prefix stripped).
+- **Leipzig `leipzig_to_berlin_schema.py`:** same Saxon-source helper adapted. Also added primary/secondary split output so the stale April-13 berlin_schema artefacts the Supabase uploader consumed actually get refreshed.
+- **Frankfurt `frankfurt_to_berlin_schema.py`:** `schulleitung`→`leitung` rename that was missing. Moved the `scripts_shared.schema.core_schema` import into a try/except since it fails outside the orchestrator and was silently truncating the save.
+- **Bremen `bremen_to_berlin_schema.py`:** `summary_en`→`description_en` fill-gaps (Bremen's description pipeline wrote summary_* not description_*). Added primary/secondary split outputs; preserved `description_en` as a Bremen-specific extra since Berlin schema doesn't include it.
+- **Stuttgart `processing/stuttgart_data_combiner.py`:** `find_most_enriched_file` now prefers `_with_metadata` over `_with_pois`. The metadata enrichment (leitung, schueler, lehrer, sprachen, gruendungsjahr, besonderheiten) layers on top of pois but was being silently skipped, so the master table carried only the pois file and downstream outputs lost all student/teacher/principal data. Added defensive `school_type`-from-`schulart` normalization so generic `'primary'/'secondary'` buckets never leak past the combiner again (the scraper was fixed in d6819cd but raw CSVs on disk predate that commit).
+- **Stuttgart `stuttgart_to_berlin_schema.py`:** reordered save-before-import, same pattern as Frankfurt.
+
+**Supabase uploader rewrite (`scripts_shared/upload_to_supabase.py`):**
+- Replaces the old `UPDATE_FIELDS = [6 items]` with organized `FIELD_GROUPS` (contact / location / school_attr / descriptions / crime / transit_summary). `--groups` flag selects which categories upload.
+- `COL_ALIASES` maps local `transit_bus_01_name`→Supabase `transit_bus_name` (Supabase uses unprefixed names for nearest stop, _02/_03 for the rest).
+- Per-field PATCH with `?<col>=is.null` URL guard so the server-side filter matches the Python NULL-only check — a race between our SELECT and PATCH cannot overwrite a non-NULL value.
+- Service-role key from env (`SUPABASE_SERVICE_ROLE_KEY`) with fallback to embedded anon key when Lovable installs a scoped RLS policy.
+- Per-table schema probe; columns missing from a target table (e.g. `transit_all_lines_1000m` on `primary_schools`) are logged as skipped instead of crashing.
+- Dry-run prints per-city per-field fill counts plus a grand total.
+
+**Lovable coordination:** Anon key was RLS-blocked from UPDATE. Went with temporary per-column `IS NULL`-gated UPDATE policies on `schools` and `primary_schools` (21 columns), covering contact, location, school_attr, descriptions, crime, transit_summary. Lovable dropped them after the fill. Verified drop by PATCH-then-reread on a real Dresden row.
+
+**Supabase results:**
+- 1,357 rows filled in the main run (before Stuttgart), 155 more in the Stuttgart re-run, plus 175 Stuttgart `school_type` values corrected via Lovable SQL. 1,512 touched total.
+- Top per-field fills: `besonderheiten` +783, `schulart` +483, `leitung` +443, `lehrer_2024_25` +425, `gruendungsjahr` +408, `ortsteil` +351, `schueler_2024_25` +321, `description_en` +203.
+- Biggest city-level wins: Dresden `schools` email/telefon/leitung/ortsteil/bezirk 0/75 → 75/75; Frankfurt `primary_schools` leitung 0/100 → 99/100; Hamburg `primary_schools` besonderheiten 0/257 → 238/257; Munich `primary_schools` besonderheiten 0/148 → 146/148, lehrer/schueler 0 → ~138.
+- Zero overwrites, zero HTTP errors across ~6,800 PATCH calls.
+
+**Remaining genuine source gaps (require new data source, out of scope):**
+- Munich `schools` (secondary) contact info: jedeschule.codefor.de only returns name/address/coords. All 108 rows are 0% for email/telefon/website/leitung.
+- Leipzig `bezirk`: Saxon source has `community_part` (→Ortsteil) only; no reliable Stadtbezirk mapping.
+- Frankfurt `bezirk` / `lehrer` / `migration_*`: Schulwegweiser (the primary source) doesn't expose them.
+- Hamburg `crime_total_crimes_2023`: Hamburg's crime feed ships categories not raw counts.
+- `transit_all_lines_1000m` on `primary_schools`: table schema gap Lovable offered to add.
+
+**Commits (all on `main`):** 9c30ebb, c1a06ad, ad8fea4, 54392c0, 0a0f1fc, f16dfac, merged as 9eb8e34.
+
 ## 2026-04-17 — Cross-City Admission Criteria + Open Day Enrichment
 
 **What:** Built and ran a new cross-city Gemini enrichment that visits every German school's website to extract structured admission criteria and upcoming open day dates. Two scripts:
