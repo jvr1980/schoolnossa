@@ -24,6 +24,7 @@ FINAL_DIR = DATA_DIR / "final"
 
 def find_most_enriched_file(school_type):
     candidates = [
+        INTERMEDIATE_DIR / f"stuttgart_{school_type}_schools_with_metadata.csv",
         INTERMEDIATE_DIR / f"stuttgart_{school_type}_schools_with_pois.csv",
         INTERMEDIATE_DIR / f"stuttgart_{school_type}_schools_with_crime.csv",
         INTERMEDIATE_DIR / f"stuttgart_{school_type}_schools_with_transit.csv",
@@ -44,7 +45,9 @@ def standardize_columns(df):
         'strasse', 'plz', 'ort', 'ortsteil', 'stadt', 'bundesland',
         'latitude', 'longitude',
         'telefon', 'fax', 'email', 'website',
-        'schulleitung', 'traegerschaft',
+        'schulleitung', 'traegerschaft', 'leitung',
+        'schueler_2024_25', 'lehrer_2024_25', 'sprachen',
+        'gruendungsjahr', 'besonderheiten',
         'transit_stops_500m', 'transit_stop_count_1000m',
         'transit_rail_01_name', 'transit_rail_01_distance_m',
         'transit_rail_01_latitude', 'transit_rail_01_longitude', 'transit_rail_01_lines',
@@ -86,6 +89,19 @@ def clean_data(df):
         df = df.drop_duplicates(subset=['schulnummer'], keep='first')
         if len(df) < orig:
             logger.info(f"Removed {orig - len(df)} duplicates")
+
+    # Normalize school_type: must be a specific German type (Gymnasium,
+    # Grundschule, etc.), never the generic 'primary'/'secondary' bucket.
+    # Older raw CSVs (pre-commit d6819cd) stored the generic value; copy
+    # from schulart to recover.
+    if 'school_type' in df.columns and 'schulart' in df.columns:
+        generic = df['school_type'].astype(str).str.strip().str.lower().isin(
+            ['primary', 'secondary', 'nan', 'none', '']
+        )
+        if generic.any():
+            logger.info(f"Normalizing school_type from schulart for "
+                        f"{int(generic.sum())} rows")
+            df.loc[generic, 'school_type'] = df.loc[generic, 'schulart']
 
     numeric_cols = ['latitude', 'longitude', 'transit_stops_500m', 'transit_stop_count_1000m',
                     'transit_accessibility_score', 'traffic_accidents_total',

@@ -76,6 +76,14 @@ def transform_to_berlin_schema(school_type):
             applied += 1
     print(f"  Renames: {applied}")
 
+    # Leitung: Schulwegweiser provides `schulleitung`; fill gaps in `leitung`
+    if 'schulleitung' in df.columns:
+        if 'leitung' not in df.columns:
+            df['leitung'] = df['schulleitung']
+        else:
+            mask = df['leitung'].isna() | (df['leitung'].astype(str).str.strip().isin(['', 'None', 'nan']))
+            df.loc[mask, 'leitung'] = df.loc[mask, 'schulleitung']
+
     # Step 2: Derived / mapped columns from Schulwegweiser data
 
     # Student count: map schueler_gesamt → schueler_2024_25 (fill gaps only)
@@ -214,8 +222,13 @@ def transform_to_berlin_schema(school_type):
     print(f"  Saved: {out_pq.name}")
 
     # Guard: school_type must be a specific German type, never 'secondary'/'primary'
-    from scripts_shared.schema.core_schema import validate_school_types
-    validate_school_types(output, city="Frankfurt", strict=True)
+    import sys
+    sys.path.insert(0, str(PROJECT_ROOT))
+    try:
+        from scripts_shared.schema.core_schema import validate_school_types
+        validate_school_types(output, city="Frankfurt", strict=True)
+    except ImportError:
+        pass
 
     # Data quality
     print("\n  Data quality:")

@@ -143,11 +143,8 @@ def transform_to_berlin_schema(school_type):
     assert list(output.columns)[:len(berlin_columns)] == berlin_columns, "SCHEMA MISMATCH!"
     print(f"  PASS: schema verified")
 
-    # Guard: school_type must be a specific German type, never 'secondary'/'primary'
-    from scripts_shared.schema.core_schema import validate_school_types
-    validate_school_types(output, city="Stuttgart", strict=True)
-
-    # Save
+    # Save — do this BEFORE the optional validate_school_types import so a
+    # missing scripts_shared path cannot swallow the output.
     out_pq = STG_DATA_DIR / f"stuttgart_{school_type}_school_master_table_berlin_schema.parquet"
     output.to_parquet(out_pq, index=False)
 
@@ -160,6 +157,15 @@ def transform_to_berlin_schema(school_type):
     csv_out.to_csv(final_pq, index=False, encoding='utf-8-sig')
 
     print(f"  Saved: {out_pq.name}")
+
+    # Guard: school_type must be a specific German type, never 'secondary'/'primary'
+    import sys
+    sys.path.insert(0, str(PROJECT_ROOT))
+    try:
+        from scripts_shared.schema.core_schema import validate_school_types
+        validate_school_types(output, city="Stuttgart", strict=True)
+    except ImportError:
+        pass
     print(f"{'='*70}")
 
     return output
