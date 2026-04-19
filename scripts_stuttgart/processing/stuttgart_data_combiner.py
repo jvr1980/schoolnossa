@@ -90,6 +90,19 @@ def clean_data(df):
         if len(df) < orig:
             logger.info(f"Removed {orig - len(df)} duplicates")
 
+    # Normalize school_type: must be a specific German type (Gymnasium,
+    # Grundschule, etc.), never the generic 'primary'/'secondary' bucket.
+    # Older raw CSVs (pre-commit d6819cd) stored the generic value; copy
+    # from schulart to recover.
+    if 'school_type' in df.columns and 'schulart' in df.columns:
+        generic = df['school_type'].astype(str).str.strip().str.lower().isin(
+            ['primary', 'secondary', 'nan', 'none', '']
+        )
+        if generic.any():
+            logger.info(f"Normalizing school_type from schulart for "
+                        f"{int(generic.sum())} rows")
+            df.loc[generic, 'school_type'] = df.loc[generic, 'schulart']
+
     numeric_cols = ['latitude', 'longitude', 'transit_stops_500m', 'transit_stop_count_1000m',
                     'transit_accessibility_score', 'traffic_accidents_total',
                     'traffic_accidents_per_year', 'crime_haeufigkeitszahl_2023', 'crime_bezirk_index']
