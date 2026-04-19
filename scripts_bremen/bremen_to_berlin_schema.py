@@ -127,6 +127,23 @@ def transform_bremen_to_berlin_schema():
         if old in bremen.columns:
             print(f"  Renamed: {old} -> {new}")
 
+    # Fill description gaps from summary_* fallback (Bremen's description pipeline
+    # populated summary_en/summary_de more consistently than description_en/de)
+    for desc_col, src_col in [('description_en', 'summary_en'), ('description_de', 'summary_de')]:
+        if src_col in bremen_renamed.columns:
+            if desc_col not in bremen_renamed.columns:
+                bremen_renamed[desc_col] = bremen_renamed[src_col]
+                filled = bremen_renamed[desc_col].notna().sum()
+                print(f"  Filled {desc_col} from {src_col}: {filled}")
+            else:
+                mask = bremen_renamed[desc_col].isna() | (
+                    bremen_renamed[desc_col].astype(str).str.strip().isin(['', 'None', 'nan'])
+                )
+                filled_before = bremen_renamed[desc_col].notna().sum()
+                bremen_renamed.loc[mask, desc_col] = bremen_renamed.loc[mask, src_col]
+                filled_after = bremen_renamed[desc_col].notna().sum()
+                print(f"  Filled {desc_col} from {src_col}: {filled_before} -> {filled_after}")
+
     # =========================================================================
     # STEP 2: Extract/transform specific columns
     # =========================================================================
@@ -175,6 +192,13 @@ def transform_bremen_to_berlin_schema():
         else:
             output[col] = None
 
+    # Preserve Bremen-specific columns the Supabase uploader expects but that
+    # aren't in the Berlin reference (e.g. description_en).
+    preserve_extras = ['description_en']
+    for col in preserve_extras:
+        if col in bremen_renamed.columns and col not in output.columns:
+            output[col] = bremen_renamed[col].values
+
     # Count populated vs empty
     populated = sum(1 for col in berlin_columns if col in bremen_renamed.columns)
     print(f"  Columns from Bremen data: {populated}/{len(berlin_columns)}")
@@ -185,9 +209,10 @@ def transform_bremen_to_berlin_schema():
     # =========================================================================
     print("\nStep 4: Verifying schema...")
 
-    assert list(output.columns) == berlin_columns, "Column order mismatch!"
-    assert len(output.columns) == len(berlin.columns), "Column count mismatch!"
-    print(f"  Schema verified: {len(output.columns)} columns match Berlin exactly")
+    output_berlin_cols = list(output.columns[:len(berlin_columns)])
+    assert output_berlin_cols == berlin_columns, "Berlin column order mismatch!"
+    extras_present = [c for c in output.columns if c not in berlin_columns]
+    print(f"  Schema verified: {len(berlin_columns)} Berlin cols + {len(extras_present)} extras")
 
     # =========================================================================
     # STEP 5: Data quality report
@@ -239,6 +264,26 @@ def transform_bremen_to_berlin_schema():
     csv_output = output.drop(columns=['embedding'], errors='ignore')
     csv_output.to_csv(output_csv, index=False, encoding='utf-8-sig')
     print(f"  Saved: {output_csv}")
+
+    # Primary/secondary split (refresh the split files consumed by Supabase uploader)
+    def _bucket(v):
+        if pd.isna(v):
+            return 'secondary'
+        return 'primary' if 'grund' in str(v).strip().lower() else 'secondary'
+
+    type_col = 'school_type' if 'school_type' in csv_output.columns else 'schulart'
+    if type_col in csv_output.columns:
+        buckets = csv_output[type_col].apply(_bucket)
+        for label in ('primary', 'secondary'):
+            sub_csv = csv_output[buckets == label]
+            sub_pq = output[buckets.values == label]
+            if sub_csv.empty:
+                continue
+            split_csv = OUTPUT_DIR / f"bremen_{label}_school_master_table_berlin_schema.csv"
+            split_pq = OUTPUT_DIR / f"bremen_{label}_school_master_table_berlin_schema.parquet"
+            sub_csv.to_csv(split_csv, index=False, encoding='utf-8-sig')
+            sub_pq.to_parquet(split_pq, index=False)
+            print(f"  Saved: {split_csv.name} ({len(sub_csv)} schools)")
 
     # =========================================================================
     # Summary

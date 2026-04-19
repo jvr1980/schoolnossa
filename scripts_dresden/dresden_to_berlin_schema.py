@@ -14,6 +14,8 @@ Created: 2026-04-07
 Updated: 2026-04-09 — process primary + secondary files separately
 """
 
+import re
+
 import pandas as pd
 import numpy as np
 import logging
@@ -37,6 +39,93 @@ COLUMN_RENAMES = {
     'crime_stadtteil': 'crime_bezirk',
     'crime_cases_total': 'crime_straftaten_gesamt',
 }
+
+
+def _format_telefon(code, number):
+    """Format phone_code_1 + phone_number_1 as German-style "0{area} {number}"."""
+    if pd.isna(code) or pd.isna(number):
+        return None
+    try:
+        code_s = str(int(float(code)))
+    except (ValueError, TypeError):
+        code_s = str(code).strip()
+    num_s = str(number).strip()
+    if num_s.endswith('.0'):
+        num_s = num_s[:-2]
+    if not code_s or not num_s:
+        return None
+    return f'0{code_s} {num_s}'
+
+
+def _join_name(first, last):
+    if pd.isna(first) and pd.isna(last):
+        return None
+    parts = []
+    if not pd.isna(first):
+        parts.append(str(first).strip())
+    if not pd.isna(last):
+        parts.append(str(last).strip())
+    name = ' '.join(p for p in parts if p)
+    return name or None
+
+
+def _clean_bezirk(val):
+    """Strip Saxon police prefix: 'StB 0 Altstadt' -> 'Altstadt'."""
+    if pd.isna(val):
+        return None
+    s = str(val).strip()
+    m = re.match(r'^StB\s+\d+\s+(.+)$', s)
+    return m.group(1) if m else s
+
+
+def _fill_from_saxon_source(df: pd.DataFrame) -> pd.DataFrame:
+    """Populate Berlin-canonical columns from Saxon Schuldatenbank raw columns.
+
+    Fills gaps only — never overwrites existing values.
+    """
+    df = df.copy()
+
+    def _ensure(col):
+        if col not in df.columns:
+            df[col] = None
+
+    # Email from `mail`
+    _ensure('email')
+    if 'mail' in df.columns:
+        mask = df['email'].isna()
+        df.loc[mask, 'email'] = df.loc[mask, 'mail']
+
+    # Telefon from phone_code_1 + phone_number_1
+    _ensure('telefon')
+    if 'phone_code_1' in df.columns and 'phone_number_1' in df.columns:
+        mask = df['telefon'].isna()
+        df.loc[mask, 'telefon'] = df.loc[mask].apply(
+            lambda r: _format_telefon(r.get('phone_code_1'), r.get('phone_number_1')),
+            axis=1,
+        )
+
+    # Leitung from headmaster_firstname + headmaster_lastname
+    _ensure('leitung')
+    if 'headmaster_firstname' in df.columns and 'headmaster_lastname' in df.columns:
+        mask = df['leitung'].isna() | (df['leitung'].astype(str).str.strip() == '')
+        df.loc[mask, 'leitung'] = df.loc[mask].apply(
+            lambda r: _join_name(r.get('headmaster_firstname'), r.get('headmaster_lastname')),
+            axis=1,
+        )
+
+    # Ortsteil from community_part
+    _ensure('ortsteil')
+    if 'community_part' in df.columns:
+        mask = df['ortsteil'].isna()
+        df.loc[mask, 'ortsteil'] = df.loc[mask, 'community_part']
+
+    # Bezirk from crime_stadtbezirk (strip police prefix)
+    _ensure('bezirk')
+    if 'crime_stadtbezirk' in df.columns:
+        mask = df['bezirk'].isna()
+        df.loc[mask, 'bezirk'] = df.loc[mask, 'crime_stadtbezirk'].apply(_clean_bezirk)
+
+    return df
 
 
 def get_berlin_schema(school_type: str) -> list:
@@ -66,6 +155,9 @@ def transform_to_berlin_schema(df: pd.DataFrame, school_type: str) -> pd.DataFra
         elif old in df.columns and new in df.columns:
             # Target already exists — drop the source column
             df = df.drop(columns=[old])
+
+    # Populate Berlin-canonical contact/location fields from Saxon source columns
+    df = _fill_from_saxon_source(df)
 
     # Student/teacher count passthrough (fill gaps only)
     for src_col in ['schueler_gesamt', 'schueler_2024_25_raw']:

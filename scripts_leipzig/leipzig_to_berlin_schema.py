@@ -26,6 +26,8 @@ Author: Leipzig School Data Pipeline
 Created: 2026-04-08
 """
 
+import re
+
 import pandas as pd
 import numpy as np
 import logging
@@ -41,6 +43,119 @@ LEIPZIG_DATA_DIR = PROJECT_ROOT / "data_leipzig" / "final"
 # Berlin reference schemas (the ground truth)
 BERLIN_SEC_REF = PROJECT_ROOT / "data_berlin" / "final" / "school_master_table_final_with_embeddings.parquet"
 BERLIN_PRI_REF = PROJECT_ROOT / "data_berlin_primary" / "final" / "grundschule_master_table_final_with_embeddings.parquet"
+
+
+def _format_telefon(code, number):
+    """Format phone_code_1 + phone_number_1 as '0{area} {number}'."""
+    if pd.isna(code) or pd.isna(number):
+        return None
+    try:
+        code_s = str(int(float(code)))
+    except (ValueError, TypeError):
+        code_s = str(code).strip()
+    num_s = str(number).strip()
+    if num_s.endswith('.0'):
+        num_s = num_s[:-2]
+    if not code_s or not num_s:
+        return None
+    return f'0{code_s} {num_s}'
+
+
+def _join_name(first, last):
+    if pd.isna(first) and pd.isna(last):
+        return None
+    parts = []
+    if not pd.isna(first):
+        parts.append(str(first).strip())
+    if not pd.isna(last):
+        parts.append(str(last).strip())
+    name = ' '.join(p for p in parts if p)
+    return name or None
+
+
+def _classify_school_type(val):
+    """Return 'primary' for Grundschule, 'secondary' for everything else.
+
+    Matches the Supabase split (Sonstige + Förderschulen are grouped with
+    secondary to keep the 94-school count stable).
+    """
+    if pd.isna(val):
+        return 'secondary'
+    s = str(val).strip().lower()
+    if 'grund' in s:
+        return 'primary'
+    return 'secondary'
+
+
+def _write_split_outputs(parquet_df: pd.DataFrame, csv_df: pd.DataFrame) -> None:
+    """Write primary/secondary berlin_schema files consumed by the Supabase uploader."""
+    type_col = None
+    for c in ('school_type', 'schulart', 'schultyp'):
+        if c in csv_df.columns:
+            type_col = c
+            break
+    if type_col is None:
+        print("    WARN: no school_type column found — skipping primary/secondary split")
+        return
+
+    classified = csv_df[type_col].apply(_classify_school_type)
+    for bucket in ('primary', 'secondary'):
+        sub_csv = csv_df[classified == bucket]
+        sub_pq = parquet_df[classified.values == bucket]
+        if sub_csv.empty:
+            continue
+        csv_path = LEIPZIG_DATA_DIR / f"leipzig_{bucket}_school_master_table_berlin_schema.csv"
+        pq_path = LEIPZIG_DATA_DIR / f"leipzig_{bucket}_school_master_table_berlin_schema.parquet"
+        sub_csv.to_csv(csv_path, index=False, encoding='utf-8-sig')
+        sub_pq.to_parquet(pq_path, index=False)
+        print(f"    Saved: {csv_path.name} ({len(sub_csv)} schools)")
+        print(f"    Saved: {pq_path.name} ({len(sub_pq)} schools)")
+
+
+def _fill_saxon_gaps(df: pd.DataFrame) -> pd.DataFrame:
+    """Populate Berlin-canonical columns from Saxon Schuldatenbank raw columns.
+
+    Fills gaps only — never overwrites existing values. Shared logic with
+    the Dresden mapper (same upstream source).
+    """
+    df = df.copy()
+
+    def _ensure(col):
+        if col not in df.columns:
+            df[col] = None
+
+    # Email from `mail` (unusual in Leipzig but covers future runs) or school_portal_mail
+    _ensure('email')
+    for src in ('mail', 'school_portal_mail'):
+        if src in df.columns:
+            mask = df['email'].isna()
+            df.loc[mask, 'email'] = df.loc[mask, src]
+
+    # Telefon from phone_code_1 + phone_number_1
+    _ensure('telefon')
+    if 'phone_code_1' in df.columns and 'phone_number_1' in df.columns:
+        mask = df['telefon'].isna()
+        df.loc[mask, 'telefon'] = df.loc[mask].apply(
+            lambda r: _format_telefon(r.get('phone_code_1'), r.get('phone_number_1')),
+            axis=1,
+        )
+
+    # Leitung from headmaster_firstname + headmaster_lastname
+    _ensure('leitung')
+    if 'headmaster_firstname' in df.columns and 'headmaster_lastname' in df.columns:
+        mask = df['leitung'].isna() | (df['leitung'].astype(str).str.strip() == '')
+        df.loc[mask, 'leitung'] = df.loc[mask].apply(
+            lambda r: _join_name(r.get('headmaster_firstname'), r.get('headmaster_lastname')),
+            axis=1,
+        )
+
+    # Ortsteil from community_part (Leipzig's raw Ortsteil field)
+    _ensure('ortsteil')
+    if 'community_part' in df.columns:
+        mask = df['ortsteil'].isna() | (df['ortsteil'].astype(str).str.strip() == '')
+        df.loc[mask, 'ortsteil'] = df.loc[mask, 'community_part']
+
+    return df
 
 
 def get_berlin_schema(school_type: str = "secondary") -> list:
@@ -139,6 +254,11 @@ def transform_to_berlin_schema():
             df = df.rename(columns={old: new})
             applied += 1
     print(f"    Applied {applied} renames")
+
+    # Fill Berlin-canonical contact/location columns from raw Saxon source
+    # (handles cases where the rename condition above was blocked by a
+    # previously-added NULL column from an earlier schema pass)
+    df = _fill_saxon_gaps(df)
 
     # =========================================================================
     # STEP 2: Map Leipzig crime data to Berlin crime columns
@@ -288,6 +408,10 @@ def transform_to_berlin_schema():
     out_csv = LEIPZIG_DATA_DIR / "leipzig_school_master_table_final.csv"
     csv_output.to_csv(out_csv, index=False, encoding='utf-8-sig')
     print(f"    Saved: {out_csv}")
+
+    # Split into primary/secondary berlin_schema files (refresh stale artifacts
+    # that the Supabase uploader consumes)
+    _write_split_outputs(output, csv_output)
 
     # =========================================================================
     # STEP 7: Data quality report
