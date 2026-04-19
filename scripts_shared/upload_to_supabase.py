@@ -39,14 +39,39 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 SUPABASE_URL = 'https://whzvzoumldeqgyrqlilt.supabase.co/rest/v1'
-SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoenZ6b3VtbGRlcWd5cnFsaWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3OTQ0MzEsImV4cCI6MjA4NDM3MDQzMX0.ex4S1up25OAcGD8hQoOSfzf3NVAG5qCmNriixYfAAKs'
 
-HEADERS = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': f'Bearer {SUPABASE_KEY}',
-    'Content-Type': 'application/json',
-    'Prefer': 'return=minimal',
-}
+# Write operations require the service role key (RLS blocks UPDATE for anon).
+# Export it in your shell or .env — never commit it:
+#   export SUPABASE_SERVICE_ROLE_KEY="eyJ..."
+# Reads fall back to the anon key (publicly documented, safe to embed).
+SUPABASE_ANON_KEY = (
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'
+    'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoenZ6b3VtbGRlcWd5cnFsaWx0Iiwicm9sZSI6ImFub24i'
+    'LCJpYXQiOjE3Njg3OTQ0MzEsImV4cCI6MjA4NDM3MDQzMX0.'
+    'ex4S1up25OAcGD8hQoOSfzf3NVAG5qCmNriixYfAAKs'
+)
+
+
+def _resolve_key(for_writes: bool):
+    if for_writes:
+        key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+        if not key:
+            raise SystemExit(
+                'Set SUPABASE_SERVICE_ROLE_KEY in your environment before running '
+                'without --dry-run. RLS blocks anon UPDATE on schools/primary_schools.'
+            )
+        return key
+    return os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or SUPABASE_ANON_KEY
+
+
+def _headers(for_writes: bool):
+    key = _resolve_key(for_writes)
+    return {
+        'apikey': key,
+        'Authorization': f'Bearer {key}',
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+    }
 
 # ============================================================================
 # FIELD GROUPS — only the groups you pass via --groups will be updated.
@@ -147,11 +172,11 @@ CITY_FILES = [
 # Supabase I/O
 # ============================================================================
 
-def supabase_request(method, path, data=None):
-    """Make a Supabase REST API request."""
+def supabase_request(method, path, data=None, for_writes=False):
+    """Make a Supabase REST API request. Use for_writes=True for PATCH/POST/DELETE."""
     url = f'{SUPABASE_URL}/{path}'
     body = json.dumps(data).encode() if data else None
-    req = urllib.request.Request(url, data=body, headers=HEADERS, method=method)
+    req = urllib.request.Request(url, data=body, headers=_headers(for_writes), method=method)
     try:
         resp = urllib.request.urlopen(req)
         content = resp.read().decode()
@@ -307,10 +332,20 @@ def update_city(table, city, local_df, fields, dry_run=False):
             continue
 
         sb_id = sb_row['id']
-        try:
-            supabase_request('PATCH', f'{table}?id=eq.{sb_id}', payload)
-        except Exception as e:
-            logger.error(f'  Failed update {snr}: {e}')
+        # Per-field PATCH with `<field>=is.null` filter so the server-side
+        # guard matches the Python-side check. If something modifies the
+        # cell between our SELECT and PATCH, the row count will be 0 and
+        # no overwrite happens. Belt-and-suspenders for service-role writes.
+        for field, new_val in payload.items():
+            try:
+                supabase_request(
+                    'PATCH',
+                    f'{table}?id=eq.{sb_id}&{field}=is.null',
+                    {field: new_val},
+                    for_writes=True,
+                )
+            except Exception as e:
+                logger.error(f'  Failed update {snr}.{field}: {e}')
 
     return summary
 
@@ -380,6 +415,10 @@ def main():
 
     if args.list_fields:
         return
+
+    # Fail fast: live writes require service role key (RLS blocks anon UPDATE)
+    if not args.dry_run:
+        _resolve_key(for_writes=True)
 
     os.chdir(PROJECT_ROOT)
 
