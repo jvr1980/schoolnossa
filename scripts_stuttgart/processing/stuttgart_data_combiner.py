@@ -24,6 +24,7 @@ FINAL_DIR = DATA_DIR / "final"
 
 def find_most_enriched_file(school_type):
     candidates = [
+        INTERMEDIATE_DIR / f"stuttgart_{school_type}_schools_with_metadata.csv",
         INTERMEDIATE_DIR / f"stuttgart_{school_type}_schools_with_pois.csv",
         INTERMEDIATE_DIR / f"stuttgart_{school_type}_schools_with_crime.csv",
         INTERMEDIATE_DIR / f"stuttgart_{school_type}_schools_with_transit.csv",
@@ -44,7 +45,9 @@ def standardize_columns(df):
         'strasse', 'plz', 'ort', 'ortsteil', 'stadt', 'bundesland',
         'latitude', 'longitude',
         'telefon', 'fax', 'email', 'website',
-        'schulleitung', 'traegerschaft',
+        'schulleitung', 'traegerschaft', 'leitung',
+        'schueler_2024_25', 'lehrer_2024_25', 'sprachen',
+        'gruendungsjahr', 'besonderheiten',
         'transit_stops_500m', 'transit_stop_count_1000m',
         'transit_rail_01_name', 'transit_rail_01_distance_m',
         'transit_rail_01_latitude', 'transit_rail_01_longitude', 'transit_rail_01_lines',
