@@ -1,5 +1,45 @@
 # SchoolNossa Development Journal
 
+## 2026-04-19 — Plan: Recover Munich Contact Info + Downstream Enrichments
+
+**Status:** Plan only — implementation kicks off immediately after this entry lands.
+
+**Why:** Munich is the only city where `schools` (secondary) shows 0/108 for email, telefon, website, leitung, besonderheiten, sprachen, gruendungsjahr, traegerschaft in Supabase. Root cause is the raw data source: `jedeschule.codefor.de` returns only name + address + coordinates for Bavarian schools. The mapper fixes in the 2026-04-19 backfill couldn't help because there was never any contact data in the raw CSV. Munich `primary_schools` has the same 0% gap for email/telefon/website/leitung/sprachen/traegerschaft (148 rows). Total 256 schools × ~4 contact fields = ~1,000 cells worth recovering.
+
+**Approach: Google Places API for contact, then reuse existing website enrichments for the rest.**
+
+The project already uses Places API (`scripts_shared/enrichment/enrich_schools_with_pois.py`, `scripts_munich/enrichment/munich_poi_enrichment.py`) with key in `.env` and a school-specific utility at `scripts_shared/utils/school_master_table_gcp_places.py`. No new infrastructure needed.
+
+**What Places API returns that helps:**
+- `formatted_phone_number` → `telefon`
+- `website` → `website`
+- (email and leitung are not exposed by Places — those come from Phase 2)
+
+**Matching strategy (coords + address as ground truth):**
+1. Primary: `Places Nearby Search` with `type=school`, `location=<coords>`, `radius=100m`. 100m ≈ one building footprint in dense Munich; target school is usually the top hit.
+2. Verify: fuzzy-match returned name against `schulname` (token-set ratio ≥ 0.5) AND distance ≤ 150m from our raw coord.
+3. Fallback: `Text Search` biased to coords with `"<schulname> <strasse>"` — handles cases where the school's Places entry is under a parent org name.
+4. Reject if neither verifies — log for manual review rather than upload a wrong match.
+Expected false-match rate: under 1% given the coord + address + name triple-check.
+
+**Plan phases:**
+1. **Phase 1a — Places contact enrichment** (new script `scripts_munich/enrichment/munich_places_contact_enrichment.py`). Fills `telefon` + `website` on both primary + secondary Munich raw CSVs. Cached by place_id in `data_munich/cache/places/contact/`. Dry-run on 10 schools first, show match distances and name similarities for eyeball check before the 256-school run. Expected cost ~$15–20 one-time (Nearby Search + Place Details).
+2. **Phase 1b — Re-run Munich pipeline** (combiner → schema mapper → Supabase uploader). Policies on `telefon`, `website` need temporary reinstatement by Lovable.
+3. **Phase 2a — Generic website-metadata enrichment.** Lift Stuttgart's `stuttgart_website_metadata_enrichment.py` into a shared cross-city `scripts_shared/enrichment/website_metadata_enrichment.py` (same pattern as the admission/open-days cross-city enrichment). Apply to Munich. Expected fills: `leitung`, `schueler_2024_25`, `lehrer_2024_25`, `sprachen`, `gruendungsjahr`, `besonderheiten`.
+4. **Phase 2b — Run existing shared pipelines for Munich:**
+   - `scripts_shared/generation/school_description_pipeline.py` → descriptions (DE + EN) + embeddings
+   - `scripts_shared/enrichment/enrich_german_schools_with_admission_and_open_days.py` → already cross-city, now has URLs to work with for Munich
+   - `scripts_shared/generation/tuition_pipeline.py` → tuition for Munich private schools
+5. **Phase 2c — Upload all new Munich data** via the existing fill-gaps uploader.
+
+**Expected final state after both phases:** Munich contact + metadata + descriptions coverage should match the typical level of other cities (80–95% for most fields, with gaps only where individual school websites have poor Impressum pages). `lehrer_2024_25` and `migration_2024_25` may stay lower because those are less commonly published on school sites.
+
+**What this plan does NOT address:**
+- `bezirk`: Munich has 25 Bezirke but neither jedeschule nor school websites reliably expose them. Would need a separate geocoding step against a Bezirk polygon dataset — out of scope for this pass.
+- `traegerschaft`: Places API doesn't expose school operator. Would need website scrape or separate municipal data. Out of scope.
+
+**Commits to come:** tagged under `feature/munich-places-contact` branch.
+
 ## 2026-04-19 — Schema Mapper Gaps + Supabase Backfill (1,512 rows)
 
 **What:** Audited a Supabase coverage report that flagged many 0%-populated columns across cities, tracked each gap to either a mapper bug or a genuine source gap, fixed the mappers, extended the Supabase uploader, and filled the resulting cells.
