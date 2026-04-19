@@ -53,14 +53,12 @@ SUPABASE_ANON_KEY = (
 
 
 def _resolve_key(for_writes: bool):
-    if for_writes:
-        key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
-        if not key:
-            raise SystemExit(
-                'Set SUPABASE_SERVICE_ROLE_KEY in your environment before running '
-                'without --dry-run. RLS blocks anon UPDATE on schools/primary_schools.'
-            )
-        return key
+    # Prefer service role if the caller has exported it (bypasses RLS).
+    # Otherwise fall back to the anon key — this is the right choice when
+    # Lovable has installed a temporary per-column `IS NULL`-gated UPDATE
+    # policy for the anon role. If neither the policy nor the service role
+    # is in place, live writes will simply 401/403 and the script logs
+    # the failure per row.
     return os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or SUPABASE_ANON_KEY
 
 
@@ -416,9 +414,10 @@ def main():
     if args.list_fields:
         return
 
-    # Fail fast: live writes require service role key (RLS blocks anon UPDATE)
     if not args.dry_run:
-        _resolve_key(for_writes=True)
+        using_service_role = bool(os.environ.get('SUPABASE_SERVICE_ROLE_KEY'))
+        print(f"Auth:    {'service_role (RLS bypassed)' if using_service_role else 'anon key (requires per-column IS NULL UPDATE policy)'}")
+        print()
 
     os.chdir(PROJECT_ROOT)
 
