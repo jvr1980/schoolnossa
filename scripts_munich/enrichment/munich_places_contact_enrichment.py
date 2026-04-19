@@ -509,17 +509,34 @@ def process_school_type(school_type, *, dry_run=False, limit=None, force=False):
     # Merge results back into the df and write intermediate output
     if not dry_run:
         enriched = df.copy()
+        # Force object dtype so we can assign strings even to columns where
+        # the raw CSV had the column all-NaN and pandas inferred float64.
+        for col in ("telefon", "website"):
+            if col not in enriched.columns:
+                enriched[col] = pd.Series([pd.NA] * len(enriched), dtype=object)
+            elif enriched[col].dtype != object:
+                enriched[col] = enriched[col].astype(object)
+
         outcome_by_snr = {str(o["schulnummer"]): o for o in outcomes}
+
+        def _is_blank(v):
+            if v is None or (isinstance(v, float) and pd.isna(v)):
+                return True
+            return str(v).strip() in ("", "nan", "None", "NaN", "<NA>")
+
         for idx, r in enriched.iterrows():
             snr = str(r.get("schulnummer", ""))
             o = outcome_by_snr.get(snr)
             if not o or o["status"] != "matched":
                 continue
-            # Fill gaps only — never overwrite non-empty raw values
-            if not str(r.get("telefon") or "").strip() and o.get("telefon"):
-                enriched.at[idx, "telefon"] = o["telefon"]
-            if not str(r.get("website") or "").strip() and o.get("website"):
-                enriched.at[idx, "website"] = o["website"]
+            # Fill gaps only — never overwrite non-empty raw values. Treat
+            # NaN/empty/'nan'-string as gaps.
+            new_phone = o.get("telefon")
+            if _is_blank(r.get("telefon")) and not _is_blank(new_phone):
+                enriched.at[idx, "telefon"] = new_phone
+            new_site = o.get("website")
+            if _is_blank(r.get("website")) and not _is_blank(new_site):
+                enriched.at[idx, "website"] = new_site
 
         out_path = INTERMEDIATE_DIR / f"munich_{school_type}_schools_with_places_contact.csv"
         INTERMEDIATE_DIR.mkdir(parents=True, exist_ok=True)
