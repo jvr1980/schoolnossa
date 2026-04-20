@@ -212,13 +212,11 @@ def process_school_type(school_type):
     desc_count = df['description'].notna().sum()
     logger.info(f"Generated {desc_count} descriptions")
 
-    # Generate embeddings (Gemini only)
-    result = generate_embeddings_gemini(df)
-    if result is None:
-        logger.warning("Embedding generation failed — saving without embeddings")
-        df['embedding'] = None
-    else:
-        df = result
+    # Delegate to shared helper (Gemini primary, OpenAI fallback).
+    import sys as _sys
+    _sys.path.insert(0, str(PROJECT_ROOT / "scripts_shared" / "generation"))
+    from embeddings import generate_embeddings as _shared_embed  # type: ignore
+    df = _shared_embed(df, text_col='description')
 
     # Compute similar schools
     df = compute_similar_schools(df)

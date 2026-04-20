@@ -3,7 +3,8 @@
 Phase 8: Munich Embeddings Generator
 
 Generates text embeddings for school descriptions and creates final parquet.
-Uses OpenAI text-embedding-3-large (3072-dim) with Gemini fallback.
+Delegates to scripts_shared/generation/embeddings.py which prefers Gemini
+(gemini-embedding-001, 3072-dim) and falls back to OpenAI.
 
 Input: data_munich/final/munich_secondary_school_master_table.csv
 Output: data_munich/final/munich_secondary_school_master_table_final.csv
@@ -149,21 +150,16 @@ def generate_for_school_type(school_type='secondary'):
         logger.info(f"Saved parquet (no embeddings): {final_parquet}")
         return df
 
-    texts = [create_text_for_embedding(row) for _, row in df.iterrows()]
-    logger.info(f"Created embedding texts for {len(texts)} schools")
+    # Delegate to shared helper (Gemini primary, OpenAI fallback).
+    import sys as _sys
+    _sys.path.insert(0, str(PROJECT_ROOT / "scripts_shared" / "generation"))
+    from embeddings import generate_embeddings as _shared_embed  # type: ignore
 
-    embeddings = None
-    if OPENAI_API_KEY:
-        logger.info("Generating embeddings with OpenAI...")
-        embeddings = generate_openai_embeddings(texts)
-    elif GEMINI_API_KEY:
-        logger.info("Generating embeddings with Gemini (fallback)...")
-        embeddings = generate_gemini_embeddings(texts)
-    else:
-        logger.warning("No API key available for embeddings. Set OPENAI_API_KEY or GEMINI_API_KEY.")
-        embeddings = [None] * len(df)
-
-    df['embedding'] = embeddings
+    df['__embedding_text'] = [create_text_for_embedding(row) for _, row in df.iterrows()]
+    logger.info(f"Created embedding texts for {len(df)} schools")
+    df = _shared_embed(df, text_col='__embedding_text')
+    df = df.drop(columns=['__embedding_text'], errors='ignore')
+    embeddings = df['embedding'].tolist()
 
     final_parquet = FINAL_DIR / f"munich_{school_type}_school_master_table_final_with_embeddings.parquet"
     df.to_parquet(final_parquet, index=False)

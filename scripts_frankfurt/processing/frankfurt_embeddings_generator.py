@@ -184,20 +184,11 @@ def generate_embeddings_gemini(df):
 
 
 def generate_embeddings(df):
-    skip = os.environ.get('SKIP_EMBEDDINGS', '').strip()
-    if skip == '1':
-        logger.info("Skipping embeddings (SKIP_EMBEDDINGS=1)")
-        df['embedding'] = None
-        return df
-    result = generate_embeddings_openai(df)
-    if result is not None:
-        return result
-    result = generate_embeddings_gemini(df)
-    if result is not None:
-        return result
-    logger.warning("No embedding API key found. Skipping.")
-    df['embedding'] = None
-    return df
+    """Delegates to shared helper (Gemini primary, OpenAI fallback)."""
+    import sys as _sys
+    _sys.path.insert(0, str(PROJECT_ROOT / "scripts_shared" / "generation"))
+    from embeddings import generate_embeddings as _shared_embed  # type: ignore
+    return _shared_embed(df, text_col='description')
 
 
 def compute_similar_schools(df, top_n=3):

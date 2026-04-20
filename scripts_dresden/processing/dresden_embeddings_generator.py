@@ -115,17 +115,17 @@ def main():
     if skip_embeddings:
         logger.info("Skipping embedding generation (SKIP_EMBEDDINGS=1)")
     else:
-        api_key = os.environ.get('OPENAI_API_KEY')
-        if not api_key:
-            logger.warning("OPENAI_API_KEY not set — skipping embeddings")
-        else:
-            texts = df['embedding_text'].tolist()
-            embeddings = generate_openai_embeddings(texts)
-
-            if embeddings:
-                df['embedding'] = [json.dumps(e) if e else None for e in embeddings]
-                valid = sum(1 for e in embeddings if e is not None)
-                logger.info(f"Generated embeddings for {valid}/{len(df)} schools")
+        # Delegate to shared helper (Gemini primary, OpenAI fallback).
+        import sys as _sys
+        _sys.path.insert(0, str(PROJECT_ROOT / "scripts_shared" / "generation"))
+        from embeddings import generate_embeddings as _shared_embed  # type: ignore
+        df = _shared_embed(df, text_col='embedding_text')
+        # Dresden previously JSON-encoded embeddings for CSV persistence.
+        df['embedding'] = df['embedding'].apply(
+            lambda e: json.dumps(e) if e is not None and hasattr(e, '__len__') else None
+        )
+        valid = df['embedding'].notna().sum()
+        logger.info(f"Generated embeddings for {valid}/{len(df)} schools")
 
     # Save final outputs
     csv_path = FINAL_DIR / "dresden_school_master_table_final.csv"

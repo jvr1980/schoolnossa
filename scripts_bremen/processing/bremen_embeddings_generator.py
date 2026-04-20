@@ -316,29 +316,11 @@ def generate_embeddings_gemini(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def generate_embeddings(df: pd.DataFrame) -> pd.DataFrame:
-    """Generate embeddings using OpenAI (preferred) or Gemini (fallback)."""
-    skip = os.environ.get('SKIP_EMBEDDINGS', '').strip()
-    if skip == '1':
-        logger.info("Skipping embedding generation (SKIP_EMBEDDINGS=1)")
-        df['embedding'] = None
-        return df
-
-    # Try OpenAI first
-    result = generate_embeddings_openai(df)
-    if result is not None:
-        return result
-
-    # Fall back to Gemini
-    logger.info("OpenAI not available, trying Gemini...")
-    result = generate_embeddings_gemini(df)
-    if result is not None:
-        return result
-
-    # Neither available
-    logger.warning("No embedding API key found. Set OPENAI_API_KEY or GEMINI_API_KEY.")
-    logger.warning("Skipping embedding generation.")
-    df['embedding'] = None
-    return df
+    """Delegates to shared helper (Gemini primary, OpenAI fallback)."""
+    import sys as _sys
+    _sys.path.insert(0, str(PROJECT_ROOT / "scripts_shared" / "generation"))
+    from embeddings import generate_embeddings as _shared_embed  # type: ignore
+    return _shared_embed(df, text_col='description')
 
 
 def compute_similar_schools(df: pd.DataFrame, top_n: int = 3) -> pd.DataFrame:

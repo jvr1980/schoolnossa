@@ -344,34 +344,12 @@ def generate_embeddings_gemini(texts: list) -> list:
 
 
 def generate_embeddings(df: pd.DataFrame) -> pd.DataFrame:
-    """Generate embeddings using OpenAI (preferred) or Gemini (fallback)."""
-    skip = os.environ.get('SKIP_EMBEDDINGS', '').strip()
-    if skip == '1':
-        logger.info("Skipping embedding generation (SKIP_EMBEDDINGS=1)")
-        df['embedding'] = None
-        return df
-
-    # Use embedding_text for richer representation
-    texts = df['embedding_text'].tolist()
-
-    # Try OpenAI first
-    embeddings = generate_embeddings_openai(texts)
-    if embeddings is not None:
-        df['embedding'] = embeddings
-        return df
-
-    # Fall back to Gemini
-    logger.info("OpenAI not available, trying Gemini...")
-    embeddings = generate_embeddings_gemini(texts)
-    if embeddings is not None:
-        df['embedding'] = embeddings
-        return df
-
-    # Neither available
-    logger.warning("No embedding API key found. Set OPENAI_API_KEY or GEMINI_API_KEY.")
-    logger.warning("Skipping embedding generation.")
-    df['embedding'] = None
-    return df
+    """Delegates to shared helper (Gemini primary, OpenAI fallback)."""
+    import sys as _sys
+    _sys.path.insert(0, str(PROJECT_ROOT / "scripts_shared" / "generation"))
+    from embeddings import generate_embeddings as _shared_embed  # type: ignore
+    text_col = 'embedding_text' if 'embedding_text' in df.columns else 'description'
+    return _shared_embed(df, text_col=text_col)
 
 
 def compute_similar_schools(df: pd.DataFrame, top_n: int = 3) -> pd.DataFrame:

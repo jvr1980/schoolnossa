@@ -148,59 +148,11 @@ def add_descriptions(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def generate_embeddings(df: pd.DataFrame) -> pd.DataFrame:
-    """Generate OpenAI embeddings for school descriptions."""
-    logger.info("Checking for OpenAI API key...")
-
-    api_key = os.environ.get('OPENAI_API_KEY')
-
-    if not api_key:
-        logger.warning("OPENAI_API_KEY not found. Skipping embedding generation.")
-        logger.info("To generate embeddings, set the OPENAI_API_KEY environment variable.")
-        # Add placeholder embedding column
-        df['embedding'] = None
-        return df
-
-    logger.info("Generating embeddings with OpenAI...")
-
-    try:
-        from openai import OpenAI
-        client = OpenAI(api_key=api_key)
-
-        embeddings = []
-        total = len(df)
-
-        for idx, row in df.iterrows():
-            if idx % 20 == 0:
-                logger.info(f"Generating embedding {idx + 1}/{total}")
-
-            description = row.get('description', '')
-            if not description:
-                embeddings.append(None)
-                continue
-
-            try:
-                response = client.embeddings.create(
-                    model=EMBEDDING_MODEL,
-                    input=description
-                )
-                embedding = response.data[0].embedding
-                embeddings.append(embedding)
-            except Exception as e:
-                logger.warning(f"Failed to generate embedding for school {idx}: {e}")
-                embeddings.append(None)
-
-        df['embedding'] = embeddings
-        embedding_count = sum(1 for e in embeddings if e is not None)
-        logger.info(f"Generated {embedding_count}/{total} embeddings")
-
-    except ImportError:
-        logger.warning("OpenAI package not installed. Run: pip install openai")
-        df['embedding'] = None
-    except Exception as e:
-        logger.error(f"Embedding generation failed: {e}")
-        df['embedding'] = None
-
-    return df
+    """Delegates to shared helper (Gemini primary, OpenAI fallback)."""
+    import sys as _sys
+    _sys.path.insert(0, str(PROJECT_ROOT / "scripts_shared" / "generation"))
+    from embeddings import generate_embeddings as _shared_embed  # type: ignore
+    return _shared_embed(df, text_col='description')
 
 
 def compute_similar_schools(df: pd.DataFrame, top_n: int = 3) -> pd.DataFrame:
