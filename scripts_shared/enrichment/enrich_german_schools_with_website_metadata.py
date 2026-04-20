@@ -137,6 +137,8 @@ OUTPUT_COLUMNS = [
     "gruendungsjahr",
     "leitung",
     "besonderheiten",
+    "traegerschaft",            # one of: staatlich / städtisch / privat / kirchlich
+    "is_private_school",        # bool derived from traegerschaft
     "tuition_monthly_eur",
     "scholarship_available",
     "source_grounding_urls",
@@ -285,6 +287,14 @@ ANWEISUNGEN
   Kommas (z.B. "bilingual, MINT, Inklusion").
 - "gruendungsjahr" muss vierstellig zwischen 1500 und 2026 liegen.
 - "tuition_monthly_eur" nur für Privatschulen, sonst null.
+- "traegerschaft" ist genau einer dieser Werte:
+    "staatlich"   — Land/Bundesland ist Träger (z.B. Bayern, NRW)
+    "städtisch"   — Kommune/Stadt ist Träger
+    "privat"      — freie/private Trägerschaft ohne Kirche
+    "kirchlich"   — evangelisch, katholisch, Jesuiten, Stiftungen mit klarem Kirchenbezug
+    null          — nicht sicher feststellbar
+  Im Impressum/Über-Uns-Bereich steht das oft explizit. Waldorf- und
+  Montessorischulen ohne Stadt-Träger sind meist "privat".
 
 ANTWORT-FORMAT (strikt JSON, kein Markdown):
 {{
@@ -295,6 +305,7 @@ ANTWORT-FORMAT (strikt JSON, kein Markdown):
   "schulleitung": "Name Vorname"|null,
   "ganztag": true|false|null,
   "besonderheiten": "kurzer Profiltext"|null,
+  "traegerschaft": "staatlich"|"städtisch"|"privat"|"kirchlich"|null,
   "tuition_monthly_eur": int|null,
   "scholarship_available": true|false|null,
   "source_grounding_urls": ["genaue URL(s)"]
@@ -472,6 +483,23 @@ def _compose_besonderheiten(besond: Any, ganztag: Any) -> Optional[str]:
     return result[:200] if result else None
 
 
+_VALID_TRAEGERSCHAFT = {"staatlich", "städtisch", "privat", "kirchlich"}
+
+
+def _normalize_traegerschaft(v) -> Optional[str]:
+    if v is None:
+        return None
+    s = str(v).strip().lower()
+    if s in {"null", "none", "nan", ""}:
+        return None
+    # Handle common synonyms
+    if s in {"staatl.", "staatliche", "staatlicher"}: return "staatlich"
+    if s in {"städt.", "städtische", "städtischer", "kommunal", "öffentlich"}: return "städtisch"
+    if s in {"private", "privater", "frei", "freie", "freier"}: return "privat"
+    if s in {"katholisch", "evangelisch", "ev.", "kath.", "kirche"}: return "kirchlich"
+    return s if s in _VALID_TRAEGERSCHAFT else None
+
+
 def _build_row(school: dict, city_key: str, gemini_result: dict) -> dict:
     data = gemini_result.get("data") or {}
     status = gemini_result.get("status", "parse_error")
@@ -486,6 +514,8 @@ def _build_row(school: dict, city_key: str, gemini_result: dict) -> dict:
     else:
         leitung = None
     besonderheiten = _compose_besonderheiten(data.get("besonderheiten"), _to_bool(data.get("ganztag")))
+    traegerschaft = _normalize_traegerschaft(data.get("traegerschaft"))
+    is_private = (traegerschaft in {"privat", "kirchlich"}) if traegerschaft else None
     tuition = _to_int(data.get("tuition_monthly_eur"), 0, 5000)
     scholarship = _to_bool(data.get("scholarship_available"))
 
@@ -493,7 +523,7 @@ def _build_row(school: dict, city_key: str, gemini_result: dict) -> dict:
     if status == "success":
         has_anything = any(v is not None for v in (
             schueler, lehrer, sprachen, gruendungsjahr, leitung,
-            besonderheiten, tuition, scholarship,
+            besonderheiten, traegerschaft, tuition, scholarship,
         ))
         if not has_anything:
             status = "no_metadata"
@@ -516,6 +546,8 @@ def _build_row(school: dict, city_key: str, gemini_result: dict) -> dict:
         "gruendungsjahr": gruendungsjahr,
         "leitung": leitung,
         "besonderheiten": besonderheiten,
+        "traegerschaft": traegerschaft,
+        "is_private_school": is_private,
         "tuition_monthly_eur": tuition,
         "scholarship_available": scholarship,
         "source_grounding_urls": json.dumps(grounding, ensure_ascii=False),
@@ -536,6 +568,8 @@ def _skipped_row(school: dict, city_key: str, status: str) -> dict:
         "gruendungsjahr": None,
         "leitung": None,
         "besonderheiten": None,
+        "traegerschaft": None,
+        "is_private_school": None,
         "tuition_monthly_eur": None,
         "scholarship_available": None,
         "source_grounding_urls": "[]",
