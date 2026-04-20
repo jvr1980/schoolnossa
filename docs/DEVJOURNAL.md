@@ -1,5 +1,119 @@
 # SchoolNossa Development Journal
 
+## 2026-04-20 — Ops Playbook: Uploading Fill-Gaps Data to Lovable Supabase
+
+**Context:** The `schools` and `primary_schools` tables on the Lovable Supabase project have Row Level Security enabled. The anon key (committed in the repo) is permitted only to `SELECT`; `UPDATE` is blocked. Whenever we need to backfill columns from a local enrichment we have to temporarily open a narrow UPDATE path. This entry documents the exact workflow so future upload rounds don't hit the same potholes.
+
+### Two options (pick one)
+
+**Option A — service role key (fast, no Lovable round-trip).**
+Ask Lovable for the Supabase `service_role` key (never committed; stored in their project secrets). Export locally and run the uploader:
+
+```bash
+export SUPABASE_SERVICE_ROLE_KEY="eyJ..."   # from Supabase dashboard → API settings
+python3 scripts_shared/upload_to_supabase.py --city <city> --groups <groups>
+```
+
+`upload_to_supabase.py` picks up the env var automatically and uses service role for writes (bypasses RLS). The script's Python-side NULL-only guard plus its per-field `<col>=is.null` URL filter still prevent overwrites. Lovable occasionally declines to share this key directly because it'd then exist in our shell history.
+
+**Option B — temporary per-column anon UPDATE policies (what we've used most).**
+Ask Lovable to install scoped RLS policies that allow the anon key to write to specific columns as long as the target cell is NULL. This never exposes a secret key.
+
+### Option B — copy-paste message template
+
+> Hi — need to backfill `<city>` from a local enrichment. Please install temporary anon UPDATE policies for the following columns on both `schools` and `primary_schools`. **Must use explicit `WITH CHECK (true)`** — PostgreSQL defaults `WITH CHECK` to the `USING` expression when omitted, which for our NULL-only gate means every UPDATE fails because the new row (with the value written) no longer satisfies `col IS NULL`.
+>
+> ```sql
+> DO $$
+> DECLARE col text;
+>         tbl text;
+> BEGIN
+>   FOR tbl IN SELECT unnest(ARRAY['schools','primary_schools']) LOOP
+>     FOR col IN SELECT unnest(ARRAY[
+>       -- <paste the column list here, e.g. 'email','telefon','website','leitung'>
+>     ]) LOOP
+>       EXECUTE format('DROP POLICY IF EXISTS %I ON %I',
+>                      'temp_anon_fill_' || col, tbl);
+>       EXECUTE format(
+>         'CREATE POLICY %I ON %I FOR UPDATE TO anon
+>          USING (%I IS NULL) WITH CHECK (true)',
+>         'temp_anon_fill_' || col, tbl, col
+>       );
+>     END LOOP;
+>   END LOOP;
+> END$$;
+> ```
+>
+> Tell me when installed; I'll canary a single PATCH first, run the batch, and confirm when to drop them.
+
+### Canary step (always run before the full upload)
+
+PostgREST returns `HTTP 204` with `Prefer: return=minimal` regardless of whether any row actually changed, so silence is not success. Always PATCH a real row, then re-read, and compare the value:
+
+```python
+# PATCH with return=representation — the response body shows rows that actually changed
+req = urllib.request.Request(
+    f'{SUPABASE_URL}/{table}?id=eq.{row_id}&{col}=is.null',
+    data=json.dumps({col: test_value}).encode(),
+    headers={**HEADERS, 'Prefer': 'return=representation'},
+    method='PATCH',
+)
+# HTTP 401 / code 42501 → RLS still blocks (policy missing or WITH CHECK misconfigured)
+# HTTP 200 + empty body []  → policy OK but the is.null filter matched 0 rows (unexpected)
+# HTTP 200 + [{...test_value}] → policy works, restore with PATCH setting col to null
+```
+
+### Known gotchas
+
+- **`WITH CHECK` default.** `CREATE POLICY ... USING (x IS NULL)` alone makes PostgreSQL enforce `WITH CHECK (x IS NULL)` too. Every UPDATE fails once the new value is non-NULL. Always request `WITH CHECK (true)` explicitly.
+- **HTTP 204 ≠ success.** PostgREST returns 204 when the URL filter matches zero rows, with or without RLS involvement. The script-side error count undercounts real failures; always verify against the live Supabase state.
+- **Canary column choice.** If you canary only columns covered by the installed policies, you can't tell whether the drop step worked at the end. Re-test on a column that was NEVER in any policy — if that fails with 401, the cleanup succeeded.
+- **Restore after canary.** The canary writes a garbage value into a real row. Immediately PATCH it back to `null` to keep production clean.
+
+### After the upload
+
+Verify in Supabase directly (don't trust the script's `fill: +N` lines):
+
+```python
+# Count non-null cells per field in the target table for the city
+for f in ['email','telefon','website', ...]:
+    cnt = sum(1 for r in rows if r.get(f) not in (None, '', 'None'))
+    print(f'{f}: {cnt}/{n}')
+```
+
+Then ask Lovable to drop the policies:
+
+```sql
+DO $$
+DECLARE col text; tbl text;
+BEGIN
+  FOR tbl IN SELECT unnest(ARRAY['schools','primary_schools']) LOOP
+    FOR col IN SELECT unnest(ARRAY[ -- <same column list as before> ]) LOOP
+      EXECUTE format('DROP POLICY IF EXISTS %I ON %I',
+                     'temp_anon_fill_' || col, tbl);
+    END LOOP;
+  END LOOP;
+END$$;
+```
+
+Confirm the drop worked by PATCHing the anon key against a column that was in the temp list — must now return 401.
+
+### Script flags to remember
+
+```
+python3 scripts_shared/upload_to_supabase.py --list-fields
+    # Print the field groups + columns without running anything.
+
+python3 scripts_shared/upload_to_supabase.py --dry-run --city <city> --groups <g1,g2>
+    # Print the per-city/per-field fill counts. No writes, no API round-trips.
+
+python3 scripts_shared/upload_to_supabase.py --city <city> --groups <g1,g2>
+    # Live run. Uses service role if SUPABASE_SERVICE_ROLE_KEY is set,
+    # otherwise anon (which needs the Option-B policies installed).
+```
+
+Field groups live at the top of `scripts_shared/upload_to_supabase.py` — extend there when a new batch of columns needs uploading.
+
 ## 2026-04-19 — Plan: Recover Munich Contact Info + Downstream Enrichments
 
 **Status:** Plan only — implementation kicks off immediately after this entry lands.
