@@ -63,11 +63,16 @@ def compute_academic_score(row) -> float:
     Compute normalized 0-100 score from UK Attainment 8.
     Attainment 8 typically ranges 0-90 (national avg ~46).
     Map: score = (att8 / 90) * 100, capped at 100.
+
+    DfE suppression codes ('x', 'z', '.', 'SUPP') are returned as NaN.
     """
     att8 = row.get("ks4_attainment8")
-    if pd.notna(att8):
+    if pd.isna(att8):
+        return np.nan
+    try:
         return round(min(100, float(att8) / 90 * 100), 1)
-    return np.nan
+    except (ValueError, TypeError):
+        return np.nan
 
 
 def find_best_input() -> Path:
@@ -89,6 +94,17 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     logger.info(f"Loading from {input_path.name}...")
     df = pd.read_csv(input_path, low_memory=False)
     logger.info(f"  {len(df)} schools, {len(df.columns)} columns")
+
+    # Normalize column names produced by osm_school_locations.py scraper to
+    # the GIAS-style names the mapping below expects. Keeps scraper output
+    # idiomatic (DfE-native names) while the finalizer speaks GIAS.
+    rename_map = {
+        "establishment_type_group": "establishment_type",
+        "la_name": "local_authority",
+        "attainment8_average": "ks4_attainment8",
+        "progress8_average": "ks4_progress8",
+    }
+    df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns and v not in df.columns})
 
     full_schema = get_full_schema("GB")
     output = pd.DataFrame(columns=full_schema)

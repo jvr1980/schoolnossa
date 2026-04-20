@@ -30,21 +30,23 @@ logger = logging.getLogger(__name__)
 
 
 def find_best_input() -> Path:
-    """Find the most enriched intermediate file (later phases = more data)."""
+    """Find the most enriched intermediate file — by column count, since any
+    enrichment phase may have been run last (pois can run after demographics)."""
     candidates = [
-        INTERMEDIATE_DIR / "nl_schools_with_demographics.csv",
         INTERMEDIATE_DIR / "nl_schools_with_pois.csv",
+        INTERMEDIATE_DIR / "nl_schools_with_demographics.csv",
         INTERMEDIATE_DIR / "nl_schools_with_crime.csv",
         INTERMEDIATE_DIR / "nl_schools_with_transit.csv",
         INTERMEDIATE_DIR / "nl_schools_with_traffic.csv",
         INTERMEDIATE_DIR / "nl_school_master_geocoded.csv",
         INTERMEDIATE_DIR / "nl_school_master_base.csv",
     ]
-    for path in candidates:
-        if path.exists():
-            return path
+    existing = [p for p in candidates if p.exists()]
+    if not existing:
+        raise FileNotFoundError("No intermediate data found. Run earlier phases first.")
 
-    raise FileNotFoundError("No intermediate data found. Run earlier phases first.")
+    # Pick the file with the most columns (= most enriched)
+    return max(existing, key=lambda p: len(pd.read_csv(p, nrows=0).columns))
 
 
 def main(skip_embeddings: bool = False):

@@ -1,5 +1,33 @@
 # SchoolNossa Development Journal
 
+## 2026-04-20 — NL POI Enrichment + GB Pipeline Chain Fix
+
+**What:** Ran NL Phase 6 POI enrichment (0% → 100% POI coverage across 1,626 schools) and repaired the GB pipeline so Phase 3 (traffic) actually produces data and Phases 4/5/9 flow it into the final table.
+
+**Why:** Status audit showed both pipelines well short of Berlin parity. NL had a POI script but had never been run. GB had multiple silent failures that left traffic/transit empty in the final table despite the phases reporting OK.
+
+**NL fixes:**
+- Rewrote `nl_poi_enrichment.py` to use `scripts_shared.enrichment.enrich_schools_with_pois.enrich_school` with a 5-worker thread pool, per-school JSON cache (keyed by `vestiging_code`/`brin_code`), and preferred the most-enriched input (`nl_schools_with_demographics.csv`) so POI output carries all prior enrichments.
+- `nl_combine_and_finalize.py`: `find_best_input` now picks the intermediate with the highest column count rather than a fixed priority list — ordering-agnostic to handle POI-after-demographics.
+- Result: 100% POI coverage (81 POI cols), 1,626 rows, ~7,800 Google Places API calls (~$250).
+
+**GB fixes (four bugs, not one):**
+- `gb_traffic_enrichment.py`: STATS19 raw now ships as `collision_severity`; script expected `accident_severity`. Added a rename before the slim-cache write. Without this, Phase 3 errored and silently stayed un-run for weeks.
+- `gb_transit_enrichment.py`: NaPTAN `Status` filter was `== "act"` but real values are `active`/`inactive`. The whole 101 MB NaPTAN file was being parsed to 0 stops, so transit enrichment was a no-op. Also deleted the empty `naptan_stops_clean.csv` cache to force a re-parse.
+- `gb_to_core_schema.py` — column-name mismatch: the OSM-based base scraper produces DfE-native names (`establishment_type_group`, `la_name`, `attainment8_average`, `progress8_average`) but the finalizer read GIAS names (`establishment_type`, `local_authority`, `ks4_*`). Added an alias rename at load time so the scraper stays idiomatic and the finalizer speaks one vocabulary.
+- `gb_to_core_schema.py` — `compute_academic_score` crashed on DfE suppression codes (`'z'`, `'x'`). Wrapped the float coercion in try/except returning NaN.
+
+**GB results (before → after):**
+- Traffic: 0% → **100%** (9 cols)
+- Transit rail: 0% → 50.7%, tram 0% → 12.7%, bus 0% → 88.9%, stop_count 100%
+- `gb_establishment_type`: 0% → 90.2%
+- `gb_local_authority`: 0% → 92.6%
+- `gb_ks4_attainment8`/`progress8`: populated at 80.1% (via column-alias fix)
+
+**Still-open GB gaps** (not in this change): POI script missing entirely, IMD decile / FSM% join (raw exists at `data_gb/raw/gb_imd.csv` but needs postcodes.io LSOA lookup), Ofsted scraping, remaining KS4 detail (progress8 CI bounds, ebacc, grade5 %), embeddings + similar schools, tuition.
+
+**Still-open NL gaps:** embeddings + similar schools, Inspectorate ratings, school_track/board, buurt/wijk codes, tuition, enrollment pressure.
+
 ## 2026-04-19 — Schema Mapper Gaps + Supabase Backfill (1,512 rows)
 
 **What:** Audited a Supabase coverage report that flagged many 0%-populated columns across cities, tracked each gap to either a mapper bug or a genuine source gap, fixed the mappers, extended the Supabase uploader, and filled the resulting cells.

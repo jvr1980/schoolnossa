@@ -81,9 +81,9 @@ def load_naptan(cache_path: Path) -> pd.DataFrame:
     df["Longitude"] = pd.to_numeric(df.get("Longitude"), errors="coerce")
     df = df.dropna(subset=["Latitude", "Longitude"])
 
-    # Filter to active stops
+    # Filter to active stops (NaPTAN uses "active" / "inactive")
     if "Status" in df.columns:
-        df = df[df["Status"] == "act"]
+        df = df[df["Status"] == "active"]
 
     # Map stop type to mode
     df["mode"] = df.get("StopType", pd.Series(dtype=str)).map(STOP_TYPE_TO_MODE).fillna("bus")
