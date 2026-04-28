@@ -31,20 +31,29 @@ FINAL_DIR.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# Establishment type → ownership mapping
+# Establishment type → ownership mapping (matches DfE establishment_type_group
+# values as seen in KS4 / performance tables).
 OWNERSHIP_MAP = {
+    # State-funded
     "Community school": "public",
+    "Community special school": "public",
     "Foundation school": "public",
+    "Foundation special school": "public",
     "Voluntary aided school": "public",
     "Voluntary controlled school": "public",
-    "Academy sponsor led": "public",
-    "Academy converter": "public",
+    "Converter academies": "public",
+    "Converter academies - special school": "public",
+    "Sponsored academies": "public",
+    "Sponsored academies - special school": "public",
     "Free schools": "public",
+    "Free schools - special school": "public",
     "Studio schools": "public",
-    "University technical college": "public",
-    "City technology college": "private",
-    "Other independent school": "private",
-    "Non-maintained special school": "private",
+    "University technical colleges (UTCs)": "public",
+    "CTCs": "public",
+    # Fee-paying
+    "Independent schools": "private",
+    "Independent special schools": "private",
+    "Non-maintained special schools": "private",
 }
 
 # Ofsted → quality rating mapping
@@ -63,11 +72,16 @@ def compute_academic_score(row) -> float:
     Compute normalized 0-100 score from UK Attainment 8.
     Attainment 8 typically ranges 0-90 (national avg ~46).
     Map: score = (att8 / 90) * 100, capped at 100.
+
+    DfE suppression codes ('x', 'z', '.', 'SUPP') are returned as NaN.
     """
     att8 = row.get("ks4_attainment8")
-    if pd.notna(att8):
+    if pd.isna(att8):
+        return np.nan
+    try:
         return round(min(100, float(att8) / 90 * 100), 1)
-    return np.nan
+    except (ValueError, TypeError):
+        return np.nan
 
 
 def find_best_input() -> Path:
@@ -89,6 +103,17 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     logger.info(f"Loading from {input_path.name}...")
     df = pd.read_csv(input_path, low_memory=False)
     logger.info(f"  {len(df)} schools, {len(df.columns)} columns")
+
+    # Normalize column names produced by osm_school_locations.py scraper to
+    # the GIAS-style names the mapping below expects. Keeps scraper output
+    # idiomatic (DfE-native names) while the finalizer speaks GIAS.
+    rename_map = {
+        "establishment_type_group": "establishment_type",
+        "la_name": "local_authority",
+        "attainment8_average": "ks4_attainment8",
+        "progress8_average": "ks4_progress8",
+    }
+    df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns and v not in df.columns})
 
     full_schema = get_full_schema("GB")
     output = pd.DataFrame(columns=full_schema)
@@ -179,6 +204,46 @@ def transform(input_path: Path = None) -> pd.DataFrame:
         output["gb_imd_decile"] = pd.to_numeric(df["imd_decile"], errors="coerce")
     if "fsm_pct" in df.columns:
         output["gb_fsm_pct"] = pd.to_numeric(df["fsm_pct"], errors="coerce")
+
+    # === DESCRIPTIONS + PASS 2 EXTRACTIONS from cache ===
+    # Mirrors nl_to_core_schema's pattern: Phase 8 wrote everything to
+    # data_gb/cache/description_pipeline.json keyed by URN. Reading from cache
+    # makes Phase 9 idempotent — re-running it doesn't clobber descriptions.
+    import json
+    desc_cache_path = PROJECT_ROOT / "data_gb" / "cache" / "description_pipeline.json"
+    if desc_cache_path.exists():
+        with open(desc_cache_path) as f:
+            desc_cache = json.load(f)
+        desc_applied = 0
+        for idx, row in df.iterrows():
+            sid = str(row.get("urn", "")).strip()
+            entry = desc_cache.get(sid, {})
+            if entry.get("pass1_en"):
+                output.at[idx, "description"] = entry["pass1_en"]
+                desc_applied += 1
+            if entry.get("pass1_local"):
+                output.at[idx, "description_local"] = entry["pass1_local"]
+
+        extract_applied = 0
+        extract_map = {
+            "website": "website", "founding_year": "founding_year",
+            "teachers_current": "teachers_current", "teachers_previous": "teachers_previous",
+            "students_current": "students_current", "students_previous": "students_previous",
+            "languages_offered": "languages_offered", "special_features": "special_features",
+            "principal": "principal", "phone": "phone", "email": "email",
+        }
+        for idx, row in df.iterrows():
+            sid = str(row.get("urn", "")).strip()
+            p2 = desc_cache.get(sid, {}).get("pass2", {})
+            for src_key, dst_col in extract_map.items():
+                val = p2.get(src_key)
+                if val is None or dst_col not in output.columns:
+                    continue
+                current = output.at[idx, dst_col]
+                if pd.isna(current) or current is None or str(current).strip() in ("", "nan"):
+                    output.at[idx, dst_col] = val
+                    extract_applied += 1
+        logger.info(f"  Descriptions: {desc_applied}/{len(df)} | Extractions: {extract_applied} fills")
 
     # Ensure all columns present
     for col in full_schema:

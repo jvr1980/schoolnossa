@@ -68,6 +68,11 @@ def load_accidents(cache_path: Path) -> pd.DataFrame:
     df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
     df = df.dropna(subset=["latitude", "longitude"])
 
+    # STATS19 now ships as "collision_severity"; normalize so the slim cache
+    # (and downstream haversine code) can always reference "accident_severity".
+    if "accident_severity" not in df.columns and "collision_severity" in df.columns:
+        df["accident_severity"] = df["collision_severity"]
+
     # Cache slim version
     df[["latitude", "longitude", "accident_severity"]].to_csv(cache_path, index=False)
     logger.info(f"  Cached {len(df)} geocoded accidents")

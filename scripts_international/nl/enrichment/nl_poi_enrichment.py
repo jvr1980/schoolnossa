@@ -1,185 +1,153 @@
 #!/usr/bin/env python3
 """
-NL Phase 6: POI Enrichment
+NL Phase 6: POI Enrichment via Google Places API (New).
 
-Uses the shared Google Places API enrichment script from scripts_shared/.
-This is a thin wrapper that sets up NL-specific paths and calls the shared logic.
+For each school, fetches nearby POIs (supermarket, restaurant, bakery/cafe,
+kita/preschool, primary school, secondary school) within 500m and stores
+counts + top-3 nearest with distance/coords.
 
-Alternatively, for NL we can use CBS Nabijheidsstatistiek (pre-computed
-average distances to amenities per buurt) as a free supplement.
+Delegates per-school work to scripts_shared.enrichment.enrich_schools_with_pois.enrich_school
+to keep parity with Berlin (and future cities). Per-school JSON cache so
+re-runs are free.
 
-Input:  data_nl/intermediate/nl_schools_with_crime.csv (or earlier)
+Input:  data_nl/intermediate/nl_schools_with_crime.csv (fallback chain below)
 Output: data_nl/intermediate/nl_schools_with_pois.csv
 """
 
+import json
 import logging
+import os
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import pandas as pd
+from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data_nl"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
-CACHE_DIR = DATA_DIR / "cache"
+CACHE_DIR = DATA_DIR / "cache" / "poi_cache"
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 sys.path.insert(0, str(PROJECT_ROOT))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
+MAX_WORKERS = 5
+
+
+def _find_input() -> Path:
+    """Prefer the most-enriched available intermediate so POI output carries
+    all prior enrichments forward."""
+    for name in [
+        "nl_schools_with_demographics.csv",
+        "nl_schools_with_crime.csv",
+        "nl_schools_with_transit.csv",
+        "nl_schools_with_traffic.csv",
+        "nl_school_master_geocoded.csv",
+    ]:
+        p = INTERMEDIATE_DIR / name
+        if p.exists():
+            return p
+    raise FileNotFoundError("No NL intermediate found. Run earlier phases first.")
+
+
+def _cache_key(row: pd.Series, idx: int) -> str:
+    """Stable per-school cache key. Prefer vestiging_code, then brin_code, then idx."""
+    for col in ("vestiging_code", "brin_code"):
+        val = row.get(col)
+        if pd.notna(val) and str(val).strip():
+            return str(val).strip().replace("/", "_")
+    return f"idx_{idx}"
+
 
 def main():
-    """Run POI enrichment using shared Google Places script."""
     logger.info("=" * 60)
     logger.info("NL Phase 6: POI Enrichment (Google Places API)")
     logger.info("=" * 60)
 
-    input_candidates = [
-        INTERMEDIATE_DIR / "nl_schools_with_crime.csv",
-        INTERMEDIATE_DIR / "nl_schools_with_transit.csv",
-        INTERMEDIATE_DIR / "nl_schools_with_traffic.csv",
-        INTERMEDIATE_DIR / "nl_school_master_geocoded.csv",
-    ]
-    input_path = next((p for p in input_candidates if p.exists()), None)
-    if input_path is None:
-        logger.error("No input file found. Run earlier phases first.")
-        sys.exit(1)
-
-    schools = pd.read_csv(input_path)
-    logger.info(f"Loaded {len(schools)} schools from {input_path.name}")
-
-    # Check for Google Places API key
-    import os
-    from dotenv import load_dotenv
     load_dotenv()
     api_key = os.getenv("GOOGLE_PLACES_API_KEY")
-
     if not api_key:
         logger.warning("GOOGLE_PLACES_API_KEY not set — skipping POI enrichment")
-        logger.info("Set the key in .env to enable Google Places POI data")
-        # Create empty POI columns so downstream doesn't break
-        poi_categories = ["supermarket", "restaurant", "bakery_cafe", "kita", "primary_school"]
-        for cat in poi_categories:
-            schools[f"poi_{cat}_count_500m"] = None
-            for idx in ["01", "02", "03"]:
-                for field in ["name", "address", "distance_m", "latitude", "longitude"]:
-                    schools[f"poi_{cat}_{idx}_{field}"] = None
-        schools["poi_secondary_school_count_500m"] = None
-
-        output_path = INTERMEDIATE_DIR / "nl_schools_with_pois.csv"
-        schools.to_csv(output_path, index=False)
-        logger.info(f"Saved (empty POI columns): {output_path}")
         return
 
-    # Use shared POI enrichment
-    try:
-        from scripts_shared.enrichment.enrich_schools_with_pois import enrich_with_pois
+    input_path = _find_input()
+    schools = pd.read_csv(input_path, low_memory=False)
+    logger.info(f"Loaded {len(schools)} schools from {input_path.name}")
 
-        output_path = INTERMEDIATE_DIR / "nl_schools_with_pois.csv"
-        enriched = enrich_with_pois(
-            df=schools,
-            lat_col="latitude",
-            lon_col="longitude",
-            output_path=str(output_path),
-            cache_dir=str(CACHE_DIR / "poi_cache"),
-        )
-        logger.info(f"Saved: {output_path}")
-    except ImportError:
-        logger.warning("Shared POI script not importable — running standalone approach")
-        # Standalone approach using Google Places API directly
-        _run_standalone_poi(schools, api_key)
+    # Drop existing POI columns so we start fresh (cache still used)
+    poi_cols = [c for c in schools.columns if c.startswith("poi_")]
+    if poi_cols:
+        schools = schools.drop(columns=poi_cols)
 
+    # Import shared enrichment function
+    from scripts_shared.enrichment.enrich_schools_with_pois import enrich_school
 
-def _run_standalone_poi(schools: pd.DataFrame, api_key: str):
-    """Standalone POI enrichment for NL (if shared script isn't importable)."""
-    import requests
-    import time
-    import json
-
-    logger.info("Running standalone Google Places POI enrichment...")
-    SEARCH_URL = "https://places.googleapis.com/v1/places:searchNearby"
-    HEADERS = {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": api_key,
-        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.location,places.types",
-    }
-
-    poi_types = {
-        "supermarket": ["supermarket"],
-        "restaurant": ["restaurant"],
-        "bakery_cafe": ["bakery", "cafe"],
-        "kita": ["preschool", "child_care_agency"],
-        "primary_school": ["primary_school"],
-        "secondary_school": ["secondary_school"],
-    }
-
-    poi_cache_dir = CACHE_DIR / "poi_cache"
-    poi_cache_dir.mkdir(parents=True, exist_ok=True)
-
-    for i, (_, school) in enumerate(schools.iterrows()):
-        lat, lon = school.get("latitude"), school.get("longitude")
+    # Queue of (idx, cache_key, lat, lon, name) tuples to process
+    work = []
+    cached_results: dict[int, dict] = {}
+    for idx, row in schools.iterrows():
+        lat, lon = row.get("latitude"), row.get("longitude")
         if pd.isna(lat) or pd.isna(lon):
             continue
-
-        cache_file = poi_cache_dir / f"{school.get('vestiging_code', i)}.json"
+        key = _cache_key(row, idx)
+        cache_file = CACHE_DIR / f"{key}.json"
         if cache_file.exists():
-            cached = json.loads(cache_file.read_text())
-            for key, value in cached.items():
-                schools.loc[schools.index[i], key] = value
-            continue
-
-        school_pois = {}
-        for category, types in poi_types.items():
-            body = {
-                "includedTypes": types,
-                "maxResultCount": 5,
-                "locationRestriction": {
-                    "circle": {
-                        "center": {"latitude": float(lat), "longitude": float(lon)},
-                        "radius": 500.0,
-                    }
-                },
-            }
             try:
-                resp = requests.post(SEARCH_URL, headers=HEADERS, json=body, timeout=10)
-                resp.raise_for_status()
-                places = resp.json().get("places", [])
+                cached_results[idx] = json.loads(cache_file.read_text())
+                continue
+            except Exception:
+                pass  # Corrupt cache — re-fetch
+        work.append((idx, key, float(lat), float(lon), str(row.get("school_name", ""))))
 
-                # Count within 500m
-                col_count = f"poi_{category}_count_500m"
-                school_pois[col_count] = len(places)
+    logger.info(f"  Cache hits: {len(cached_results)}  To fetch: {len(work)}")
 
-                # Top 3 nearest
-                for idx, place in enumerate(places[:3]):
-                    prefix = f"poi_{category}_{idx + 1:02d}"
-                    loc = place.get("location", {})
-                    school_pois[f"{prefix}_name"] = place.get("displayName", {}).get("text", "")
-                    school_pois[f"{prefix}_address"] = place.get("formattedAddress", "")
-                    school_pois[f"{prefix}_latitude"] = loc.get("latitude")
-                    school_pois[f"{prefix}_longitude"] = loc.get("longitude")
-                    # Distance computed from coordinates
-                    if loc.get("latitude") and loc.get("longitude"):
-                        from nl_traffic_enrichment import haversine_distance
-                        dist = haversine_distance(float(lat), float(lon),
-                                                  loc["latitude"], loc["longitude"])
-                        school_pois[f"{prefix}_distance_m"] = round(dist, 0)
+    if not work:
+        logger.info("  All schools cached — writing output")
+    else:
+        # Estimated: 6 API calls/school × $0.032 ≈ $0.19/school
+        est_cost = len(work) * 6 * 0.032
+        logger.info(f"  Estimated API cost: ~${est_cost:.2f} ({len(work) * 6} calls)")
 
-                time.sleep(0.1)
-            except Exception as e:
-                logger.debug(f"  POI error for school {i}: {e}")
+        fetched = 0
+        start = time.time()
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+            future_to_key = {
+                pool.submit(enrich_school, idx, lat, lon, name): (idx, key)
+                for idx, key, lat, lon, name in work
+            }
+            for fut in as_completed(future_to_key):
+                idx, key = future_to_key[fut]
+                try:
+                    _, poi_data, _ = fut.result()
+                except Exception as e:
+                    logger.warning(f"  POI fetch failed for {key}: {e}")
+                    continue
+                # Write per-school cache
+                (CACHE_DIR / f"{key}.json").write_text(json.dumps(poi_data))
+                cached_results[idx] = poi_data
+                fetched += 1
+                if fetched % 100 == 0:
+                    rate = fetched / (time.time() - start)
+                    eta = (len(work) - fetched) / rate if rate else 0
+                    logger.info(f"  Progress: {fetched}/{len(work)}  rate={rate:.1f}/s  eta={eta/60:.1f}m")
 
-        # Cache and apply
-        cache_file.write_text(json.dumps(school_pois))
-        for key, value in school_pois.items():
-            schools.loc[schools.index[i], key] = value
+        logger.info(f"  Fetched {fetched} schools in {(time.time()-start)/60:.1f} min")
 
-        if (i + 1) % 100 == 0:
-            logger.info(f"  POI progress: {i + 1}/{len(schools)}")
+    # Apply results to dataframe
+    all_keys: set[str] = set()
+    for poi_data in cached_results.values():
+        all_keys.update(poi_data.keys())
+    for col in all_keys:
+        schools[col] = schools.index.map(lambda i: cached_results.get(i, {}).get(col))
 
     output_path = INTERMEDIATE_DIR / "nl_schools_with_pois.csv"
     schools.to_csv(output_path, index=False)
-    logger.info(f"Saved: {output_path}")
+    logger.info(f"Saved: {output_path} ({len(schools)} schools, {len(schools.columns)} cols)")
 
 
 if __name__ == "__main__":
