@@ -1,5 +1,30 @@
 # SchoolNossa Development Journal
 
+## 2026-08-22 — Wave A Free Data Refresh + Stable Fields Migration
+
+**What:** Executed the zero-API-cost half of the August source audit (`docs/DATA_REFRESH_PLAN_2026.md`): refreshed base data for Berlin (SJ 2026/27), Munich, Hamburg, Dresden, Stuttgart, Bremen; Unfallatlas 2025 everywhere; crime 2025 (Kriminalitätsatlas 2016-2025, Hamburg Stadtteilatlas 2025, BKA PKS 2025 T01 for Munich/Stuttgart); introduced stable year-agnostic fields so the Lovable app stops breaking on yearly refreshes. Zero paid API calls (verified by log grep + env-stripped runs).
+
+**Why:** Asset was uniformly on SJ 2024/25; Munich's scraper was pinned to a Jan-2025 jedeschule snapshot (19 months stale); Berlin's portal already serves 2026/27. NRW/Hessen/Leipzig deliberately deferred to Wave B (their annual releases land ~Sept).
+
+**Refresh-safety infrastructure (the bulk of the work):**
+- `scripts_shared/processing/merge_enriched_columns.py` — merge-back of paid columns (POI/descriptions/embeddings/tuition/env/admission + LLM-scraped year stats) from the previous final parquet on `schulnummer`; wired into Munich/Stuttgart/Dresden combiners. Handles mixed-dtype normalization (pyarrow write failures).
+- Embedding generators no longer null paid vectors on keyless runs (Hamburg restore-from-parquet, Munich parquet-input preference, Stuttgart preserve-carried).
+- Berlin secondary path unification (scrapers wrote to CWD, combiner read scripts_berlin/processing/, manifest said data_berlin/raw/ — none existed); both Berlin orchestrators shell-quoted (space in volume name broke every subprocess with exit 2); new `convert_crime_xlsx_to_csv.py` (the missing Kriminalitätsatlas step — semantics reverse-engineered to byte-match the old parquet: HZ sheets, violent = Raub+Straßenraub+KV+gef.KV, rank tertiles safe/moderate/elevated).
+- Munich orchestrator phase 7 re-ingests the 48 researched private schools (a base refresh silently dropped 31 secondary rows — caught and restored same-day).
+- Berlin scrapers resolve the newest Schuljahr from the live dropdown (was pinned to value 16 = 2025/26; now picks 17 = 2026/27) and ISS scraper relabels year columns from the site's own headers (anti-vintage-laundering).
+- `scripts_shared/processing/refresh_traffic_columns.py` — surgical Unfallatlas update for unchanged-base cities (Frankfurt/Leipzig/NRW), overwrites traffic_* in finals on schulnummer.
+
+**Stable fields (additive):** `scripts_shared/schema/stable_fields.py` derives `schueler_current`, `lehrer_current`, `migration_current`, `nachfrage_prozent_current`, `abitur_durchschnitt_current`, `crime_total_crimes_current` + vintage stamps (`data_school_year`, `abitur_year`, `crime_data_year`), newest-first fallback chains. Wired into all 9 schema mappers + `upload_to_supabase.py` (new `stable` field group, ghost-column guard that aborts instead of silently skipping). Supabase DDL prepared in `scripts_shared/schema/supabase_stable_fields.sql` — **pending execution via Lovable** (Cloud-managed), then `--groups stable` upload.
+
+**Results (before → after, POI/embedding preservation verified per table):**
+- Berlin primary: 257 → **490 rows** on SJ 2026/27 base; local parquet had drifted to a stale 257-row subset while Supabase served 492 — recovered descriptions/embeddings (490/490) from a Supabase snapshot after the old parquet's numeric-ID keyspace matched 0 rows.
+- Berlin secondary: 259 → 258 (one school closed, one opened), crime 2024+2025 (Lichtenberg → safe, Tempelhof → moderate), traffic re-attached, transit partially fresh (BVG API refused connections mid-run; rest carried).
+- Munich: fresh jedeschule 2026-08-15 base, PKS 2025 (HZ 7684→6061), 139/165 rows, POI 108/148 + embeddings preserved exactly.
+- Hamburg 172/259 (+2/+2 new schools), Stuttgart 81/95 (+1), Dresden 159, Bremen 254 (+1) — all with Unfallatlas 2025 and preserved paid columns; Dresden split finals gained embeddings (0 → 75/90).
+- Frankfurt/Leipzig/NRW: traffic 2025 in all finals (100% row match), no base change.
+
+**Still open:** Supabase DDL + stable upload (needs Lovable MCP OAuth — `claude mcp add --transport http lovable "https://mcp.lovable.dev"` from an interactive terminal); ~6 new schools need Supabase INSERTs (uploader is PATCH-only); regression scripts + LLM prompt contracts still read year-suffixed names; Berlin transit re-run when BVG API recovers; Wave B triggers ~Sept 9 (Hessen) / Sept 23 (NRW).
+
 ## 2026-04-20 — NL POI Enrichment + GB Pipeline Chain Fix
 
 **What:** Ran NL Phase 6 POI enrichment (0% → 100% POI coverage across 1,626 schools) and repaired the GB pipeline so Phase 3 (traffic) actually produces data and Phases 4/5/9 flow it into the final table.
