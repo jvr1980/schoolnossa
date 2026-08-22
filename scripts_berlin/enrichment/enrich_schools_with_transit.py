@@ -34,11 +34,13 @@ REQUEST_DELAY_S = 0.7  # Stay under 100 req/min rate limit
 MAX_RESULTS = 100  # Get more results to find all transport types
 TOP_N_STOPS = 3  # Store top 3 nearest stops per type
 
-# File paths
+# File paths — canonical project layout (previously CWD-relative)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SCHOOLS_FILE = os.path.join(BASE_DIR, "combined_schools_with_metadata.csv")
-OUTPUT_CSV = os.path.join(BASE_DIR, "combined_schools_with_metadata.csv")
-OUTPUT_XLSX = os.path.join(BASE_DIR, "combined_schools_with_metadata.xlsx")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
+INTERMEDIATE_DIR = os.path.join(PROJECT_ROOT, "data_berlin", "intermediate")
+SCHOOLS_FILE = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata_msa.csv")
+OUTPUT_CSV = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata_msa.csv")
+OUTPUT_XLSX = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata_msa.xlsx")
 
 
 def fetch_nearby_stops(lat: float, lon: float, radius: int = SEARCH_RADIUS_M) -> List[dict]:
