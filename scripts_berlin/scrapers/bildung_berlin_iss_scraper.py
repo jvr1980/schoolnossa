@@ -22,6 +22,9 @@ import time
 from typing import Optional
 from urllib.parse import urljoin
 import logging
+from pathlib import Path
+
+RAW_DIR = Path(__file__).resolve().parent.parent.parent / "data_berlin" / "raw"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -255,8 +258,9 @@ def main():
         return
 
     # Save to CSV and Excel
-    csv_path = 'bildung_berlin_iss.csv'
-    xlsx_path = 'bildung_berlin_iss.xlsx'
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    csv_path = RAW_DIR / 'bildung_berlin_iss.csv'
+    xlsx_path = RAW_DIR / 'bildung_berlin_iss.xlsx'
 
     df.to_csv(csv_path, index=False, encoding='utf-8-sig')
     df.to_excel(xlsx_path, index=False)

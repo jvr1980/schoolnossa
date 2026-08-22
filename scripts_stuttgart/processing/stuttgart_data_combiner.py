@@ -116,10 +116,29 @@ def clean_data(df):
     return df
 
 
+def _carry_forward_paid_columns(df, school_type):
+    """Preserve paid-enrichment columns (POI, descriptions, embeddings, tuition)
+    across a base-data refresh by merging them back from the previous final
+    parquet on schulnummer. Fill-gaps only — fresh values always win. See
+    scripts_shared/processing/merge_enriched_columns.py."""
+    import sys
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+    from scripts_shared.processing.merge_enriched_columns import merge_enriched_columns
+
+    prev_path = FINAL_DIR / f"stuttgart_{school_type}_school_master_table_final_with_embeddings.parquet"
+    if not prev_path.exists():
+        logger.info(f"No previous final parquet at {prev_path.name} — skipping merge-back")
+        return df
+    prev = pd.read_parquet(prev_path)
+    return merge_enriched_columns(df, prev)
+
+
 def combine_school_type(school_type):
     df = find_most_enriched_file(school_type)
     df = clean_data(df)
     df = standardize_columns(df)
+    df = _carry_forward_paid_columns(df, school_type)
 
     FINAL_DIR.mkdir(parents=True, exist_ok=True)
     csv_path = FINAL_DIR / f"stuttgart_{school_type}_school_master_table.csv"

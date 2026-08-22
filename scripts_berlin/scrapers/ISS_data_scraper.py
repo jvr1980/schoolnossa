@@ -11,6 +11,9 @@ import time
 import re
 from urllib.parse import urljoin
 import logging
+from pathlib import Path
+
+RAW_DIR = Path(__file__).resolve().parent.parent.parent / "data_berlin" / "raw"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -556,12 +559,13 @@ def main():
         master_df = create_master_table(scrape_details=True)
 
         # Save to CSV
-        output_file = 'ISS_master_table.csv'
+        RAW_DIR.mkdir(parents=True, exist_ok=True)
+        output_file = RAW_DIR / 'ISS_master_table.csv'
         master_df.to_csv(output_file, index=False, encoding='utf-8-sig')
         logger.info(f"Saved master table to {output_file}")
 
         # Also save to Excel
-        excel_file = 'ISS_master_table.xlsx'
+        excel_file = RAW_DIR / 'ISS_master_table.xlsx'
         master_df.to_excel(excel_file, index=False)
         logger.info(f"Saved master table to {excel_file}")
 

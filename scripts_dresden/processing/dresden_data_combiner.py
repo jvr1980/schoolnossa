@@ -160,6 +160,24 @@ def save_outputs(df: pd.DataFrame, primary_df: pd.DataFrame, secondary_df: pd.Da
     logger.info(f"Secondary: {secondary_csv} ({len(secondary_df)} schools)")
 
 
+def _carry_forward_paid_columns(df):
+    """Preserve paid-enrichment columns (POI, descriptions, embeddings) across a
+    base-data refresh by merging them back from the previous combined final
+    parquet on schulnummer. Fill-gaps only — fresh values always win. See
+    scripts_shared/processing/merge_enriched_columns.py."""
+    import sys
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+    from scripts_shared.processing.merge_enriched_columns import merge_enriched_columns
+
+    prev_path = FINAL_DIR / "dresden_school_master_table_final.parquet"
+    if not prev_path.exists():
+        logger.info(f"No previous final parquet at {prev_path.name} — skipping merge-back")
+        return df
+    prev = pd.read_parquet(prev_path)
+    return merge_enriched_columns(df, prev)
+
+
 def main():
     logger.info("=" * 60)
     logger.info("Starting Dresden Data Combiner")
@@ -167,6 +185,7 @@ def main():
 
     df = find_most_enriched_file()
     df = clean_data(df)
+    df = _carry_forward_paid_columns(df)
 
     # Split into primary + secondary (with cross-level duplication)
     primary_df, secondary_df = split_primary_secondary(df)

@@ -222,7 +222,10 @@ def enrich_with_crime(
 
     # Count successful matches
     new_crime_cols = [c for c in df_enriched.columns if c.startswith('crime_')]
-    matched_count = df_enriched['crime_total_crimes_2023'].notna().sum()
+    # Use whichever total_crimes year column is present (year-agnostic:
+    # the atlas edition determines the years, e.g. 2023/2024 or 2024/2025)
+    total_cols = sorted(c for c in new_crime_cols if c.startswith('crime_total_crimes_2'))
+    matched_count = df_enriched[total_cols[-1]].notna().sum() if total_cols else 0
 
     logger.info(f"  Added {len(new_crime_cols)} crime columns")
     logger.info(f"  Successfully matched {matched_count}/{len(df_enriched)} schools ({100*matched_count/len(df_enriched):.1f}%)")

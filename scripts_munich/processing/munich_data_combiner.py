@@ -45,12 +45,31 @@ def find_most_enriched_file(school_type='secondary'):
     raise FileNotFoundError(f"No {school_type} school data found in intermediate/")
 
 
+def _carry_forward_paid_columns(df, school_type):
+    """Preserve paid-enrichment columns (POI, descriptions, embeddings) across a
+    base-data refresh by merging them back from the previous final parquet on
+    schulnummer. Fill-gaps only — fresh values always win. See
+    scripts_shared/processing/merge_enriched_columns.py."""
+    import sys
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+    from scripts_shared.processing.merge_enriched_columns import merge_enriched_columns
+
+    prev_path = FINAL_DIR / f"munich_{school_type}_school_master_table_final_with_embeddings.parquet"
+    if not prev_path.exists():
+        logger.info(f"No previous final parquet at {prev_path.name} — skipping merge-back")
+        return df
+    prev = pd.read_parquet(prev_path)
+    return merge_enriched_columns(df, prev)
+
+
 def combine_school_type(school_type='secondary'):
     logger.info(f"Combining {school_type} school data...")
 
     FINAL_DIR.mkdir(parents=True, exist_ok=True)
 
     df = find_most_enriched_file(school_type)
+    df = _carry_forward_paid_columns(df, school_type)
 
     csv_path = FINAL_DIR / f"munich_{school_type}_school_master_table.csv"
     df.to_csv(csv_path, index=False, encoding='utf-8-sig')

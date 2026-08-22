@@ -22,16 +22,24 @@ import pandas as pd
 import os
 import re
 
-# File paths
+# File paths — scrapers write to data_berlin/raw/, this combiner writes to
+# data_berlin/intermediate/ (matches the orchestrator manifest; previously the
+# scrapers wrote to CWD and this script read from scripts_berlin/processing/,
+# so the pipeline only ever worked by accident).
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
+RAW_DIR = os.path.join(PROJECT_ROOT, "data_berlin", "raw")
+INTERMEDIATE_DIR = os.path.join(PROJECT_ROOT, "data_berlin", "intermediate")
 
-BILDUNG_ISS_FILE = os.path.join(BASE_DIR, "bildung_berlin_iss.csv")
-BILDUNG_GYM_FILE = os.path.join(BASE_DIR, "bildung_berlin_gymnasien.csv")
-ISS_METADATA_FILE = os.path.join(BASE_DIR, "ISS_master_table.xlsx")
-GYM_METADATA_FILE = os.path.join(BASE_DIR, "berlin_gymnasiums_detailed_v2.xlsx")
+BILDUNG_ISS_FILE = os.path.join(RAW_DIR, "bildung_berlin_iss.csv")
+BILDUNG_GYM_FILE = os.path.join(RAW_DIR, "bildung_berlin_gymnasien.csv")
+ISS_METADATA_FILE = os.path.join(RAW_DIR, "ISS_master_table.xlsx")
+# One-off legacy scrape; canonical copy archived. Copied into raw/ on first run.
+GYM_METADATA_FILE = os.path.join(RAW_DIR, "berlin_gymnasiums_detailed_v2.xlsx")
+GYM_METADATA_ARCHIVE = os.path.join(PROJECT_ROOT, "archive", "data", "berlin_gymnasiums_detailed_v2.xlsx")
 
-OUTPUT_CSV = os.path.join(BASE_DIR, "combined_schools_with_metadata.csv")
-OUTPUT_XLSX = os.path.join(BASE_DIR, "combined_schools_with_metadata.xlsx")
+OUTPUT_CSV = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata.csv")
+OUTPUT_XLSX = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata.xlsx")
 
 
 def normalize_url(url):
@@ -141,6 +149,10 @@ def load_and_harmonize_metadata():
     print(f"  - ISS_master_table.xlsx: {len(df_iss_meta)} rows")
 
     # Load Gymnasium metadata
+    if not os.path.exists(GYM_METADATA_FILE) and os.path.exists(GYM_METADATA_ARCHIVE):
+        import shutil
+        os.makedirs(RAW_DIR, exist_ok=True)
+        shutil.copy2(GYM_METADATA_ARCHIVE, GYM_METADATA_FILE)
     df_gym_meta = pd.read_excel(GYM_METADATA_FILE)
     df_gym_meta['metadata_source'] = 'Gymnasium'
     print(f"  - berlin_gymnasiums_detailed_v2.xlsx: {len(df_gym_meta)} rows")
@@ -379,6 +391,7 @@ def main():
 
     # Save outputs
     print("\nSaving output files...")
+    os.makedirs(INTERMEDIATE_DIR, exist_ok=True)
     df_final.to_csv(OUTPUT_CSV, index=False, encoding='utf-8-sig')
     print(f"  - Saved: {OUTPUT_CSV}")
 

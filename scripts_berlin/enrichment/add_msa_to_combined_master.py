@@ -341,9 +341,11 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main():
-    input_file = "combined_schools_with_metadata.csv"
-    output_csv = "combined_schools_with_metadata_msa.csv"
-    output_xlsx = "combined_schools_with_metadata_msa.xlsx"
+    from pathlib import Path
+    intermediate_dir = Path(__file__).resolve().parent.parent.parent / "data_berlin" / "intermediate"
+    input_file = intermediate_dir / "combined_schools_with_metadata.csv"
+    output_csv = intermediate_dir / "combined_schools_with_metadata_msa.csv"
+    output_xlsx = intermediate_dir / "combined_schools_with_metadata_msa.xlsx"
 
     if not os.path.exists(input_file):
         logger.error(f"Input file not found: {input_file}")

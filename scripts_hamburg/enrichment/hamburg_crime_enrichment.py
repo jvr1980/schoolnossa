@@ -128,12 +128,16 @@ class HamburgCrimeEnrichment:
         """Load school data."""
         logger.info("Loading school data...")
 
+        # Prefer the freshly scraped raw file: the combiner joins enrichment
+        # outputs on schulnummer, so this script only needs the current school
+        # list — reading the old final table before raw would silently pin the
+        # enrichment to a stale school set after a base refresh.
         possible_files = [
+            RAW_DIR / "hamburg_secondary_schools.csv",
             INTERMEDIATE_DIR / "hamburg_schools_with_traffic.parquet",
             INTERMEDIATE_DIR / "hamburg_schools_with_traffic.csv",
             FINAL_DIR / "hamburg_school_master_table.parquet",
-            FINAL_DIR / "hamburg_school_master_table.csv",
-            RAW_DIR / "hamburg_secondary_schools.csv"
+            FINAL_DIR / "hamburg_school_master_table.csv"
         ]
 
         for filepath in possible_files:
