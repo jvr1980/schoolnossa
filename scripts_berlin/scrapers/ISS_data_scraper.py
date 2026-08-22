@@ -91,6 +91,24 @@ def scrape_views_table(url: str, value_columns: list) -> pd.DataFrame:
         logger.warning(f"No views-table found at {url}")
         return pd.DataFrame()
 
+    # Re-derive year-suffixed labels from the site's own header row so a site
+    # update (e.g. 24/25 -> 26/27 columns) can never be mislabeled with a
+    # stale vintage. Headers look like "24/25"; labels like "Schueler_2024_25".
+    header_cells = [th.get_text(strip=True) for th in table.find_all('th')]
+    year_headers = header_cells[1:1 + len(value_columns)]  # first header is "Schule"
+    relabeled = []
+    for label, header in zip(value_columns, year_headers + [''] * len(value_columns)):
+        m = re.match(r'^(\d\d)/(\d\d)$', header or '')
+        stripped = re.sub(r'_20\d\d_\d\d$', '', label)
+        if m and stripped != label:
+            new_label = f"{stripped}_20{m.group(1)}_{m.group(2)}"
+            if new_label != label:
+                logger.warning(f"{url}: header says {header}; relabeling {label} -> {new_label}")
+            relabeled.append(new_label)
+        else:
+            relabeled.append(label)
+    value_columns = relabeled
+
     # Process each row
     rows = table.find_all('tr')
     for row in rows:
