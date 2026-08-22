@@ -58,6 +58,7 @@ DEFAULT_CARRY_PREFIXES = [
     'summary_',             # Bremen summary_en variant
     'embedding',            # OpenAI/Gemini vectors + embedding_text
     'similar_schools',      # derived from embeddings
+    'most_similar',         # most_similar_school_01..03
     'tuition',              # Stuttgart Gemini/GPT tuition pipeline
     'admission_',           # Gemini admission/open-days enrichment
     'open_days',
@@ -70,6 +71,14 @@ DEFAULT_CARRY_EXACT = [
     'leitung',
     'profil',
     'website_scrape_status',
+]
+# Year-suffixed statistics: for cities whose base source doesn't publish them
+# (e.g. Munich/Stuttgart, where they were LLM-scraped from school websites),
+# a base refresh loses them entirely. Gap-fill semantics still lets a fresh
+# scrape win wherever it provides values.
+DEFAULT_CARRY_PREFIXES += [
+    'schueler_', 'lehrer_', 'migration_', 'abitur_', 'nachfrage_',
+    'msa_', 'notendurchschnitt_',
 ]
 JOIN_KEY = 'schulnummer'
 
@@ -124,6 +133,18 @@ def merge_enriched_columns(fresh_df: pd.DataFrame,
         filled = before - fresh[col].isna().sum()
         if filled:
             filled_counts[col] = int(filled)
+
+    # Normalize mixed-dtype object columns produced by gap-filling (e.g. a
+    # fresh string '91;N3' filled into a column whose carried values were
+    # numeric) — pyarrow refuses to write such columns. Vector/list columns
+    # (embedding*) are left untouched.
+    for col in set(new_cols + gap_cols):
+        if col.startswith('embedding') or col not in fresh.columns:
+            continue
+        if fresh[col].dtype == object:
+            sample_types = {type(v).__name__ for v in fresh[col].dropna().head(100)}
+            if len(sample_types) > 1 and 'str' in sample_types:
+                fresh[col] = fresh[col].map(lambda v: v if pd.isna(v) else str(v))
 
     # Reporting
     logger.info("=" * 60)

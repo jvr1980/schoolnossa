@@ -143,10 +143,11 @@ FLOAT_FIELDS = {
 # ============================================================================
 CITY_FILES = [
     # (city, schools table file, primary_schools table file)
-    # Berlin: source of truth in Supabase already — skip by default
-    # ('berlin',
-    #  'data_berlin/final/school_master_table_final_with_embeddings.parquet',
-    #  'data_berlin_primary/final/grundschule_master_table_final_with_embeddings.parquet'),
+    # Berlin re-enabled for the stable-fields fill (2026-08): fill-gaps
+    # semantics means existing populated cells are never overwritten.
+    ('berlin',
+     'data_berlin/final/school_master_table_final_with_embeddings.parquet',
+     'data_berlin_primary/final/grundschule_master_table_final_with_embeddings.parquet'),
     ('muenchen',
      'data_munich/final/munich_secondary_school_master_table_final.csv',
      'data_munich/final/munich_primary_school_master_table_final.csv'),
