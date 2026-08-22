@@ -54,9 +54,9 @@ class CrimeDataDownloader:
         # Crime data URLs
         self.crime_data_urls = [
             {
-                'url': 'https://www.kriminalitaetsatlas.berlin.de/K-Atlas/bezirke/Fallzahlen&HZ 2015-2024.xlsx',
-                'name': 'Crime_Statistics_Districts_2015-2024',
-                'description': 'Absolute case numbers and frequency rates for Berlin districts (2015-2024)'
+                'url': 'https://www.kriminalitaetsatlas.berlin.de/K-Atlas/bezirke/Fallzahlen&HZ 2016-2025.xlsx',
+                'name': 'Crime_Statistics_Districts_2016-2025',
+                'description': 'Absolute case numbers and frequency rates for Berlin districts (2016-2025)'
             }
         ]
 

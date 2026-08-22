@@ -65,10 +65,10 @@ def transform_to_berlin_schema(school_type):
 
     # Crime mapping
     crime_map = {
-        'crime_straftaten_2023': 'crime_total_crimes_2023',
-        'crime_strassenraub_2023': 'crime_street_robbery_2023',
-        'crime_koerperverletzung_2023': 'crime_assault_2023',
-        'crime_diebstahl_fahrrad_2023': 'crime_bike_theft_2023',
+        'crime_straftaten_2025': 'crime_total_crimes_2025',
+        'crime_strassenraub_2025': 'crime_street_robbery_2025',
+        'crime_koerperverletzung_2025': 'crime_assault_2025',
+        'crime_diebstahl_fahrrad_2025': 'crime_bike_theft_2025',
     }
     for src, dst in crime_map.items():
         if src in df.columns:

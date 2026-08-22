@@ -29,17 +29,19 @@ DATA_DIR = PROJECT_ROOT / "data_stuttgart"
 RAW_DIR = DATA_DIR / "raw"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 
-# Stuttgart city-level crime data (PKS 2023)
-# Source: polizei-bw.de / presseportal
+# Stuttgart city-level crime data (PKS 2025, BKA Stadt-Falltabellen T01, V1.1 2026-04-21)
+# Source: https://www.bka.de/DE/AktuelleInformationen/StatistikenLagebilder/PolizeilicheKriminalstatistik/PKS2025/pksTabellen_Interpretationshilfen/StadtFalltabellen/stadtfalltabellen.html
+# Category mapping from T01 keys: strassenraub = 216000 + 217000;
+# koerperverletzung = 222000 + 224000; fahrrad = ***300.
 STUTTGART_CRIME_DATA = {
-    'population': 632_865,
-    'straftaten_2023': 68_457,
-    'haeufigkeitszahl_2023': 10_817,  # per 100k
-    'aufklaerungsquote_2023': 52.3,
-    'strassenraub_2023': 489,
-    'wohnungseinbruch_2023': 1_210,
-    'koerperverletzung_2023': 6_842,
-    'diebstahl_fahrrad_2023': 3_520,
+    'population': 612_660,  # implied by HZ (Zensus 22 basis)
+    'straftaten_2025': 53_894,
+    'haeufigkeitszahl_2025': 8_797,  # per 100k
+    'aufklaerungsquote_2025': 66.9,
+    'strassenraub_2025': 230,        # 216000 + 217000
+    'wohnungseinbruch_2025': 447,    # 435*00
+    'koerperverletzung_2025': 7_157, # 222000 + 224000
+    'diebstahl_fahrrad_2025': 821,   # ***300
 }
 
 # Stuttgart Stadtbezirke with estimated crime indices and population
@@ -86,11 +88,11 @@ STUTTGART_PLZ_BEZIRK = {
 }
 
 CRIME_CATEGORIES = {
-    'straftaten_2023': 'crime_straftaten_2023',
-    'strassenraub_2023': 'crime_strassenraub_2023',
-    'koerperverletzung_2023': 'crime_koerperverletzung_2023',
-    'diebstahl_fahrrad_2023': 'crime_diebstahl_fahrrad_2023',
-    'wohnungseinbruch_2023': 'crime_wohnungseinbruch_2023',
+    'straftaten_2025': 'crime_straftaten_2025',
+    'strassenraub_2025': 'crime_strassenraub_2025',
+    'koerperverletzung_2025': 'crime_koerperverletzung_2025',
+    'diebstahl_fahrrad_2025': 'crime_diebstahl_fahrrad_2025',
+    'wohnungseinbruch_2025': 'crime_wohnungseinbruch_2025',
 }
 
 
@@ -119,8 +121,8 @@ def enrich_with_crime(schools_df):
 
     # Initialize columns
     for col in ['crime_bezirk', 'crime_stadt', 'crime_bezirk_population',
-                'crime_bezirk_index', 'crime_haeufigkeitszahl_2023',
-                'crime_aufklaerungsquote_2023', 'crime_data_source']:
+                'crime_bezirk_index', 'crime_haeufigkeitszahl_2025',
+                'crime_aufklaerungsquote_2025', 'crime_data_source']:
         df[col] = None
     for _, col in CRIME_CATEGORIES.items():
         df[col] = None
@@ -138,16 +140,16 @@ def enrich_with_crime(schools_df):
                 bezirk = ortsteil
 
         df.at[idx, 'crime_stadt'] = 'Stuttgart'
-        df.at[idx, 'crime_haeufigkeitszahl_2023'] = STUTTGART_CRIME_DATA['haeufigkeitszahl_2023']
-        df.at[idx, 'crime_aufklaerungsquote_2023'] = STUTTGART_CRIME_DATA['aufklaerungsquote_2023']
+        df.at[idx, 'crime_haeufigkeitszahl_2025'] = STUTTGART_CRIME_DATA['haeufigkeitszahl_2025']
+        df.at[idx, 'crime_aufklaerungsquote_2025'] = STUTTGART_CRIME_DATA['aufklaerungsquote_2025']
 
         if bezirk and bezirk in STUTTGART_BEZIRKE:
             df.at[idx, 'crime_bezirk'] = bezirk
             estimates = compute_bezirk_estimates(STUTTGART_BEZIRKE[bezirk])
             for col, val in estimates.items():
                 df.at[idx, col] = val
-            df.at[idx, 'crime_haeufigkeitszahl_2023'] = round(
-                STUTTGART_CRIME_DATA['haeufigkeitszahl_2023'] * STUTTGART_BEZIRKE[bezirk]['crime_index'], 1
+            df.at[idx, 'crime_haeufigkeitszahl_2025'] = round(
+                STUTTGART_CRIME_DATA['haeufigkeitszahl_2025'] * STUTTGART_BEZIRKE[bezirk]['crime_index'], 1
             )
             df.at[idx, 'crime_data_source'] = 'bezirk_estimated'
             matched += 1

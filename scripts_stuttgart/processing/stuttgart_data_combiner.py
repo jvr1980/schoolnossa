@@ -73,8 +73,8 @@ def standardize_columns(df):
         'traffic_accidents_bicycle', 'traffic_accidents_pedestrian',
         'traffic_accidents_school_hours', 'traffic_nearest_accident_m',
         'crime_bezirk', 'crime_stadt',
-        'crime_straftaten_2023', 'crime_haeufigkeitszahl_2023',
-        'crime_aufklaerungsquote_2023', 'crime_bezirk_index',
+        'crime_straftaten_2025', 'crime_haeufigkeitszahl_2025',
+        'crime_aufklaerungsquote_2025', 'crime_bezirk_index',
         'data_source', 'data_retrieved',
     ]
     ordered = [c for c in preferred if c in df.columns]
@@ -105,7 +105,7 @@ def clean_data(df):
 
     numeric_cols = ['latitude', 'longitude', 'transit_stops_500m', 'transit_stop_count_1000m',
                     'transit_accessibility_score', 'traffic_accidents_total',
-                    'traffic_accidents_per_year', 'crime_haeufigkeitszahl_2023', 'crime_bezirk_index']
+                    'traffic_accidents_per_year', 'crime_haeufigkeitszahl_2025', 'crime_bezirk_index']
     for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -155,7 +155,7 @@ def combine_school_type(school_type):
         'schulnummer': 'ID', 'latitude': 'Coordinates', 'telefon': 'Phone',
         'website': 'Website', 'email': 'Email', 'schulleitung': 'Principal',
         'transit_accessibility_score': 'Transit', 'traffic_accidents_total': 'Traffic',
-        'crime_haeufigkeitszahl_2023': 'Crime',
+        'crime_haeufigkeitszahl_2025': 'Crime',
     }
     for col, label in coverage.items():
         if col in df.columns:

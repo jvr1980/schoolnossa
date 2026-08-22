@@ -11,7 +11,7 @@ PKS, same approach as the Frankfurt pipeline. If district-level data becomes ava
 in machine-readable format, this script should be upgraded.
 
 Data Sources:
-- PKS 2023 / BKA Stadt-Falltabellen (city aggregate)
+- PKS 2025 / BKA Stadt-Falltabellen (city aggregate)
 - PP München Sicherheitsreport 2024 (for context / validation)
 
 Note: München is Germany's safest major city (50th consecutive year, 2024).
@@ -36,24 +36,27 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent
 DATA_DIR = PROJECT_ROOT / "data_munich"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 
-# Munich crime data (PKS 2023, BKA Stadt-Falltabellen)
-# Source: https://www.bka.de/DE/AktuelleInformationen/StatistikenLagebilder/PolizeilicheKriminalstatistik/PKS2024/PKSTabellen/StadtFalltabellen/
-# Munich is Germany's safest major city (>200k inhabitants) for the 50th time
+# Munich crime data (PKS 2025, BKA Stadt-Falltabellen T01, V1.1 2026-04-21)
+# Source: https://www.bka.de/DE/AktuelleInformationen/StatistikenLagebilder/PolizeilicheKriminalstatistik/PKS2025/pksTabellen_Interpretationshilfen/StadtFalltabellen/stadtfalltabellen.html
+# Category mapping from T01 keys: strassenraub = 216000 Handtaschenraub +
+# 217000 sonstige Raubueberfaelle auf Strassen; koerperverletzung = 222000
+# gefaehrliche/schwere + 224000 vorsaetzliche einfache KV; fahrrad = ***300.
+# Population backed out of the official HZ (Zensus 2022 basis).
 MUNICH_CRIME_DATA = {
-    'population': 1_512_491,  # Einwohner 2023
-    'straftaten_2023': 116_195,
-    'haeufigkeitszahl_2023': 7_684,  # per 100k — much lower than Frankfurt (14,840)
-    'aufklaerungsquote_2023': 62.9,
-    'strassenraub_2023': 574,
-    'wohnungseinbruch_2023': 952,
-    'koerperverletzung_2023': 10_127,
-    'diebstahl_fahrrad_2023': 7_456,
+    'population': 1_505_022,  # implied by HZ (Zensus 22 basis)
+    'straftaten_2025': 91_219,
+    'haeufigkeitszahl_2025': 6_061,  # per 100k — Germany's safest major city
+    'aufklaerungsquote_2025': 65.5,
+    'strassenraub_2025': 134,       # 216000 + 217000
+    'wohnungseinbruch_2025': 815,   # 435*00
+    'koerperverletzung_2025': 12_076,  # 222000 + 224000
+    'diebstahl_fahrrad_2025': 5_671,   # ***300
 }
 
 
 def enrich_with_crime(schools_df: pd.DataFrame) -> pd.DataFrame:
     """Assign city-level crime data to all Munich schools."""
-    logger.info("Enriching with city-level crime data (München PKS 2023)...")
+    logger.info("Enriching with city-level crime data (München PKS 2025)...")
 
     df = schools_df.copy()
     pop = MUNICH_CRIME_DATA['population']
@@ -63,24 +66,24 @@ def enrich_with_crime(schools_df: pd.DataFrame) -> pd.DataFrame:
     df['crime_bezirk'] = None  # No district-level data in machine-readable format
     df['crime_bezirk_population'] = pop
     df['crime_bezirk_index'] = 1.0  # City average
-    df['crime_haeufigkeitszahl_2023'] = MUNICH_CRIME_DATA['haeufigkeitszahl_2023']
-    df['crime_aufklaerungsquote_2023'] = MUNICH_CRIME_DATA['aufklaerungsquote_2023']
+    df['crime_haeufigkeitszahl_2025'] = MUNICH_CRIME_DATA['haeufigkeitszahl_2025']
+    df['crime_aufklaerungsquote_2025'] = MUNICH_CRIME_DATA['aufklaerungsquote_2025']
 
     # Crime categories (absolute city numbers)
-    df['crime_straftaten_2023'] = MUNICH_CRIME_DATA['straftaten_2023']
-    df['crime_strassenraub_2023'] = MUNICH_CRIME_DATA['strassenraub_2023']
-    df['crime_koerperverletzung_2023'] = MUNICH_CRIME_DATA['koerperverletzung_2023']
-    df['crime_diebstahl_fahrrad_2023'] = MUNICH_CRIME_DATA['diebstahl_fahrrad_2023']
-    df['crime_wohnungseinbruch_2023'] = MUNICH_CRIME_DATA['wohnungseinbruch_2023']
+    df['crime_straftaten_2025'] = MUNICH_CRIME_DATA['straftaten_2025']
+    df['crime_strassenraub_2025'] = MUNICH_CRIME_DATA['strassenraub_2025']
+    df['crime_koerperverletzung_2025'] = MUNICH_CRIME_DATA['koerperverletzung_2025']
+    df['crime_diebstahl_fahrrad_2025'] = MUNICH_CRIME_DATA['diebstahl_fahrrad_2025']
+    df['crime_wohnungseinbruch_2025'] = MUNICH_CRIME_DATA['wohnungseinbruch_2025']
 
     # Per-100k rates
     for key in ['straftaten', 'strassenraub', 'koerperverletzung', 'diebstahl_fahrrad', 'wohnungseinbruch']:
-        total = MUNICH_CRIME_DATA.get(f'{key}_2023')
+        total = MUNICH_CRIME_DATA.get(f'{key}_2025')
         if total:
-            df[f'crime_{key}_2023_rate_per_100k'] = round(total / pop * 100_000, 1)
+            df[f'crime_{key}_2025_rate_per_100k'] = round(total / pop * 100_000, 1)
 
     # Safety category based on Häufigkeitszahl (HZ)
-    hz = MUNICH_CRIME_DATA['haeufigkeitszahl_2023']
+    hz = MUNICH_CRIME_DATA['haeufigkeitszahl_2025']
     if hz < 8000:
         safety_cat = 'Sehr sicher'
     elif hz < 10000:
@@ -128,8 +131,8 @@ def enrich_schools(school_type='secondary'):
     logger.info(f"Saved: {output_path}")
 
     print(f"\nCrime enrichment ({school_type}): {len(schools)} schools (city-level data)")
-    print(f"Häufigkeitszahl: {MUNICH_CRIME_DATA['haeufigkeitszahl_2023']}/100k")
-    print(f"Aufklärungsquote: {MUNICH_CRIME_DATA['aufklaerungsquote_2023']}%")
+    print(f"Häufigkeitszahl: {MUNICH_CRIME_DATA['haeufigkeitszahl_2025']}/100k")
+    print(f"Aufklärungsquote: {MUNICH_CRIME_DATA['aufklaerungsquote_2025']}%")
 
     return schools
 

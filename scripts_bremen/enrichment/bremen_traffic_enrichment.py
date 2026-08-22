@@ -56,7 +56,7 @@ UNFALLATLAS_URL_TEMPLATE = "https://www.opengeodata.nrw.de/produkte/transport_ve
 
 # Configuration
 SEARCH_RADIUS_M = 500
-YEARS_TO_DOWNLOAD = [2024, 2023, 2022]
+YEARS_TO_DOWNLOAD = [2025, 2024, 2023]
 BREMEN_ULAND_CODE = '04'
 
 HEADERS = {

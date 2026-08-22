@@ -49,8 +49,32 @@ RAW_DIR = DATA_DIR / "raw"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 CACHE_DIR = DATA_DIR / "cache"
 
-# jedeschule.codefor.de — weekly scraped school data with coordinates
-JEDESCHULE_CSV_URL = "https://jedeschule.codefor.de/csv-data/jedeschule-data-2025-01-04.csv"
+# jedeschule.codefor.de — weekly scraped school data with coordinates.
+# Snapshots are published roughly weekly (Saturday-dated). We resolve the
+# latest one at runtime instead of pinning a URL: a hardcoded snapshot left
+# this scraper 19 months stale (2025-01-04) before the Aug 2026 refresh.
+JEDESCHULE_CSV_TEMPLATE = "https://jedeschule.codefor.de/csv-data/jedeschule-data-{date}.csv"
+JEDESCHULE_FALLBACK_DATE = "2026-08-15"  # newest known-good snapshot
+
+
+def resolve_latest_jedeschule_url() -> str:
+    """Probe recent Saturday-dated snapshot URLs (newest first) and return the
+    first that exists. Falls back to the newest known-good snapshot."""
+    from datetime import date, timedelta
+    today = date.today()
+    saturday = today - timedelta(days=(today.weekday() - 5) % 7)
+    for weeks_back in range(0, 12):
+        d = saturday - timedelta(weeks=weeks_back)
+        url = JEDESCHULE_CSV_TEMPLATE.format(date=d.isoformat())
+        try:
+            resp = requests.head(url, headers=HEADERS, timeout=20)
+            if resp.status_code == 200 and 'text/html' not in resp.headers.get('Content-Type', ''):
+                logger.info(f"Resolved latest jedeschule snapshot: {d.isoformat()}")
+                return url
+        except requests.RequestException:
+            continue
+    logger.warning(f"Could not resolve a recent snapshot; falling back to {JEDESCHULE_FALLBACK_DATE}")
+    return JEDESCHULE_CSV_TEMPLATE.format(date=JEDESCHULE_FALLBACK_DATE)
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
 HEADERS = {
@@ -117,9 +141,10 @@ def download_jedeschule_csv() -> pd.DataFrame:
             logger.info("Loading jedeschule.codefor.de data from cache...")
             return pd.read_csv(cache_file, dtype=str)
 
-    logger.info(f"Downloading jedeschule.codefor.de CSV from {JEDESCHULE_CSV_URL}")
+    url = resolve_latest_jedeschule_url()
+    logger.info(f"Downloading jedeschule.codefor.de CSV from {url}")
     try:
-        response = requests.get(JEDESCHULE_CSV_URL, headers=HEADERS, timeout=120)
+        response = requests.get(url, headers=HEADERS, timeout=120)
         response.raise_for_status()
         logger.info(f"Downloaded {len(response.content) / 1024 / 1024:.1f} MB")
 
