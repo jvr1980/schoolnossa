@@ -139,6 +139,7 @@ def load_geocode_cache():
 
 def save_geocode_cache(cache):
     """Save geocoding results to cache."""
+    os.makedirs(os.path.dirname(GEOCODED_CACHE), exist_ok=True)
     with open(GEOCODED_CACHE, 'w', encoding='utf-8') as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
 

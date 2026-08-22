@@ -442,7 +442,8 @@ class PipelineOrchestrator:
         if not script_path.exists():
             return False, f"Script not found: {script_path}"
 
-        cmd = f"python3 {script_path}"
+        import shlex
+        cmd = f"python3 {shlex.quote(str(script_path))}"
         if args:
             cmd += f" {args}"
 
