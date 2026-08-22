@@ -215,8 +215,14 @@ def process_school_type(school_type):
     # Generate embeddings (Gemini only)
     result = generate_embeddings_gemini(df)
     if result is None:
-        logger.warning("Embedding generation failed — saving without embeddings")
-        df['embedding'] = None
+        if 'embedding' in df.columns and df['embedding'].notna().any():
+            # Combiner merge-back carried the previously paid-for vectors;
+            # keep them rather than overwriting with NULLs.
+            logger.warning("Embedding generation unavailable — preserving "
+                           f"carried embeddings ({df['embedding'].notna().sum()}/{len(df)})")
+        else:
+            logger.warning("Embedding generation failed — saving without embeddings")
+            df['embedding'] = None
     else:
         df = result
 

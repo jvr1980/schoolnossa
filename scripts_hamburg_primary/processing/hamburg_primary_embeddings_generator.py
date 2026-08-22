@@ -270,8 +270,26 @@ def save_final_output(df: pd.DataFrame):
     # Ensure directory exists
     FINAL_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Save as parquet (handles complex types like embeddings)
+    # Preserve previously paid-for embeddings: when this run produced no
+    # vectors (no OPENAI_API_KEY / SKIP_EMBEDDINGS), restore them from the
+    # existing final parquet by schulnummer instead of overwriting with NULLs.
     parquet_path = FINAL_DIR / "hamburg_primary_school_master_table_final_with_embeddings.parquet"
+    if 'embedding' in df.columns and df['embedding'].isna().all() and parquet_path.exists():
+        try:
+            import sys as _sys
+            _root = str(Path(__file__).resolve().parent.parent.parent)
+            if _root not in _sys.path:
+                _sys.path.insert(0, _root)
+            from scripts_shared.processing.merge_enriched_columns import merge_enriched_columns
+            prev = pd.read_parquet(parquet_path)
+            df = df.drop(columns=['embedding'])
+            df = merge_enriched_columns(df, prev, carry_prefixes=['embedding'], carry_exact=[])
+            logger.info("Restored embeddings from previous final parquet "
+                        f"({df['embedding'].notna().sum()}/{len(df)} rows)")
+        except Exception as _e:
+            logger.warning(f"Embedding restore skipped: {_e}")
+
+    # Save as parquet (handles complex types like embeddings)
     df.to_parquet(parquet_path, index=False)
     logger.info(f"Saved: {parquet_path}")
 
