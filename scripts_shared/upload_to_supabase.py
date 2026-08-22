@@ -88,6 +88,13 @@ FIELD_GROUPS = {
     'transit_summary': ['transit_accessibility_score',
                         'transit_stop_count_1000m',
                         'transit_all_lines_1000m'],
+    # Stable (year-agnostic) fields + vintage stamps, derived by
+    # scripts_shared/schema/stable_fields.py. Additive to the year-suffixed
+    # columns; the Lovable app migrates to these at its own pace.
+    'stable': ['schueler_current', 'lehrer_current', 'migration_current',
+               'nachfrage_prozent_current', 'abitur_durchschnitt_current',
+               'crime_total_crimes_current',
+               'data_school_year', 'abitur_year', 'crime_data_year'],
     # Nearest stop (Supabase uses unprefixed names for #1, _02/_03 for the rest)
     'transit_nearest': ['transit_bus_name', 'transit_bus_distance_m',
                         'transit_bus_lines',
@@ -121,11 +128,14 @@ COL_ALIASES = {
 INTEGER_FIELDS = {
     'schueler_2024_25', 'lehrer_2024_25', 'gruendungsjahr',
     'transit_stop_count_1000m', 'crime_safety_rank',
+    'schueler_current', 'lehrer_current',
 }
 FLOAT_FIELDS = {
     'transit_accessibility_score', 'transit_bus_distance_m',
     'transit_rail_distance_m', 'transit_tram_distance_m',
     'crime_total_crimes_2023',
+    'migration_current', 'nachfrage_prozent_current',
+    'abitur_durchschnitt_current', 'crime_total_crimes_current',
 }
 
 # ============================================================================
@@ -237,6 +247,18 @@ def load_local_df(filepath):
     for local_col, supabase_col in COL_ALIASES.items():
         if local_col in df.columns and supabase_col not in df.columns:
             df[supabase_col] = df[local_col]
+
+    # Derive stable (year-agnostic) fields if the pipeline didn't already —
+    # single choke point so every upload carries schueler_current & friends.
+    try:
+        import sys as _sys
+        _root = str(Path(__file__).resolve().parent.parent)
+        if _root not in _sys.path:
+            _sys.path.insert(0, _root)
+        from scripts_shared.schema.stable_fields import add_stable_fields
+        df = add_stable_fields(df)
+    except Exception as _e:
+        print(f"  WARN: stable-field derivation skipped: {_e}")
 
     if 'schulnummer' in df.columns:
         df['schulnummer'] = df['schulnummer'].astype(str)
@@ -383,6 +405,10 @@ def parse_args():
                    help='Limit to a single city (e.g. dresden, leipzig)')
     p.add_argument('--list-fields', action='store_true',
                    help='Print the selected field set and exit')
+    p.add_argument('--allow-missing', action='store_true',
+                   help='Proceed even if selected fields are missing from BOTH '
+                        'Supabase tables (default: abort, since that usually '
+                        'means the Supabase column was not created yet)')
     return p.parse_args()
 
 
@@ -420,6 +446,23 @@ def main():
         print()
 
     os.chdir(PROJECT_ROOT)
+
+    # Guard against the silent-skip hazard: a field missing from BOTH tables
+    # uploads nothing anywhere while still reporting success per city. That is
+    # almost always a not-yet-created Supabase column (e.g. after adding a new
+    # group here before running the DDL in Lovable) — abort loudly instead.
+    all_table_cols = get_table_columns('schools') | get_table_columns('primary_schools')
+    if all_table_cols:
+        ghost_fields = [f for f in fields if f not in all_table_cols]
+        if ghost_fields:
+            msg = (f"Selected fields missing from BOTH Supabase tables: "
+                   f"{', '.join(ghost_fields)}. Create the columns first "
+                   f"(via Lovable / its MCP SQL tool) or pass --allow-missing.")
+            if args.allow_missing:
+                logger.warning(msg)
+            else:
+                logger.error(msg)
+                sys.exit(2)
 
     summaries = []
     for city, sec_file, pri_file in CITY_FILES:

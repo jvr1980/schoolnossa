@@ -256,6 +256,17 @@ def transform_bremen_to_berlin_schema():
 
     # Save as parquet
     output_parquet = OUTPUT_DIR / "bremen_school_master_table_berlin_schema.parquet"
+    # Derive stable (year-agnostic) fields + vintage stamps — additive,
+    # keeps all year-suffixed columns. See scripts_shared/schema/stable_fields.py.
+    try:
+        import sys as _sys
+        _root = str(Path(__file__).resolve().parent.parent)
+        if _root not in _sys.path:
+            _sys.path.insert(0, _root)
+        from scripts_shared.schema.stable_fields import add_stable_fields
+        output = add_stable_fields(output)
+    except Exception as _e:
+        print(f"  WARN: stable-field derivation skipped: {_e}")
     output.to_parquet(output_parquet, index=False)
     print(f"  Saved: {output_parquet}")
 

@@ -146,6 +146,17 @@ def transform_to_berlin_schema(school_type):
     # Save — do this BEFORE the optional validate_school_types import so a
     # missing scripts_shared path cannot swallow the output.
     out_pq = STG_DATA_DIR / f"stuttgart_{school_type}_school_master_table_berlin_schema.parquet"
+    # Derive stable (year-agnostic) fields + vintage stamps — additive,
+    # keeps all year-suffixed columns. See scripts_shared/schema/stable_fields.py.
+    try:
+        import sys as _sys
+        _root = str(Path(__file__).resolve().parent.parent)
+        if _root not in _sys.path:
+            _sys.path.insert(0, _root)
+        from scripts_shared.schema.stable_fields import add_stable_fields
+        output = add_stable_fields(output)
+    except Exception as _e:
+        print(f"  WARN: stable-field derivation skipped: {_e}")
     output.to_parquet(out_pq, index=False)
 
     out_csv = STG_DATA_DIR / f"stuttgart_{school_type}_school_master_table_berlin_schema.csv"

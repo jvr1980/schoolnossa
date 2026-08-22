@@ -4,7 +4,8 @@ Coverage Verification Script
 ==============================
 
 Checks student/teacher data coverage across all city final outputs.
-Reports fill rates for schueler_2024_25 and lehrer_2024_25.
+Reports fill rates for the stable schueler_current / lehrer_current fields
+(falling back to the year-suffixed columns for tables not yet re-run).
 
 Usage:
     python3 scripts_shared/verify_coverage.py
@@ -35,15 +36,40 @@ CITIES = [
     ("Bremen", "data_bremen/final", "bremen*final*.csv"),
 ]
 
+# Stable names preferred; resolve_field() falls back to the newest
+# year-suffixed column for tables not yet re-run through the mappers.
 FIELDS = [
-    "schueler_2024_25",
-    "lehrer_2024_25",
+    "schueler_current",
+    "lehrer_current",
     "sprachen",
     "description_de",
     "crime_safety_rank",
     "transit_accessibility_score",
     "belastungsstufe",
 ]
+
+
+import re
+
+
+
+def _real_files(path, pattern):
+    """Glob, excluding macOS AppleDouble ("._*") resource-fork files."""
+    return sorted(p for p in path.glob(pattern) if not p.name.startswith("._"))
+
+
+def resolve_field(df, field):
+    """Return the actual column for a stable field, falling back to the
+    newest year-suffixed variant if the stable column is absent."""
+    if field in df.columns:
+        return field
+    base = {"schueler_current": r"^schueler_(20\d\d_\d\d)$",
+            "lehrer_current": r"^lehrer_(20\d\d_\d\d)$"}.get(field)
+    if base:
+        hits = sorted((c for c in df.columns if re.match(base, c)), reverse=True)
+        if hits:
+            return hits[0]
+    return field
 
 
 def check_coverage():
@@ -54,7 +80,7 @@ def check_coverage():
     # Header
     header = f"{'City':<30}"
     for field in FIELDS:
-        short = field.replace("_2024_25", "").replace("transit_accessibility_", "transit_").replace("crime_safety_", "crime_")
+        short = field.replace("_current", "").replace("transit_accessibility_", "transit_").replace("crime_safety_", "crime_")
         header += f" {short:>12}"
     header += f" {'Total':>8}"
     print(header)
@@ -65,10 +91,10 @@ def check_coverage():
         if not city_path.exists():
             continue
 
-        files = sorted(city_path.glob(pattern))
+        files = _real_files(city_path, pattern)
         if not files:
             # Try without the pattern filter
-            files = sorted(city_path.glob("*final*.csv"))
+            files = _real_files(city_path, "*final*.csv")
         if not files:
             continue
 
@@ -77,7 +103,8 @@ def check_coverage():
         total = len(df)
 
         row = f"{city_name:<30}"
-        for field in FIELDS:
+        for field_name in FIELDS:
+            field = resolve_field(df, field_name)
             if field in df.columns:
                 filled = df[field].notna().sum()
                 if df[field].dtype == object:
@@ -98,14 +125,14 @@ def check_coverage():
         city_path = PROJECT_ROOT / data_dir
         if not city_path.exists():
             continue
-        files = sorted(city_path.glob(pattern))
+        files = _real_files(city_path, pattern)
         if not files:
-            files = sorted(city_path.glob("*final*.csv"))
+            files = _real_files(city_path, "*final*.csv")
         if not files:
             continue
 
         df = pd.read_csv(files[0], low_memory=False)
-        for col in ["schueler_2024_25", "lehrer_2024_25"]:
+        for col in [resolve_field(df, "schueler_current"), resolve_field(df, "lehrer_current")]:
             if col in df.columns:
                 vals = pd.to_numeric(df[col], errors="coerce").dropna()
                 if len(vals) > 0:

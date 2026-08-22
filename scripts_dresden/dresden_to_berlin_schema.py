@@ -217,6 +217,17 @@ def process_school_type(school_type: str):
 
     # Overwrite the _final files with Berlin-aligned schema
     df.to_csv(input_csv, index=False, encoding='utf-8-sig')
+    # Derive stable (year-agnostic) fields + vintage stamps — additive,
+    # keeps all year-suffixed columns. See scripts_shared/schema/stable_fields.py.
+    try:
+        import sys as _sys
+        _root = str(Path(__file__).resolve().parent.parent)
+        if _root not in _sys.path:
+            _sys.path.insert(0, _root)
+        from scripts_shared.schema.stable_fields import add_stable_fields
+        df = add_stable_fields(df)
+    except Exception as _e:
+        print(f"  WARN: stable-field derivation skipped: {_e}")
     df.to_parquet(input_csv.with_suffix('.parquet'), index=False)
     logger.info(f"Saved: {input_csv} ({len(df)} schools, {len(df.columns)} cols)")
 
