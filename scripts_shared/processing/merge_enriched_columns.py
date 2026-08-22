@@ -61,6 +61,7 @@ DEFAULT_CARRY_PREFIXES = [
     'most_similar',         # most_similar_school_01..03
     'tuition',              # Stuttgart Gemini/GPT tuition pipeline
     'admission_',           # Gemini admission/open-days enrichment
+    'env_',                 # air quality / pollen API enrichment
     'open_days',
     'last_open_day_seen',
 ]
