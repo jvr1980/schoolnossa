@@ -73,13 +73,39 @@ CENTER = {"latitude": 48.1374, "longitude": 11.5755}
 
 DATA_SOURCE_LABEL = "private-schools-research-2026-04 (OSM + km.bayern + Places + Gemini)"
 
-# Map candidate -> primary/secondary table school_type label
-def school_type_label(candidate_level: str, table: str) -> str:
-    """Pick a 'school_type' string consistent with existing data."""
+# Map candidate -> primary/secondary table school_type label.
+# Munich's public rows (Bavarian open data) use the plural labels
+# 'Gymnasien' / 'Realschulen' / 'Mittelschulen' / 'Grundschulen' and the
+# Lovable filter UI keys on exactly those strings, so private schools must use
+# the same vocabulary instead of the generic 'Sekundarschule' placeholder.
+# Pedagogical concepts without a Bavarian bucket get the cross-city canonical
+# names (Waldorfschule, Internationale Schule, Montessorischule).
+_SECONDARY_KEYWORDS = [
+    # (keywords in name/schulart_detail, label) — first match wins, ordered
+    # from most specific concept to the state-school hierarchy.
+    (("waldorf", "rudolf-steiner", "steiner-schule"), "Waldorfschule"),
+    (("europäische schule", "international school", "internationale schule",
+      "lycée", "lycee", "lyzeum", "deutsch-französische"), "Internationale Schule"),
+    (("montessori",), "Montessorischule"),
+    (("gymnasium", "gymnasien"), "Gymnasien"),
+    (("realschule", "realschulen"), "Realschulen"),
+    (("mittelschule", "hauptschule", "volksschule", "werkrealschule"), "Mittelschulen"),
+]
+
+
+def school_type_label(candidate: dict, table: str) -> str:
+    """Pick a 'school_type' string consistent with the existing Munich rows."""
     if table == "primary":
-        return "Grundschule"
-    # secondary
-    return "Sekundarschule"  # generic; will be enriched/refined later
+        return "Grundschulen"
+    text = " ".join(str(candidate.get(k, "") or "") for k in
+                    ("schulname", "schulart_detail", "gemini_category")).lower()
+    # Names that carry no type word but are well known
+    if "nymphenburger schulen" in text:      # private Gymnasium + Realschule
+        return "Gymnasien"
+    for keywords, label in _SECONDARY_KEYWORDS:
+        if any(k in text for k in keywords):
+            return label
+    return "Sekundarschule"  # unknown concept; logged by the caller
 
 
 # ---------------------------------------------------------------------------
@@ -189,7 +215,7 @@ def build_raw_row(candidate: dict, table: str, lat: float | None, lon: float | N
         "ort": ort,
         "website": candidate.get("website", "") or "",
         "email": "",
-        "school_type": school_type_label(candidate.get("schulart", ""), table),
+        "school_type": school_type_label(candidate, table),
         "traegerschaft": candidate.get("traegerschaft_hint", "privat") or "privat",
         "traeger": "",
         "fax": "",

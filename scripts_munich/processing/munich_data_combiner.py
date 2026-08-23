@@ -63,12 +63,37 @@ def _carry_forward_paid_columns(df, school_type):
     return merge_enriched_columns(df, prev)
 
 
+MUNICH_MUNICIPALITY = 'münchen'
+
+
+def _drop_non_munich_rows(df):
+    """Guard against non-Munich rows that reached the intermediates through an
+    earlier substring filter (Waldmünchen, Schwabmünchen, ... 'b.München').
+    Only the jedeschule base is checked: rows without an `ort` value and the
+    researched private schools (MUCPRIV_*, re-ingested after the combiner,
+    some deliberately in Landkreis München) are left alone."""
+    if 'ort' not in df.columns:
+        return df
+    ort = (df['ort'].astype(str).str.strip().str.lower()
+           .str.replace('muenchen', 'münchen', regex=False))
+    is_private = df['schulnummer'].astype(str).str.startswith('MUCPRIV') \
+        if 'schulnummer' in df.columns else pd.Series(False, index=df.index)
+    drop = df['ort'].notna() & ort.ne(MUNICH_MUNICIPALITY) & ~is_private
+    if drop.any():
+        names = list(df.loc[drop, 'schulname'].astype(str).str.slice(0, 40)) \
+            if 'schulname' in df.columns else []
+        logger.warning(f"Dropping {int(drop.sum())} non-Munich rows (ort != München): {names}")
+        df = df[~drop].copy()
+    return df
+
+
 def combine_school_type(school_type='secondary'):
     logger.info(f"Combining {school_type} school data...")
 
     FINAL_DIR.mkdir(parents=True, exist_ok=True)
 
     df = find_most_enriched_file(school_type)
+    df = _drop_non_munich_rows(df)
     df = _carry_forward_paid_columns(df, school_type)
 
     csv_path = FINAL_DIR / f"munich_{school_type}_school_master_table.csv"

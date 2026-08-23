@@ -194,18 +194,26 @@ def filter_munich_schools(df: pd.DataFrame) -> pd.DataFrame:
     """
     logger.info("Filtering for München schools...")
 
-    city_mask = df['city'].str.contains('München', case=False, na=False)
+    # Exact municipality match. A substring test ('München' in city/name)
+    # pulled in Waldmünchen, Schwabmünchen, Ostermünchen, Münchenbernsdorf
+    # (Thüringen!), Grafing/Garching/Kirchheim "b.München" and an Ingolstadt
+    # school on the Münchener Straße — 21 non-Munich rows reached Supabase.
+    city_norm = (df['city'].astype(str).str.strip().str.lower()
+                 .str.replace('muenchen', 'münchen', regex=False))
+    city_mask = city_norm.eq('münchen')
     plz_mask = df['zip'].astype(str).str.strip().str.startswith(('80', '81'))
 
-    # Require BOTH city name match AND Munich PLZ prefix
+    # Require BOTH exact city AND Munich PLZ prefix
     mask = city_mask & plz_mask
     filtered = df[mask].copy()
 
-    # Also include schools explicitly named "München" even if PLZ is different
-    name_mask = df['name'].str.contains('München', case=False, na=False) & ~mask
-    if name_mask.any():
-        extra = df[name_mask]
-        logger.info(f"  Adding {len(extra)} schools with 'München' in name but non-80/81 PLZ")
+    # City says München but PLZ is not 80/81 (data-entry quirks): keep, but
+    # log so they can be checked. Never match on the school *name*.
+    extra_mask = city_mask & ~plz_mask
+    if extra_mask.any():
+        extra = df[extra_mask]
+        logger.info(f"  Adding {len(extra)} schools with city München but non-80/81 PLZ: "
+                    f"{list(extra['name'].head(10))}")
         filtered = pd.concat([filtered, extra], ignore_index=True)
 
     logger.info(f"Filtered from {len(df)} to {len(filtered)} München schools")
