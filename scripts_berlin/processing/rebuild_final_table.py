@@ -49,15 +49,35 @@ CONFIG = {
 }
 
 
+TRANSIT_SUMMARY = ['transit_stop_count_1000m', 'transit_accessibility_score']
+
+
+def blank_failed_transit_summary(df: pd.DataFrame, label: str) -> pd.DataFrame:
+    """
+    A 0/0 transit summary is what the BVG enricher used to write when the API
+    was unreachable — a failure marker, not data for a Berlin school. Blank it
+    so it neither ships in the final nor gap-fills over real values.
+    """
+    if all(c in df.columns for c in TRANSIT_SUMMARY):
+        failed = (df[TRANSIT_SUMMARY].fillna(0) == 0).all(axis=1)
+        if failed.any():
+            logger.warning(f"{label}: {int(failed.sum())} rows with a 0/0 transit summary "
+                           f"(failed BVG lookups) — blanked")
+            df = df.copy()
+            df.loc[failed, TRANSIT_SUMMARY] = None
+    return df
+
+
 def rebuild(which: str) -> pd.DataFrame:
     cfg = CONFIG[which]
     if not cfg['fresh'].exists():
         raise FileNotFoundError(f"Fresh chain output missing: {cfg['fresh']} — run the free chain first")
     fresh = pd.read_csv(cfg['fresh'], low_memory=False)
     logger.info(f"Fresh {which}: {len(fresh)} rows, {len(fresh.columns)} cols")
+    fresh = blank_failed_transit_summary(fresh, f"fresh {which}")
 
     if cfg['previous'].exists():
-        prev = pd.read_parquet(cfg['previous'])
+        prev = blank_failed_transit_summary(pd.read_parquet(cfg['previous']), f"previous {which} final")
         merged = merge_enriched_columns(fresh, prev)
     else:
         logger.warning("No previous final parquet — proceeding without merge-back")

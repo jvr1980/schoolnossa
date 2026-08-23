@@ -130,14 +130,16 @@ def enrich_with_crime(schools_df):
 
     matched = 0
     for idx, row in df.iterrows():
-        plz = str(row.get('plz', '')).strip()
-        bezirk = STUTTGART_PLZ_BEZIRK.get(plz)
-
-        # Try ortsteil if PLZ not mapped
+        # The Stadtbezirk scraped from the stuttgart.de directory (ortsteil)
+        # is authoritative; the PLZ->Bezirk table is only an approximation
+        # (several PLZ areas straddle two Bezirke), so use it as fallback.
+        bezirk = None
+        ortsteil = str(row.get('ortsteil', '')).strip()
+        if ortsteil in STUTTGART_BEZIRKE:
+            bezirk = ortsteil
         if not bezirk:
-            ortsteil = str(row.get('ortsteil', '')).strip()
-            if ortsteil in STUTTGART_BEZIRKE:
-                bezirk = ortsteil
+            plz = str(row.get('plz', '')).strip()
+            bezirk = STUTTGART_PLZ_BEZIRK.get(plz)
 
         df.at[idx, 'crime_stadt'] = 'Stuttgart'
         df.at[idx, 'crime_haeufigkeitszahl_2025'] = STUTTGART_CRIME_DATA['haeufigkeitszahl_2025']
