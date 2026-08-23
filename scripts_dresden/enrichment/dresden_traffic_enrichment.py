@@ -42,7 +42,7 @@ CACHE_DIR = DATA_DIR / "cache"
 
 UNFALLATLAS_URL_TEMPLATE = "https://www.opengeodata.nrw.de/produkte/transport_verkehr/unfallatlas/Unfallorte{year}_EPSG25832_CSV.zip"
 SEARCH_RADIUS_M = 500
-YEARS_TO_DOWNLOAD = [2024, 2023, 2022]
+YEARS_TO_DOWNLOAD = [2025, 2024, 2023]
 SACHSEN_ULAND_CODE = '14'
 
 HEADERS = {'User-Agent': 'SchoolNossa/1.0 (Dresden school data enrichment)'}

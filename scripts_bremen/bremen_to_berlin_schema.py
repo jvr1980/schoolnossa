@@ -104,6 +104,10 @@ def transform_bremen_to_berlin_schema():
         'website': 'website',
         # Location
         'stadtteil': 'ortsteil',
+        # School type: Bremen's combiner emits `schulform` (Grundschule,
+        # Oberschule, Gymnasium, Berufsbildende Schule, Sonstige, ...). It is
+        # the Berlin-canonical `schulart`; `school_type` is bucketed below.
+        'schulform': 'schulart',
         # Leadership
         'leitung': 'leitung',
         # Similar schools
@@ -126,6 +130,32 @@ def transform_bremen_to_berlin_schema():
     for old, new in column_renames.items():
         if old in bremen.columns:
             print(f"  Renamed: {old} -> {new}")
+
+    # Derive the Lovable filter-UI `school_type` from schulart (fill-gaps).
+    # Mirrors what the live Supabase rows carry for Bremen: Grundschule ->
+    # Grundschule, Gymnasium -> Gymnasium, everything else (Oberschule,
+    # Berufsbildende Schule, Sonstige, Waldorfschule, Foerderzentrum) ->
+    # Oberschule. Without this every row bucketed as 'secondary' below and
+    # the primary split file was never refreshed.
+    def _school_type_from_schulart(v):
+        if pd.isna(v):
+            return None
+        t = str(v).strip().lower()
+        if 'grund' in t:
+            return 'Grundschule'
+        if 'gymnasium' in t:
+            return 'Gymnasium'
+        return 'Oberschule'
+
+    if 'schulart' in bremen_renamed.columns:
+        derived = bremen_renamed['schulart'].apply(_school_type_from_schulart)
+        if 'school_type' not in bremen_renamed.columns:
+            bremen_renamed['school_type'] = derived
+        else:
+            mask = bremen_renamed['school_type'].isna()
+            bremen_renamed.loc[mask, 'school_type'] = derived[mask]
+        print(f"  school_type derived from schulart: "
+              f"{bremen_renamed['school_type'].notna().sum()}/{len(bremen_renamed)}")
 
     # Fill description gaps from summary_* fallback (Bremen's description pipeline
     # populated summary_en/summary_de more consistently than description_en/de)
@@ -193,8 +223,13 @@ def transform_bremen_to_berlin_schema():
             output[col] = None
 
     # Preserve Bremen-specific columns the Supabase uploader expects but that
-    # aren't in the Berlin reference (e.g. description_en).
-    preserve_extras = ['description_en']
+    # aren't in the Berlin reference (e.g. description_en). Bremen's crime
+    # data is a 2023 vintage; since Berlin's reference moved on to 2024/2025
+    # columns, the renamed crime_*_2023 columns must be kept explicitly or
+    # they vanish (and crime_total_crimes_current can't be derived).
+    preserve_extras = ['description_en'] + sorted(
+        c for c in bremen_renamed.columns
+        if c.startswith('crime_') and c.endswith('_2023'))
     for col in preserve_extras:
         if col in bremen_renamed.columns and col not in output.columns:
             output[col] = bremen_renamed[col].values
@@ -256,6 +291,17 @@ def transform_bremen_to_berlin_schema():
 
     # Save as parquet
     output_parquet = OUTPUT_DIR / "bremen_school_master_table_berlin_schema.parquet"
+    # Derive stable (year-agnostic) fields + vintage stamps — additive,
+    # keeps all year-suffixed columns. See scripts_shared/schema/stable_fields.py.
+    try:
+        import sys as _sys
+        _root = str(Path(__file__).resolve().parent.parent)
+        if _root not in _sys.path:
+            _sys.path.insert(0, _root)
+        from scripts_shared.schema.stable_fields import add_stable_fields
+        output = add_stable_fields(output)
+    except Exception as _e:
+        print(f"  WARN: stable-field derivation skipped: {_e}")
     output.to_parquet(output_parquet, index=False)
     print(f"  Saved: {output_parquet}")
 

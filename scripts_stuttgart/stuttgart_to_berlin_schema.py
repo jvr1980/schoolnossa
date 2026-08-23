@@ -65,10 +65,10 @@ def transform_to_berlin_schema(school_type):
 
     # Crime mapping
     crime_map = {
-        'crime_straftaten_2023': 'crime_total_crimes_2023',
-        'crime_strassenraub_2023': 'crime_street_robbery_2023',
-        'crime_koerperverletzung_2023': 'crime_assault_2023',
-        'crime_diebstahl_fahrrad_2023': 'crime_bike_theft_2023',
+        'crime_straftaten_2025': 'crime_total_crimes_2025',
+        'crime_strassenraub_2025': 'crime_street_robbery_2025',
+        'crime_koerperverletzung_2025': 'crime_assault_2025',
+        'crime_diebstahl_fahrrad_2025': 'crime_bike_theft_2025',
     }
     for src, dst in crime_map.items():
         if src in df.columns:
@@ -146,6 +146,17 @@ def transform_to_berlin_schema(school_type):
     # Save — do this BEFORE the optional validate_school_types import so a
     # missing scripts_shared path cannot swallow the output.
     out_pq = STG_DATA_DIR / f"stuttgart_{school_type}_school_master_table_berlin_schema.parquet"
+    # Derive stable (year-agnostic) fields + vintage stamps — additive,
+    # keeps all year-suffixed columns. See scripts_shared/schema/stable_fields.py.
+    try:
+        import sys as _sys
+        _root = str(Path(__file__).resolve().parent.parent)
+        if _root not in _sys.path:
+            _sys.path.insert(0, _root)
+        from scripts_shared.schema.stable_fields import add_stable_fields
+        output = add_stable_fields(output)
+    except Exception as _e:
+        print(f"  WARN: stable-field derivation skipped: {_e}")
     output.to_parquet(out_pq, index=False)
 
     out_csv = STG_DATA_DIR / f"stuttgart_{school_type}_school_master_table_berlin_schema.csv"

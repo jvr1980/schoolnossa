@@ -80,7 +80,7 @@ UNFALLATLAS_URL_TEMPLATE = "https://www.opengeodata.nrw.de/produkte/transport_ve
 # Configuration
 SEARCH_RADIUS_500 = 500   # Inner radius for accident counting
 SEARCH_RADIUS_1000 = 1000  # Outer radius for accident counting
-YEARS_TO_DOWNLOAD = [2024, 2023, 2022]
+YEARS_TO_DOWNLOAD = [2025, 2024, 2023]
 SACHSEN_ULAND_CODE = '14'  # Sachsen Bundesland code
 
 # Leipzig bounding box (approximate city limits)

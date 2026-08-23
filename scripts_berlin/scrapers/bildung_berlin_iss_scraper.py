@@ -22,6 +22,9 @@ import time
 from typing import Optional
 from urllib.parse import urljoin
 import logging
+from pathlib import Path
+
+RAW_DIR = Path(__file__).resolve().parent.parent.parent / "data_berlin" / "raw"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -37,6 +40,27 @@ HEADERS = {
 SCHULART_ISS = "41"  # Integrierte Sekundarschule
 SCHULART_GYMNASIUM = "14"  # Gymnasien
 
+
+
+def resolve_newest_schuljahr(soup) -> str:
+    """Pick the newest Schuljahr value from the search form's dropdown.
+
+    The portal adds a new option each school year (e.g. value 17 = 2026/27);
+    hardcoding a value silently pins the scrape to an old year.
+    """
+    select = soup.find('select', {'name': 'DropDownListSchuljahre'})
+    best_value, best_year = None, ''
+    if select:
+        for opt in select.find_all('option'):
+            label = opt.get_text(strip=True)
+            m = re.match(r'^(20\d\d)/\d\d$', label)
+            if m and label > best_year:
+                best_year, best_value = label, opt.get('value')
+    if best_value:
+        logger.info(f"Using Schuljahr {best_year} (dropdown value {best_value})")
+        return best_value
+    logger.warning("Could not resolve Schuljahr dropdown; falling back to value 17 (2026/27)")
+    return '17'
 
 def get_session_with_search(schulart_code: str) -> tuple[requests.Session, list[dict]]:
     """
@@ -72,7 +96,7 @@ def get_session_with_search(schulart_code: str) -> tuple[requests.Session, list[
         '__VIEWSTATEGENERATOR': viewstate_gen_value,
         '__EVENTVALIDATION': eventvalidation_value,
         'txtSuchbegriff': '',
-        'DropDownListSchuljahre': '16',  # 2025/26
+        'DropDownListSchuljahre': resolve_newest_schuljahr(soup),
         'DropDownListBezirk': '0',
         'DropDownListSchulart': schulart_code,
         'DropDownListFremdsprache': '0',
@@ -255,8 +279,9 @@ def main():
         return
 
     # Save to CSV and Excel
-    csv_path = 'bildung_berlin_iss.csv'
-    xlsx_path = 'bildung_berlin_iss.xlsx'
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    csv_path = RAW_DIR / 'bildung_berlin_iss.csv'
+    xlsx_path = RAW_DIR / 'bildung_berlin_iss.xlsx'
 
     df.to_csv(csv_path, index=False, encoding='utf-8-sig')
     df.to_excel(xlsx_path, index=False)

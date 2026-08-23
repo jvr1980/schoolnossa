@@ -18,6 +18,11 @@ Usage:
     # Limit to specific groups / cities
     python3 scripts_shared/upload_to_supabase.py --dry-run \
             --groups contact,location,descriptions --city dresden
+
+    # No write credential? Emit the same fill-gaps changes as SQL files for
+    # the Lovable MCP SQL tool (Lovable Cloud owns the DB; anon is read-only):
+    python3 scripts_shared/upload_to_supabase.py --groups stable \
+            --emit-sql data_shared/supabase_sql/stable_2026-08-23
 """
 
 import argparse
@@ -88,6 +93,13 @@ FIELD_GROUPS = {
     'transit_summary': ['transit_accessibility_score',
                         'transit_stop_count_1000m',
                         'transit_all_lines_1000m'],
+    # Stable (year-agnostic) fields + vintage stamps, derived by
+    # scripts_shared/schema/stable_fields.py. Additive to the year-suffixed
+    # columns; the Lovable app migrates to these at its own pace.
+    'stable': ['schueler_current', 'lehrer_current', 'migration_current',
+               'nachfrage_prozent_current', 'abitur_durchschnitt_current',
+               'crime_total_crimes_current',
+               'data_school_year', 'abitur_year', 'crime_data_year'],
     # Nearest stop (Supabase uses unprefixed names for #1, _02/_03 for the rest)
     'transit_nearest': ['transit_bus_name', 'transit_bus_distance_m',
                         'transit_bus_lines',
@@ -121,11 +133,14 @@ COL_ALIASES = {
 INTEGER_FIELDS = {
     'schueler_2024_25', 'lehrer_2024_25', 'gruendungsjahr',
     'transit_stop_count_1000m', 'crime_safety_rank',
+    'schueler_current', 'lehrer_current',
 }
 FLOAT_FIELDS = {
     'transit_accessibility_score', 'transit_bus_distance_m',
     'transit_rail_distance_m', 'transit_tram_distance_m',
     'crime_total_crimes_2023',
+    'migration_current', 'nachfrage_prozent_current',
+    'abitur_durchschnitt_current', 'crime_total_crimes_current',
 }
 
 # ============================================================================
@@ -133,10 +148,11 @@ FLOAT_FIELDS = {
 # ============================================================================
 CITY_FILES = [
     # (city, schools table file, primary_schools table file)
-    # Berlin: source of truth in Supabase already — skip by default
-    # ('berlin',
-    #  'data_berlin/final/school_master_table_final_with_embeddings.parquet',
-    #  'data_berlin_primary/final/grundschule_master_table_final_with_embeddings.parquet'),
+    # Berlin re-enabled for the stable-fields fill (2026-08): fill-gaps
+    # semantics means existing populated cells are never overwritten.
+    ('berlin',
+     'data_berlin/final/school_master_table_final_with_embeddings.parquet',
+     'data_berlin_primary/final/grundschule_master_table_final_with_embeddings.parquet'),
     ('muenchen',
      'data_munich/final/munich_secondary_school_master_table_final.csv',
      'data_munich/final/munich_primary_school_master_table_final.csv'),
@@ -199,15 +215,18 @@ def get_table_columns(table):
     return _TABLE_COLUMNS_CACHE[table]
 
 
-def fetch_supabase_schools(table, city, fields):
+def fetch_supabase_schools(table, city, fields, assume_missing=False):
     """Fetch schulnummer + given fields for a city from Supabase.
 
     Skips fields that don't exist in the target table (returned in
-    extra result so callers know what was skipped).
+    extra result so callers know what was skipped). With assume_missing=True
+    (SQL emission before the DDL has run) missing fields stay in the active
+    set and read as NULL, so the emitted SQL fills them once the columns exist.
     """
     table_cols = get_table_columns(table)
     safe_fields = [f for f in fields if f in table_cols]
     skipped_missing_in_table = [f for f in fields if f not in table_cols]
+    active_fields = list(fields) if assume_missing else safe_fields
 
     select = ','.join(['id', 'schulnummer', 'city'] + safe_fields)
     all_data = []
@@ -219,7 +238,7 @@ def fetch_supabase_schools(table, city, fields):
         if len(data) < 1000:
             break
         offset += 1000
-    return all_data, safe_fields, skipped_missing_in_table
+    return all_data, active_fields, ([] if assume_missing else skipped_missing_in_table)
 
 
 # ============================================================================
@@ -238,6 +257,18 @@ def load_local_df(filepath):
         if local_col in df.columns and supabase_col not in df.columns:
             df[supabase_col] = df[local_col]
 
+    # Derive stable (year-agnostic) fields if the pipeline didn't already —
+    # single choke point so every upload carries schueler_current & friends.
+    try:
+        import sys as _sys
+        _root = str(Path(__file__).resolve().parent.parent)
+        if _root not in _sys.path:
+            _sys.path.insert(0, _root)
+        from scripts_shared.schema.stable_fields import add_stable_fields
+        df = add_stable_fields(df)
+    except Exception as _e:
+        print(f"  WARN: stable-field derivation skipped: {_e}")
+
     if 'schulnummer' in df.columns:
         df['schulnummer'] = df['schulnummer'].astype(str)
     return df
@@ -246,9 +277,14 @@ def load_local_df(filepath):
 def _is_empty(val):
     if val is None:
         return True
-    if isinstance(val, float) and pd.isna(val):
-        return True
-    if isinstance(val, str) and val.strip() in ('', 'None', 'nan', 'NaN'):
+    # Any scalar missing marker: float nan, pd.NA, pd.NaT, np.nan ...
+    # (pd.NA is not a float and would otherwise str() to '<NA>').
+    try:
+        if pd.api.types.is_scalar(val) and pd.isna(val):
+            return True
+    except (TypeError, ValueError):
+        pass
+    if isinstance(val, str) and val.strip() in ('', 'None', 'nan', 'NaN', '<NA>', 'NaT'):
         return True
     return False
 
@@ -283,9 +319,14 @@ def _coerce(field, value):
 # Update flow
 # ============================================================================
 
-def update_city(table, city, local_df, fields, dry_run=False):
-    """Fill NULL Supabase values from local data. Returns summary dict."""
-    sb_rows, active_fields, skipped_in_table = fetch_supabase_schools(table, city, fields)
+def update_city(table, city, local_df, fields, dry_run=False, sql_rows=None):
+    """Fill NULL Supabase values from local data. Returns summary dict.
+
+    sql_rows: if a list is passed, nothing is written; instead every planned
+    (supabase_id, payload) pair is appended so the caller can emit SQL.
+    """
+    sb_rows, active_fields, skipped_in_table = fetch_supabase_schools(
+        table, city, fields, assume_missing=(sql_rows is not None))
     summary = {
         'city': city, 'table': table,
         'sb_rows': len(sb_rows), 'local_rows': len(local_df),
@@ -293,6 +334,7 @@ def update_city(table, city, local_df, fields, dry_run=False):
         'per_field': {f: 0 for f in active_fields},
         'skipped_no_local_col': [],
         'skipped_not_in_table': skipped_in_table,
+        'pg_types': _infer_pg_types(sb_rows, active_fields),
     }
 
     if not sb_rows:
@@ -326,6 +368,9 @@ def update_city(table, city, local_df, fields, dry_run=False):
             continue
         summary['planned_updates'] += 1
 
+        if sql_rows is not None:
+            sql_rows.append((sb_row['id'], payload))
+            continue
         if dry_run:
             continue
 
@@ -346,6 +391,105 @@ def update_city(table, city, local_df, fields, dry_run=False):
                 logger.error(f'  Failed update {snr}.{field}: {e}')
 
     return summary
+
+
+# ============================================================================
+# SQL emission (for the Lovable MCP SQL tool when no write credential exists)
+# ============================================================================
+
+def _infer_pg_types(sb_rows, fields):
+    """Best-effort Postgres type per field: from the JSON values Supabase
+    returned (int -> integer, float -> numeric, bool -> boolean, str -> text);
+    for all-NULL columns fall back to the INTEGER/FLOAT field sets, else text."""
+    types = {}
+    for f in fields:
+        seen = set()
+        for r in sb_rows:
+            v = r.get(f)
+            if v is None:
+                continue
+            if isinstance(v, bool):
+                seen.add('boolean')
+            elif isinstance(v, int):
+                seen.add('integer')
+            elif isinstance(v, float):
+                seen.add('numeric')
+            elif isinstance(v, (list, dict)):
+                seen.add('jsonb')
+            else:
+                seen.add('text')
+        if 'jsonb' in seen:
+            t = 'jsonb'
+        elif 'text' in seen:
+            t = 'text'
+        elif 'numeric' in seen:
+            t = 'numeric'
+        elif 'integer' in seen:
+            t = 'integer'
+        elif 'boolean' in seen:
+            t = 'boolean'
+        elif f in INTEGER_FIELDS:
+            t = 'integer'
+        elif f in FLOAT_FIELDS:
+            t = 'numeric'
+        else:
+            t = 'text'
+        types[f] = t
+    return types
+
+
+def _sql_literal(value, pg_type):
+    """Render a Python value as a cast SQL literal (NULL-safe)."""
+    if value is None:
+        return f'NULL::{pg_type}'
+    if pg_type in ('integer', 'numeric'):
+        return f'{value}::{pg_type}'
+    if pg_type == 'boolean':
+        return ('TRUE' if value else 'FALSE') + '::boolean'
+    if pg_type == 'jsonb':
+        txt = json.dumps(value, ensure_ascii=False)
+    else:
+        txt = str(value)
+    return "'" + txt.replace("'", "''") + f"'::{pg_type}"
+
+
+def write_fill_gaps_sql(out_dir, table, city, rows, pg_types, chunk_rows=200):
+    """Write fill-gaps UPDATE statements for one (table, city) as chunked files.
+
+    Semantics mirror the REST path exactly: every cell is set with
+    COALESCE(existing, new), so a value that already exists in Supabase is
+    never overwritten; rows are addressed by their Supabase uuid.
+    Returns list of written paths.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    fields = sorted({f for _, payload in rows for f in payload})
+    if not rows or not fields:
+        return []
+    paths = []
+    n_chunks = (len(rows) + chunk_rows - 1) // chunk_rows
+    for ci in range(n_chunks):
+        chunk = rows[ci * chunk_rows:(ci + 1) * chunk_rows]
+        lines = [
+            f"-- {table} / {city} — chunk {ci + 1}/{n_chunks} ({len(chunk)} rows)",
+            f"-- fill-gaps: COALESCE(existing, new) — existing non-NULL values are kept",
+            f"-- fields: {', '.join(fields)}",
+            f"UPDATE {table} AS s SET",
+            ',\n'.join(f"  {f} = COALESCE(s.{f}, v.{f})" for f in fields),
+            "FROM (VALUES",
+        ]
+        vals = []
+        for sb_id, payload in chunk:
+            cells = [f"'{sb_id}'::uuid"] + [
+                _sql_literal(payload.get(f), pg_types.get(f, 'text')) for f in fields]
+            vals.append('  (' + ', '.join(cells) + ')')
+        lines.append(',\n'.join(vals))
+        lines.append(f") AS v(id, {', '.join(fields)})")
+        lines.append("WHERE s.id = v.id;")
+        path = out_dir / f"{table}__{city}__{ci + 1:02d}of{n_chunks:02d}.sql"
+        path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        paths.append(path)
+    return paths
 
 
 def print_summary(summary):
@@ -383,6 +527,16 @@ def parse_args():
                    help='Limit to a single city (e.g. dresden, leipzig)')
     p.add_argument('--list-fields', action='store_true',
                    help='Print the selected field set and exit')
+    p.add_argument('--emit-sql', metavar='DIR', default=None,
+                   help='Write the planned fill-gaps changes as chunked SQL '
+                        'files into DIR (for the Lovable MCP SQL tool) instead '
+                        'of PATCHing. Implies no REST writes.')
+    p.add_argument('--sql-chunk-rows', type=int, default=200,
+                   help='Rows per UPDATE statement/file with --emit-sql (default 200)')
+    p.add_argument('--allow-missing', action='store_true',
+                   help='Proceed even if selected fields are missing from BOTH '
+                        'Supabase tables (default: abort, since that usually '
+                        'means the Supabase column was not created yet)')
     return p.parse_args()
 
 
@@ -404,7 +558,9 @@ def main():
     print("=" * 72)
     print("SUPABASE FILL-GAPS UPLOAD")
     print("=" * 72)
-    print(f"Mode:    {'DRY RUN (no writes)' if args.dry_run else 'LIVE WRITE'}")
+    mode = ('EMIT SQL (no writes)' if args.emit_sql
+            else 'DRY RUN (no writes)' if args.dry_run else 'LIVE WRITE')
+    print(f"Mode:    {mode}")
     print(f"Groups:  {', '.join(groups)}")
     print(f"Fields:  {', '.join(fields)}")
     if args.city:
@@ -414,14 +570,36 @@ def main():
     if args.list_fields:
         return
 
-    if not args.dry_run:
+    if not args.dry_run and not args.emit_sql:
         using_service_role = bool(os.environ.get('SUPABASE_SERVICE_ROLE_KEY'))
         print(f"Auth:    {'service_role (RLS bypassed)' if using_service_role else 'anon key (requires per-column IS NULL UPDATE policy)'}")
         print()
 
     os.chdir(PROJECT_ROOT)
 
+    # Guard against the silent-skip hazard: a field missing from BOTH tables
+    # uploads nothing anywhere while still reporting success per city. That is
+    # almost always a not-yet-created Supabase column (e.g. after adding a new
+    # group here before running the DDL in Lovable) — abort loudly instead.
+    all_table_cols = get_table_columns('schools') | get_table_columns('primary_schools')
+    if all_table_cols:
+        ghost_fields = [f for f in fields if f not in all_table_cols]
+        if ghost_fields:
+            msg = (f"Selected fields missing from BOTH Supabase tables: "
+                   f"{', '.join(ghost_fields)}. Create the columns first "
+                   f"(via Lovable / its MCP SQL tool) or pass --allow-missing.")
+            if args.emit_sql:
+                logger.warning(f"{msg} (--emit-sql: the generated SQL assumes "
+                               f"those columns exist — run the DDL first, e.g. "
+                               f"scripts_shared/schema/supabase_stable_fields.sql)")
+            elif args.allow_missing:
+                logger.warning(msg)
+            else:
+                logger.error(msg)
+                sys.exit(2)
+
     summaries = []
+    sql_files = []
     for city, sec_file, pri_file in CITY_FILES:
         if args.city and city != args.city:
             continue
@@ -432,9 +610,18 @@ def main():
                 continue
             logger.info(f'\nProcessing {city} / {table} ({rel_path})')
             local_df = load_local_df(filepath)
-            s = update_city(table, city, local_df, fields, dry_run=args.dry_run)
+            sql_rows = [] if args.emit_sql else None
+            s = update_city(table, city, local_df, fields,
+                            dry_run=args.dry_run, sql_rows=sql_rows)
             summaries.append(s)
             print_summary(s)
+            if args.emit_sql and sql_rows:
+                paths = write_fill_gaps_sql(PROJECT_ROOT / args.emit_sql, table,
+                                            city, sql_rows, s['pg_types'],
+                                            chunk_rows=args.sql_chunk_rows)
+                sql_files.extend(paths)
+                print(f"    SQL: {len(sql_rows)} rows -> "
+                      f"{', '.join(p.name for p in paths)}")
 
     # Aggregate
     print("\n" + "=" * 72)
@@ -451,7 +638,14 @@ def main():
         if agg.get(f, 0) > 0:
             print(f"    {f}: +{agg[f]}")
     print()
-    if args.dry_run:
+    if args.emit_sql:
+        out_dir = PROJECT_ROOT / args.emit_sql
+        total_bytes = sum(p.stat().st_size for p in sql_files)
+        print(f"  EMIT SQL — nothing was written to Supabase. {len(sql_files)} file(s), "
+              f"{total_bytes / 1024:.0f} KB in {out_dir}")
+        print("  Run them (in any order) via the Lovable MCP SQL tool; each statement "
+              "is idempotent (COALESCE fill-gaps).")
+    elif args.dry_run:
         print("  DRY RUN — nothing was written. Re-run without --dry-run to apply.")
 
 

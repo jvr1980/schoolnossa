@@ -771,3 +771,175 @@ Running Phase 9: Berlin Schema Enforcement
 2026-04-09 10:15:58,793 - INFO - ============================================================
 2026-04-09 10:15:58,793 - INFO - PHASE 9: Berlin Schema Enforcement
 2026-04-09 10:15:58,793 - INFO - ============================================================
+2026-08-22 18:46:38,987 - INFO - ======================================================================
+2026-08-22 18:46:38,987 - INFO - BREMEN SCHOOL DATA ASSET BUILDER - STARTING
+2026-08-22 18:46:38,987 - INFO - Start time: 2026-08-22 18:46:38.987025
+2026-08-22 18:46:38,987 - INFO - ======================================================================
+2026-08-22 18:46:38,987 - INFO - 
+Running Phase 1: School Master Data
+2026-08-22 18:46:38,987 - INFO - ============================================================
+2026-08-22 18:46:38,987 - INFO - PHASE 1: School Master Data (Schulwegweiser + GeoBremen)
+2026-08-22 18:46:38,987 - INFO - ============================================================
+2026-08-22 18:46:39,442 - INFO - ============================================================
+2026-08-22 18:46:39,442 - INFO - Starting Bremen School Master Data Scraper (Phase 1)
+2026-08-22 18:46:39,442 - INFO - ============================================================
+2026-08-22 18:46:39,443 - INFO - Downloading Schulstandorte Shapefile from https://gdi2.geo.bremen.de/inspire/download/Schulstandorte/data/Schulstandorte_HB_BHV.zip
+2026-08-22 18:46:39,603 - INFO - Downloaded Schulstandorte Shapefile (33,640 bytes)
+2026-08-22 18:46:39,603 - INFO - Parsing Schulstandorte Shapefile...
+2026-08-22 18:46:39,612 - INFO - Using geopandas to read shapefile...
+2026-08-22 18:46:40,076 - INFO - Read 207 features with CRS: EPSG:25832
+2026-08-22 18:46:40,076 - INFO - Columns: ['snr', 'lblkuerzel', 'lblnamekur', 'nam', 'strasse', 'plz', 'ort', 'ortsteil_i', 'ortsteilna', 'schultraeg', 'traegernam', 'schularten', 'schulart_1', 'schulart_2', 'ganztagssc', 'ganztagsfo', 'snr_txt', 'x_etrs', 'y_etrs', 'isced_2011', 'stand', 'geometry']
+2026-08-22 18:46:40,086 - INFO - Converted coordinates to WGS84
+2026-08-22 18:46:40,088 - INFO - Extracted coordinates for 207/207 schools
+2026-08-22 18:46:40,088 - INFO - Shapefile: 207 school locations
+2026-08-22 18:46:40,088 - INFO - Searching for Excel download on https://www.bildung.bremen.de/schulwegweiser-3714
+2026-08-22 18:46:40,857 - INFO - Found Excel link: https://www.bildung.bremen.de/../sixcms/media.php/13/Schulen.xlsx
+2026-08-22 18:46:40,859 - INFO - Downloading Schulwegweiser Excel from https://www.bildung.bremen.de/../sixcms/media.php/13/Schulen.xlsx
+2026-08-22 18:46:41,463 - INFO - Downloaded Schulwegweiser Excel (59,048 bytes)
+2026-08-22 18:46:41,466 - INFO - Parsing Schulwegweiser Excel...
+2026-08-22 18:46:41,655 - INFO - Sheet 'Schule_XLS': 254 rows, 48 columns
+2026-08-22 18:46:41,655 - INFO - Using sheet with 254 rows
+2026-08-22 18:46:41,655 - INFO - Columns: ['Schulnummer', 'Name1', 'Name2', 'Zusatz1', 'Zusatz2', 'Zusatz3', 'Strasse', 'PLZ', 'Ort', 'Region', 'Planbezirk', 'Vorwahl', 'Telefon', 'Fax', 'EMail', 'SchulleiterName', 'SchulleiterVorname', 'SchulleiterTitel', 'SchulleiterGeschlecht', 'SchulleiterEMail', 'SchulleiterVertrName', 'SchulleiterVertrVorName', 'SchulleiterVertrGeschlecht', 'SchulleiterVertrEMail', 'Schulform', 'Ganztagsschule', 'GanztagsForm', 'Ganztagsschule_ab', 'Schulart1', 'Schulart2', 'Schulart3', 'Schulart4', 'Schulart5', 'Schulart6', 'Schulart7', 'Schulart8', 'Schulart9', 'Schulart10', 'Schulart11', 'Internet', 'LKW_Anfahrt', 'Kiosk', 'Mensa', 'Cafeteria', 'PaedMittagessen', 'Mittagessen', 'LiegenschaftsbetreuerEmail', 'Liegenschaftsbetreuer']
+2026-08-22 18:46:41,655 - INFO - Excel: 254 schools
+2026-08-22 18:46:41,655 - INFO - Joining Shapefile and Excel data sources...
+2026-08-22 18:46:41,658 - INFO - Name matching: 29/254 schools got coordinates
+2026-08-22 18:46:41,658 - INFO - 225 schools still need coordinates (will geocode later)
+2026-08-22 18:46:41,658 - INFO - Combined: 254 schools
+2026-08-22 18:46:41,658 - INFO - Normalizing columns...
+2026-08-22 18:46:41,666 - INFO - Built schulname from ['Name1', 'Name2']
+2026-08-22 18:46:41,666 - INFO - Mapped Planbezirk -> stadtteil (254 values)
+2026-08-22 18:46:41,666 - INFO - Mapped Region -> bezirk (254 values)
+2026-08-22 18:46:41,666 - INFO - Mapped Internet -> website
+2026-08-22 18:46:41,674 - INFO - Built leitung from ['SchulleiterTitel', 'SchulleiterVorname', 'SchulleiterName']
+2026-08-22 18:46:41,677 - INFO - Geocoding 225 schools with missing coordinates via Nominatim...
+2026-08-22 18:47:10,215 - INFO - Geocoded 20/225 schools...
+2026-08-22 18:47:37,475 - INFO - Geocoded 40/225 schools...
+2026-08-22 18:48:07,658 - INFO - Geocoded 60/225 schools...
+2026-08-22 18:48:35,080 - INFO - Geocoded 80/225 schools...
+2026-08-22 18:49:01,815 - INFO - Geocoded 100/225 schools...
+2026-08-22 18:49:31,820 - INFO - Geocoded 120/225 schools...
+2026-08-22 18:50:00,084 - INFO - Geocoded 140/225 schools...
+2026-08-22 18:50:28,754 - INFO - Geocoded 160/225 schools...
+2026-08-22 18:50:55,812 - INFO - Geocoded 180/225 schools...
+2026-08-22 18:51:24,326 - INFO - Geocoded 200/225 schools...
+2026-08-22 18:51:51,022 - INFO - Geocoded 220/225 schools...
+2026-08-22 18:51:56,192 - INFO - Geocoded 224/225 schools via Nominatim
+2026-08-22 18:51:56,193 - WARNING - 1 schools still have no coordinates
+2026-08-22 18:51:56,194 - INFO - Saving output files...
+2026-08-22 18:51:56,214 - INFO - Saved: /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/raw/bremen_school_master.csv (254 schools)
+2026-08-22 18:51:56,220 - INFO - Saved: /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/raw/bremen_primary_schools.csv (114 schools)
+2026-08-22 18:51:56,225 - INFO - Saved: /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/raw/bremen_secondary_schools.csv (66 schools)
+2026-08-22 18:51:56,229 - INFO - Saved: /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/raw/bremen_other_schools.csv (74 schools)
+2026-08-22 18:51:56,234 - INFO - Phase 1 complete!
+2026-08-22 18:51:56,234 - INFO - 
+Running Phase 2: Traffic Enrichment (Unfallatlas)
+2026-08-22 18:51:56,234 - INFO - ============================================================
+2026-08-22 18:51:56,234 - INFO - PHASE 2: Traffic Data (Unfallatlas, ULAND=04)
+2026-08-22 18:51:56,234 - INFO - ============================================================
+2026-08-22 18:51:56,246 - INFO - ============================================================
+2026-08-22 18:51:56,246 - INFO - Starting Bremen Traffic Enrichment (Unfallatlas, ULAND=04)
+2026-08-22 18:51:56,246 - INFO - ============================================================
+2026-08-22 18:51:56,246 - INFO - Using input: bremen_school_master.csv
+2026-08-22 18:51:56,251 - INFO - Loaded 254 schools from bremen_school_master.csv
+2026-08-22 18:51:56,251 - INFO - Loading accident data for all years...
+2026-08-22 18:51:56,251 - INFO - Downloading Unfallatlas 2025 from https://www.opengeodata.nrw.de/produkte/transport_verkehr/unfallatlas/Unfallorte2025_EPSG25832_CSV.zip
+2026-08-22 18:51:57,618 - INFO - Downloaded 12.0 MB
+2026-08-22 18:51:57,619 - INFO - Extracting: csv/Unfallorte_2025_LR_BasisDLM.csv
+2026-08-22 18:51:58,080 - INFO - Parsed 273007 accidents for 2025
+2026-08-22 18:51:58,100 - INFO - Filtered to 2575 Bremen accidents
+2026-08-22 18:51:58,143 - INFO - Cached to /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/cache/unfallatlas_2025_bremen.parquet
+2026-08-22 18:51:58,144 - INFO - Downloading Unfallatlas 2024 from https://www.opengeodata.nrw.de/produkte/transport_verkehr/unfallatlas/Unfallorte2024_EPSG25832_CSV.zip
+2026-08-22 18:52:01,050 - INFO - Downloaded 12.1 MB
+2026-08-22 18:52:01,051 - INFO - Extracting: csv/Unfallorte2024_LinRef.csv
+2026-08-22 18:52:01,571 - INFO - Parsed 268519 accidents for 2024
+2026-08-22 18:52:01,593 - INFO - Filtered to 2609 Bremen accidents
+2026-08-22 18:52:01,609 - INFO - Cached to /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/cache/unfallatlas_2024_bremen.parquet
+2026-08-22 18:52:01,611 - INFO - Downloading Unfallatlas 2023 from https://www.opengeodata.nrw.de/produkte/transport_verkehr/unfallatlas/Unfallorte2023_EPSG25832_CSV.zip
+2026-08-22 18:52:02,885 - INFO - Downloaded 12.1 MB
+2026-08-22 18:52:02,885 - INFO - Extracting: csv/Unfallorte2023_LinRef.csv
+2026-08-22 18:52:03,376 - INFO - Parsed 269048 accidents for 2023
+2026-08-22 18:52:03,398 - INFO - Filtered to 2703 Bremen accidents
+2026-08-22 18:52:03,407 - INFO - Cached to /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/cache/unfallatlas_2023_bremen.parquet
+2026-08-22 18:52:03,409 - INFO - Total accidents loaded: 7887 across 3 years
+2026-08-22 18:52:03,409 - INFO - Counting accidents within 500m of each school...
+2026-08-22 18:52:03,413 - INFO - Valid accidents with coordinates: 7887
+2026-08-22 18:52:03,413 - INFO - Schools with coordinates: 253
+2026-08-22 18:52:03,805 - INFO - Schools with nearby accidents: 251/253
+2026-08-22 18:52:03,805 - INFO - Merging traffic data...
+2026-08-22 18:52:03,829 - INFO - Saved: /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/intermediate/bremen_schools_with_traffic.csv (254 schools)
+2026-08-22 18:52:03,829 - INFO - Schools with traffic data: 253/254
+2026-08-22 18:52:03,830 - INFO - Total accidents matched: 12164
+2026-08-22 18:52:03,830 - INFO - 
+Running Phase 3: Transit Enrichment (Overpass)
+2026-08-22 18:52:03,830 - INFO - ============================================================
+2026-08-22 18:52:03,830 - INFO - PHASE 3: Transit Enrichment (Overpass API)
+2026-08-22 18:52:03,830 - INFO - ============================================================
+2026-08-22 18:52:03,832 - INFO - ============================================================
+2026-08-22 18:52:03,832 - INFO - Starting Bremen Transit Enrichment (Overpass API)
+2026-08-22 18:52:03,832 - INFO - ============================================================
+2026-08-22 18:52:03,832 - INFO - Using input: bremen_schools_with_traffic.csv
+2026-08-22 18:52:03,835 - INFO - Loaded 254 schools from bremen_schools_with_traffic.csv
+2026-08-22 18:52:03,836 - INFO - Querying Overpass API for transit stops in bbox (53.0094,8.5053) to (53.6153,8.9815)...
+2026-08-22 18:52:12,947 - INFO - Found 7198 transit stops
+2026-08-22 18:52:12,948 - INFO -   - bus (Bus): 6798
+2026-08-22 18:52:12,948 - INFO -   - rail (Bahn): 58
+2026-08-22 18:52:12,948 - INFO -   - tram (Straßenbahn): 342
+2026-08-22 18:52:12,993 - INFO - Calculating transit accessibility for schools...
+2026-08-22 18:52:15,173 - INFO - Saved: /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/intermediate/bremen_schools_with_transit.csv (254 schools)
+2026-08-22 18:52:15,174 - INFO - Avg stops within 500m: 14.2
+2026-08-22 18:52:15,174 - INFO - Avg stops within 1000m: 48.2
+2026-08-22 18:52:15,175 - INFO - 
+Running Phase 4: Crime Enrichment (PKS)
+2026-08-22 18:52:15,175 - INFO - ============================================================
+2026-08-22 18:52:15,175 - INFO - PHASE 4: Crime Statistics (Stadtteil-level PKS)
+2026-08-22 18:52:15,175 - INFO - ============================================================
+2026-08-22 18:52:15,179 - INFO - ============================================================
+2026-08-22 18:52:15,179 - INFO - Starting Bremen Crime Data Enrichment
+2026-08-22 18:52:15,179 - INFO - ============================================================
+2026-08-22 18:52:15,179 - INFO - Using input file: bremen_schools_with_transit.csv
+2026-08-22 18:52:15,183 - INFO - Loaded 254 schools from bremen_schools_with_transit.csv
+2026-08-22 18:52:15,183 - INFO - Enriching schools with crime data (Beiratsbereich level)...
+2026-08-22 18:52:15,184 - INFO - Loaded crime data from cache (22 Beiratsbereiche)
+2026-08-22 18:52:15,199 - INFO -   Matched to Beiratsbereich: 207/254 schools
+2026-08-22 18:52:15,199 - INFO -   Unmatched: 47/254 schools
+2026-08-22 18:52:15,213 - INFO - Saved: /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/intermediate/bremen_schools_with_crime.csv
+2026-08-22 18:52:15,218 - INFO - 
+Running Phase 7: Data Combination
+2026-08-22 18:52:15,218 - INFO - ============================================================
+2026-08-22 18:52:15,218 - INFO - PHASE 7: Data Combination
+2026-08-22 18:52:15,218 - INFO - ============================================================
+2026-08-22 18:52:15,222 - INFO - ============================================================
+2026-08-22 18:52:15,222 - INFO - Starting Bremen School Data Combiner
+2026-08-22 18:52:15,222 - INFO - ============================================================
+2026-08-22 18:52:15,225 - INFO - Loaded base data: 254 schools from bremen_school_master.csv
+2026-08-22 18:52:15,228 - INFO -   Loaded bremen_schools_with_traffic.csv: 254 rows, 73 columns
+2026-08-22 18:52:15,228 - INFO - Merging traffic data...
+2026-08-22 18:52:15,228 - INFO -   traffic: 11 new columns
+2026-08-22 18:52:15,231 - INFO -   Merged: 254 rows
+2026-08-22 18:52:15,235 - INFO -   Loaded bremen_schools_with_transit.csv: 254 rows, 122 columns
+2026-08-22 18:52:15,235 - INFO - Merging transit data...
+2026-08-22 18:52:15,235 - INFO -   transit: 49 new columns
+2026-08-22 18:52:15,236 - INFO -   Merged: 254 rows
+2026-08-22 18:52:15,239 - INFO -   Loaded bremen_schools_with_crime.csv: 254 rows, 136 columns
+2026-08-22 18:52:15,240 - INFO - Merging crime data...
+2026-08-22 18:52:15,240 - INFO -   crime: 14 new columns
+2026-08-22 18:52:15,241 - INFO -   Merged: 254 rows
+2026-08-22 18:52:15,250 - INFO -   Loaded bremen_schools_with_poi.csv: 253 rows, 219 columns
+2026-08-22 18:52:15,251 - INFO - Merging POI data...
+2026-08-22 18:52:15,251 - INFO -   POI: 83 new columns
+2026-08-22 18:52:15,252 - INFO -   Merged: 254 rows
+2026-08-22 18:52:15,274 - INFO -   Loaded bremen_schools_with_website_metadata.csv: 253 rows, 229 columns
+2026-08-22 18:52:15,274 - INFO - Merging website_metadata data...
+2026-08-22 18:52:15,274 - INFO -   website_metadata: 10 new columns
+2026-08-22 18:52:15,276 - INFO -   Merged: 254 rows
+2026-08-22 18:52:15,276 - INFO - Cleaning combined data...
+2026-08-22 18:52:15,277 - INFO - Standardizing column order...
+2026-08-22 18:52:15,278 - INFO - Saving output files...
+2026-08-22 18:52:15,301 - INFO -   Saved: /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/final/bremen_school_master_table_final.csv
+2026-08-22 18:52:15,333 - INFO -   Saved: /Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_bremen/final/bremen_school_master_table_final.parquet
+2026-08-22 18:52:15,334 - INFO - Data combination complete!
+2026-08-22 18:52:15,334 - INFO - 
+Running Phase 9: Berlin Schema Enforcement
+2026-08-22 18:52:15,334 - INFO - ============================================================
+2026-08-22 18:52:15,334 - INFO - PHASE 9: Berlin Schema Enforcement
+2026-08-22 18:52:15,334 - INFO - ============================================================

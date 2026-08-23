@@ -131,11 +131,16 @@ def generate_for_school_type(school_type='secondary'):
 
     FINAL_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Prefer the parquet: the combiner's merge-back carries the previous
+    # embedding vectors, and a CSV round-trip would stringify them.
+    input_parquet = FINAL_DIR / f"munich_{school_type}_school_master_table.parquet"
     input_path = FINAL_DIR / f"munich_{school_type}_school_master_table.csv"
-    if not input_path.exists():
+    if input_parquet.exists():
+        df = pd.read_parquet(input_parquet)
+    elif input_path.exists():
+        df = pd.read_csv(input_path)
+    else:
         raise FileNotFoundError(f"Input not found: {input_path}. Run Phase 7 first.")
-
-    df = pd.read_csv(input_path)
     logger.info(f"Loaded {len(df)} schools")
 
     final_csv = FINAL_DIR / f"munich_{school_type}_school_master_table_final.csv"

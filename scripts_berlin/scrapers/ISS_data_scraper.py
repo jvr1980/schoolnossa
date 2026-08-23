@@ -11,6 +11,9 @@ import time
 import re
 from urllib.parse import urljoin
 import logging
+from pathlib import Path
+
+RAW_DIR = Path(__file__).resolve().parent.parent.parent / "data_berlin" / "raw"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -87,6 +90,24 @@ def scrape_views_table(url: str, value_columns: list) -> pd.DataFrame:
     if not table:
         logger.warning(f"No views-table found at {url}")
         return pd.DataFrame()
+
+    # Re-derive year-suffixed labels from the site's own header row so a site
+    # update (e.g. 24/25 -> 26/27 columns) can never be mislabeled with a
+    # stale vintage. Headers look like "24/25"; labels like "Schueler_2024_25".
+    header_cells = [th.get_text(strip=True) for th in table.find_all('th')]
+    year_headers = header_cells[1:1 + len(value_columns)]  # first header is "Schule"
+    relabeled = []
+    for label, header in zip(value_columns, year_headers + [''] * len(value_columns)):
+        m = re.match(r'^(\d\d)/(\d\d)$', header or '')
+        stripped = re.sub(r'_20\d\d_\d\d$', '', label)
+        if m and stripped != label:
+            new_label = f"{stripped}_20{m.group(1)}_{m.group(2)}"
+            if new_label != label:
+                logger.warning(f"{url}: header says {header}; relabeling {label} -> {new_label}")
+            relabeled.append(new_label)
+        else:
+            relabeled.append(label)
+    value_columns = relabeled
 
     # Process each row
     rows = table.find_all('tr')
@@ -556,12 +577,13 @@ def main():
         master_df = create_master_table(scrape_details=True)
 
         # Save to CSV
-        output_file = 'ISS_master_table.csv'
+        RAW_DIR.mkdir(parents=True, exist_ok=True)
+        output_file = RAW_DIR / 'ISS_master_table.csv'
         master_df.to_csv(output_file, index=False, encoding='utf-8-sig')
         logger.info(f"Saved master table to {output_file}")
 
         # Also save to Excel
-        excel_file = 'ISS_master_table.xlsx'
+        excel_file = RAW_DIR / 'ISS_master_table.xlsx'
         master_df.to_excel(excel_file, index=False)
         logger.info(f"Saved master table to {excel_file}")
 

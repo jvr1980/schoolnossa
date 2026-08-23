@@ -14,11 +14,14 @@ import os
 
 # File paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-COMBINED_FILE = os.path.join(BASE_DIR, "combined_schools_with_metadata.csv")
-SCRAPED_FILE = os.path.join(BASE_DIR, "scraped_missing_metadata.csv")
-SCRAPED_LLM_FILE = os.path.join(BASE_DIR, "scraped_missing_metadata_llm.csv")
-OUTPUT_CSV = os.path.join(BASE_DIR, "combined_schools_with_metadata.csv")
-OUTPUT_XLSX = os.path.join(BASE_DIR, "combined_schools_with_metadata.xlsx")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
+INTERMEDIATE_DIR = os.path.join(PROJECT_ROOT, "data_berlin", "intermediate")
+RAW_DIR = os.path.join(PROJECT_ROOT, "data_berlin", "raw")
+COMBINED_FILE = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata.csv")
+SCRAPED_FILE = os.path.join(RAW_DIR, "scraped_missing_metadata.csv")
+SCRAPED_LLM_FILE = os.path.join(RAW_DIR, "scraped_missing_metadata_llm.csv")
+OUTPUT_CSV = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata.csv")
+OUTPUT_XLSX = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata.xlsx")
 
 
 def coalesce(val1, val2):

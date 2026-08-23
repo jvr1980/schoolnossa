@@ -33,16 +33,21 @@ except ImportError:
 # Load environment variables
 load_dotenv()
 
-# File paths
+# File paths — canonical project layout (previously CWD-relative, which only
+# worked when run from inside scripts_berlin/enrichment/).
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SCHOOLS_FILE = os.path.join(BASE_DIR, "combined_schools_with_metadata.csv")
-TELRAAM_GEOJSON = os.path.join(BASE_DIR, "traffic_data/metadata/bzm_telraam_segments.geojson")
-ECOCOUNTER_GEOJSON = os.path.join(BASE_DIR, "traffic_data/metadata/bzm_ecocounter_segments.geojson")
-TELRAAM_DATA_DIR = os.path.join(BASE_DIR, "traffic_data/telraam")
-ECOCOUNTER_DATA_DIR = os.path.join(BASE_DIR, "traffic_data/ecocounter")
-OUTPUT_CSV = os.path.join(BASE_DIR, "combined_schools_with_metadata.csv")
-OUTPUT_XLSX = os.path.join(BASE_DIR, "combined_schools_with_metadata.xlsx")
-GEOCODED_CACHE = os.path.join(BASE_DIR, "geocoded_schools_cache.json")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
+INTERMEDIATE_DIR = os.path.join(PROJECT_ROOT, "data_berlin", "intermediate")
+RAW_DIR = os.path.join(PROJECT_ROOT, "data_berlin", "raw")
+CACHE_DIR = os.path.join(PROJECT_ROOT, "data_berlin", "cache")
+SCHOOLS_FILE = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata_msa.csv")
+TELRAAM_GEOJSON = os.path.join(RAW_DIR, "traffic_data/metadata/bzm_telraam_segments.geojson")
+ECOCOUNTER_GEOJSON = os.path.join(RAW_DIR, "traffic_data/metadata/bzm_ecocounter_segments.geojson")
+TELRAAM_DATA_DIR = os.path.join(RAW_DIR, "traffic_data/telraam")
+ECOCOUNTER_DATA_DIR = os.path.join(RAW_DIR, "traffic_data/ecocounter")
+OUTPUT_CSV = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata_msa.csv")
+OUTPUT_XLSX = os.path.join(INTERMEDIATE_DIR, "combined_schools_with_metadata_msa.xlsx")
+GEOCODED_CACHE = os.path.join(CACHE_DIR, "geocoded_schools_cache.json")
 
 # Configuration
 GOOGLE_API_KEY = os.getenv("GOOGLE_PLACES_API_KEY")
@@ -134,6 +139,7 @@ def load_geocode_cache():
 
 def save_geocode_cache(cache):
     """Save geocoding results to cache."""
+    os.makedirs(os.path.dirname(GEOCODED_CACHE), exist_ok=True)
     with open(GEOCODED_CACHE, 'w', encoding='utf-8') as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
 

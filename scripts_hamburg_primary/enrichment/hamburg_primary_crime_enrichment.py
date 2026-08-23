@@ -10,7 +10,7 @@ This script:
 4. Merges crime metrics into school data
 
 Data sources:
-- PKS Stadtteilatlas: https://www.polizei.hamburg/services/polizeiliche-kriminalstatistik-2024
+- PKS Stadtteilatlas: https://www.polizei.hamburg/services/polizeiliche-kriminalstatistik-2025
 - Stadtteil-Profile: https://suche.transparenz.hamburg.de/dataset/stadtteil-profile-hamburg1
 
 Note: Hamburg crime data is primarily available as PDF. This script uses pdfplumber
@@ -61,7 +61,7 @@ FINAL_DIR = DATA_DIR / "final"
 CACHE_DIR = DATA_DIR / "cache"
 
 # Data source URLs
-PKS_STADTTEILATLAS_URL = "https://www.polizei.hamburg/resource/blob/1024890/f7220b94849ab02959cbc9ad5eff5289/stadtteilatlas-2024-do-data.pdf"
+PKS_STADTTEILATLAS_URL = "https://www.polizei.hamburg/resource/blob/1153262/317efafe8864b9ad0f182577ba409c54/pks-stadtteilatlas2025-do-data.pdf"
 STADTTEIL_PROFILE_URL = "https://www.statistik-nord.de/fileadmin/Dokumente/NORD.regional/Stadtteil-Profile_Berichtsjahr_2023_Hamburg.xlsx"
 
 # Hamburg Bezirke (districts) and their Stadtteile (neighborhoods)
@@ -151,7 +151,7 @@ class HamburgPrimaryCrimeEnrichment:
         """Download PKS Stadtteilatlas PDF."""
         logger.info("Downloading PKS Stadtteilatlas PDF...")
 
-        pdf_path = CACHE_DIR / "hamburg_pks_stadtteilatlas_2024.pdf"
+        pdf_path = CACHE_DIR / "hamburg_pks_stadtteilatlas_2025.pdf"
 
         # Check if already downloaded (cache for 7 days)
         if pdf_path.exists():
@@ -209,7 +209,7 @@ class HamburgPrimaryCrimeEnrichment:
                         header = table[0] if table else []
 
                         # Check if this looks like a crime statistics table
-                        if not any(h and ('2024' in str(h) or '2023' in str(h) or 'Fallzahl' in str(h)) for h in header):
+                        if not any(h and ('2025' in str(h) or '2024' in str(h) or 'Fallzahl' in str(h)) for h in header):
                             continue
 
                         for row in table[1:]:
@@ -247,10 +247,10 @@ class HamburgPrimaryCrimeEnrichment:
                                 crime_data.append({
                                     'stadtteil': stadtteil_name,
                                     'bezirk': current_bezirk or STADTTEIL_TO_BEZIRK.get(stadtteil_name.lower(), 'Unknown'),
-                                    'straftaten_2024': values[0] if len(values) > 0 else None,
-                                    'straftaten_2023': values[1] if len(values) > 1 else None,
-                                    'aufklaerungsquote_2024': values[2] if len(values) > 2 else None,
-                                    'aufklaerungsquote_2023': values[3] if len(values) > 3 else None,
+                                    'straftaten_2025': values[0] if len(values) > 0 else None,
+                                    'straftaten_2024': values[1] if len(values) > 1 else None,
+                                    'aufklaerungsquote_2025': values[2] if len(values) > 2 else None,
+                                    'aufklaerungsquote_2024': values[3] if len(values) > 3 else None,
                                 })
 
             logger.info(f"Extracted crime data for {len(crime_data)} neighborhoods")
@@ -280,8 +280,8 @@ class HamburgPrimaryCrimeEnrichment:
         for bezirk, data in bezirk_data.items():
             crime_data.append({
                 'bezirk': bezirk,
-                'straftaten_haeufigkeitszahl_2024': data['hz'],
-                'trend_2024': data['trend'],
+                'straftaten_haeufigkeitszahl_2025': data['hz'],
+                'trend_2025': data['trend'],
                 'data_source': 'bezirk_aggregate'
             })
 
@@ -338,11 +338,11 @@ class HamburgPrimaryCrimeEnrichment:
 
         # Initialize crime columns
         crime_columns = [
+            'crime_straftaten_2025',
             'crime_straftaten_2024',
-            'crime_straftaten_2023',
-            'crime_aufklaerungsquote_2024',
-            'crime_haeufigkeitszahl_2024',
-            'crime_trend_2024',
+            'crime_aufklaerungsquote_2025',
+            'crime_haeufigkeitszahl_2025',
+            'crime_trend_2025',
             'crime_bezirk',
             'crime_data_source'
         ]
@@ -371,9 +371,9 @@ class HamburgPrimaryCrimeEnrichment:
 
                 if not crime_match.empty:
                     crime_row = crime_match.iloc[0]
+                    df.at[idx, 'crime_straftaten_2025'] = crime_row.get('straftaten_2025')
                     df.at[idx, 'crime_straftaten_2024'] = crime_row.get('straftaten_2024')
-                    df.at[idx, 'crime_straftaten_2023'] = crime_row.get('straftaten_2023')
-                    df.at[idx, 'crime_aufklaerungsquote_2024'] = crime_row.get('aufklaerungsquote_2024')
+                    df.at[idx, 'crime_aufklaerungsquote_2025'] = crime_row.get('aufklaerungsquote_2025')
                     df.at[idx, 'crime_bezirk'] = bezirk or crime_row.get('bezirk')
                     df.at[idx, 'crime_data_source'] = 'stadtteil'
                     matched_stadtteil = True
@@ -384,8 +384,8 @@ class HamburgPrimaryCrimeEnrichment:
 
                 if not bezirk_match.empty:
                     crime_row = bezirk_match.iloc[0]
-                    df.at[idx, 'crime_haeufigkeitszahl_2024'] = crime_row.get('straftaten_haeufigkeitszahl_2024')
-                    df.at[idx, 'crime_trend_2024'] = crime_row.get('trend_2024')
+                    df.at[idx, 'crime_haeufigkeitszahl_2025'] = crime_row.get('straftaten_haeufigkeitszahl_2025')
+                    df.at[idx, 'crime_trend_2025'] = crime_row.get('trend_2025')
 
                     # Only set bezirk and data_source if not already set by Stadtteil match
                     if not matched_stadtteil:
@@ -459,8 +459,8 @@ class HamburgPrimaryCrimeEnrichment:
 
         print(f"\nCrime data coverage:")
         coverage = {
-            'crime_straftaten_2024': 'Straftaten 2024 (Stadtteil)',
-            'crime_haeufigkeitszahl_2024': 'Haeufigkeitszahl 2024 (Bezirk)',
+            'crime_straftaten_2025': 'Straftaten 2025 (Stadtteil)',
+            'crime_haeufigkeitszahl_2025': 'Haeufigkeitszahl 2025 (Bezirk)',
             'crime_bezirk': 'Matched to Bezirk'
         }
 

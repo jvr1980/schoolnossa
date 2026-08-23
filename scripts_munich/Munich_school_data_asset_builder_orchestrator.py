@@ -98,12 +98,24 @@ def run_phase_6(school_type='secondary'):
 
 
 def run_phase_7(school_type='secondary'):
-    """Phase 7: Data combiner."""
+    """Phase 7: Data combiner + private-school re-ingest."""
     logger.info("=" * 60)
     logger.info(f"PHASE 7: Data Combiner ({school_type})")
     logger.info("=" * 60)
     from processing.munich_data_combiner import main as combine
-    return combine(school_type)
+    result = combine(school_type)
+
+    # Re-ingest the researched private schools: the jedeschule base does not
+    # carry them, so every base refresh would silently drop those rows again
+    # (happened 2026-08-22: 139 -> 108 secondary). The ingest is idempotent
+    # (skips rows already present by schulname+plz+ort) and uses cached
+    # coordinates, so this is free.
+    try:
+        from research_private_schools.phase4_ingest_to_pipeline import main as ingest
+        ingest([])
+    except Exception as e:
+        logger.warning(f"Private-school re-ingest skipped: {e}")
+    return result
 
 
 def run_phase_8(school_type='secondary', skip_embeddings=False):

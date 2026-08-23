@@ -42,7 +42,7 @@ CACHE_DIR = DATA_DIR / "cache"
 
 UNFALLATLAS_URL_TEMPLATE = "https://www.opengeodata.nrw.de/produkte/transport_verkehr/unfallatlas/Unfallorte{year}_EPSG25832_CSV.zip"
 SEARCH_RADIUS_M = 500
-YEARS_TO_DOWNLOAD = [2024, 2023, 2022]
+YEARS_TO_DOWNLOAD = [2025, 2024, 2023]
 HESSEN_ULAND_CODE = '06'
 FRANKFURT_UKREIS_CODE = '12'
 

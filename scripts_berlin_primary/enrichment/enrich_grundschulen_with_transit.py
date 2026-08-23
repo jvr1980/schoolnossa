@@ -10,6 +10,14 @@ This script:
 5. Calculates an accessibility score
 6. Saves the enriched data back to CSV and XLSX
 
+Robustness: a school whose BVG lookup fails (API unreachable / no stops
+returned) keeps its previous transit values — from the per-school cache
+written by this script, the previous final parquet, or the transit columns
+already in the input file — instead of being written as a 0/0 summary.
+A transit_accessibility_score of 0 with transit_stop_count_1000m of 0 is a
+failure marker for a Berlin school, never data. After MAX_CONSECUTIVE_FAILURES
+the API is assumed down and the remaining lookups are skipped (fast fail).
+
 Data source: https://v6.bvg.transport.rest (free, no API key required)
 """
 
@@ -34,6 +42,9 @@ SEARCH_RADIUS_M = 15000  # 15km - effectively unlimited for Berlin
 REQUEST_DELAY_S = 0.7  # Stay under 100 req/min rate limit
 MAX_RESULTS = 100  # Get more results to find all transport types
 TOP_N_STOPS = 3  # Store top 3 nearest stops per type
+MAX_RETRIES = 3  # Attempts per school before the lookup counts as failed
+RETRY_BACKOFF_S = 2  # Seconds before retry (doubled each attempt)
+MAX_CONSECUTIVE_FAILURES = 10  # After this many, assume the API is down and stop querying
 
 # File paths
 SCRIPT_DIR = Path(__file__).parent
@@ -43,9 +54,13 @@ DATA_DIR = PROJECT_ROOT / "data_berlin_primary"
 SCHOOLS_FILE = DATA_DIR / "intermediate" / "combined_grundschulen_with_metadata.csv"
 OUTPUT_CSV = DATA_DIR / "intermediate" / "combined_grundschulen_with_metadata.csv"
 OUTPUT_XLSX = DATA_DIR / "intermediate" / "combined_grundschulen_with_metadata.xlsx"
+# Fallback sources for schools whose lookup fails this run (see module docstring)
+TRANSIT_CACHE = DATA_DIR / "cache" / "bvg_transit_cache.csv"
+PREVIOUS_FINAL = DATA_DIR / "final" / "grundschule_master_table_final_with_embeddings.parquet"
+SUMMARY_COLS = ["transit_stop_count_1000m", "transit_accessibility_score"]
 
 
-def fetch_nearby_stops(lat: float, lon: float, radius: int = SEARCH_RADIUS_M) -> List[dict]:
+def fetch_nearby_stops(lat: float, lon: float, radius: int = SEARCH_RADIUS_M) -> Optional[List[dict]]:
     """
     Fetch nearby transit stops from BVG API.
 
@@ -55,7 +70,8 @@ def fetch_nearby_stops(lat: float, lon: float, radius: int = SEARCH_RADIUS_M) ->
         radius: Search radius in meters
 
     Returns:
-        List of stop dictionaries from BVG API
+        List of stop dictionaries from BVG API, or None if the API could not
+        be reached / answered with an error after MAX_RETRIES attempts.
     """
     url = f"{BVG_API_BASE}/locations/nearby"
     params = {
@@ -66,13 +82,17 @@ def fetch_nearby_stops(lat: float, lon: float, radius: int = SEARCH_RADIUS_M) ->
         "linesOfStops": "true"
     }
 
-    try:
-        response = requests.get(url, params=params, timeout=15)
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        print(f"  API error: {e}")
-        return []
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.get(url, params=params, timeout=15)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            if attempt + 1 < MAX_RETRIES:
+                time.sleep(RETRY_BACKOFF_S * (2 ** attempt))
+            else:
+                print(f"  API error: {e}")
+    return None
 
 
 def categorize_by_transport_type(stops: List[dict]) -> Dict[str, List[dict]]:
@@ -230,7 +250,7 @@ def get_all_lines_in_radius(stops: List[dict], radius: int = 1000) -> str:
     return ", ".join(sorted(all_lines))
 
 
-def enrich_school(lat: float, lon: float) -> dict:
+def enrich_school(lat: float, lon: float) -> Optional[dict]:
     """
     Fetch and process transit data for one school.
 
@@ -239,10 +259,14 @@ def enrich_school(lat: float, lon: float) -> dict:
         lon: School longitude
 
     Returns:
-        Dictionary with all transit columns for this school
+        Dictionary with all transit columns for this school, or None when the
+        API failed / returned no stops at all — the caller then keeps the
+        school's previous transit values instead of writing a 0/0 summary.
     """
     # Fetch nearby stops (large radius to find all types)
     stops = fetch_nearby_stops(lat, lon, SEARCH_RADIUS_M)
+    if not stops:
+        return None
 
     # Categorize by transport type
     categorized = categorize_by_transport_type(stops)
@@ -289,6 +313,76 @@ def enrich_school(lat: float, lon: float) -> dict:
     return result
 
 
+def transit_columns() -> List[str]:
+    """All transit columns written by enrich_school(), in output order."""
+    cols = []
+    for transport_type in ["rail", "tram", "bus"]:
+        for i in range(TOP_N_STOPS):
+            prefix = f"transit_{transport_type}_{i+1:02d}"
+            cols += [f"{prefix}_name", f"{prefix}_distance_m", f"{prefix}_latitude",
+                     f"{prefix}_longitude", f"{prefix}_lines"]
+    return cols + ["transit_stop_count_1000m", "transit_all_lines_1000m", "transit_accessibility_score"]
+
+
+def load_previous_transit(df: pd.DataFrame) -> Optional[pd.DataFrame]:
+    """
+    Last known transit values per schulnummer, used for schools whose lookup
+    fails this run. Priority: transit cache (last good API result) >
+    previous final parquet > transit columns already in the input file.
+    0/0 summaries are failure markers and are blanked so they never carry.
+
+    Returns:
+        DataFrame indexed by schulnummer with the transit_columns(), or None
+    """
+    sources = []
+    for label, path in [("transit cache", TRANSIT_CACHE), ("previous final", PREVIOUS_FINAL)]:
+        if os.path.exists(path):
+            src = pd.read_parquet(path) if str(path).endswith(".parquet") else pd.read_csv(path, low_memory=False)
+            sources.append((label, src))
+    sources.append(("input file", df))
+
+    wanted = transit_columns()
+    previous = None
+    for label, src in sources:
+        if 'schulnummer' not in src.columns:
+            continue
+        part = src.copy()
+        part['schulnummer'] = part['schulnummer'].astype(str).str.strip()
+        part = part.drop_duplicates('schulnummer').set_index('schulnummer')
+        # Supabase-style unranked columns (transit_bus_name, ...) stand in for rank 01
+        for transport_type in ["rail", "tram", "bus"]:
+            for field in ["name", "distance_m", "lines"]:
+                ranked, flat = f"transit_{transport_type}_01_{field}", f"transit_{transport_type}_{field}"
+                if flat in part.columns:
+                    part[ranked] = part[ranked].fillna(part[flat]) if ranked in part.columns else part[flat]
+        part = part[[c for c in wanted if c in part.columns]]
+        if part.empty or part.notna().sum().sum() == 0:
+            continue
+        if all(c in part.columns for c in SUMMARY_COLS):
+            failed = (part[SUMMARY_COLS].fillna(0) == 0).all(axis=1)
+            part.loc[failed, SUMMARY_COLS] = None
+        usable = int(part.drop(columns=SUMMARY_COLS, errors='ignore').notna().any(axis=1).sum())
+        print(f"  Previous transit values from {label}: {usable} schools")
+        previous = part if previous is None else previous.combine_first(part)
+    return previous
+
+
+def update_transit_cache(fresh_rows: Dict[str, dict]) -> None:
+    """Merge this run's successful lookups into the per-school transit cache."""
+    if not fresh_rows:
+        return
+    new = pd.DataFrame.from_dict(fresh_rows, orient='index')
+    new.index.name = 'schulnummer'
+    new['transit_fetched_at'] = datetime.now().strftime('%Y-%m-%d')
+    new['transit_cache_source'] = 'bvg_api'
+    if os.path.exists(TRANSIT_CACHE):
+        old = pd.read_csv(TRANSIT_CACHE, dtype={'schulnummer': str}, low_memory=False).set_index('schulnummer')
+        new = pd.concat([old[~old.index.isin(new.index)], new])
+    os.makedirs(os.path.dirname(str(TRANSIT_CACHE)), exist_ok=True)
+    new.to_csv(TRANSIT_CACHE, encoding='utf-8-sig')
+    print(f"Transit cache updated: {TRANSIT_CACHE} ({len(new)} schools)")
+
+
 def main():
     """Main function to enrich all primary schools with transit data."""
     print("="*70)
@@ -318,6 +412,12 @@ def main():
         print("No schools have coordinates. Please run geocoding first.")
         return
 
+    # Previous transit values, kept for schools whose lookup fails this run
+    print("\nLoading previous transit values (fallback for failed lookups)...")
+    previous = load_previous_transit(df)
+    if previous is None:
+        print("  None found — failed lookups will stay empty (never 0/0)")
+
     # Remove old transit columns if they exist
     old_transit_cols = [c for c in df.columns if c.startswith('transit_')]
     if old_transit_cols:
@@ -331,6 +431,11 @@ def main():
 
     processed = 0
     errors = 0
+    failed_lookups = 0
+    kept_previous = 0
+    consecutive_failures = 0
+    api_down = False
+    fresh_rows = {}  # schulnummer -> transit_data, for the cache
 
     if TQDM_AVAILABLE:
         iterator = tqdm(df.iterrows(), total=len(df), desc="Processing schools")
@@ -339,22 +444,46 @@ def main():
 
     for idx, row in iterator:
         if pd.notna(row['latitude']) and pd.notna(row['longitude']):
-            try:
-                transit_data = enrich_school(row['latitude'], row['longitude'])
+            schulnummer = str(row['schulnummer']).strip()
+            transit_data = None
+            if not api_down:
+                try:
+                    transit_data = enrich_school(row['latitude'], row['longitude'])
+                except Exception as e:
+                    errors += 1
+                    if not TQDM_AVAILABLE:
+                        print(f"  Error processing {row['schulname']}: {e}")
 
+            if transit_data is not None:
                 # Update dataframe
                 for col, val in transit_data.items():
                     df.at[idx, col] = val
-
+                fresh_rows[schulnummer] = transit_data
                 processed += 1
-
-            except Exception as e:
-                errors += 1
-                if not TQDM_AVAILABLE:
-                    print(f"  Error processing {row['schulname']}: {e}")
+                consecutive_failures = 0
+            else:
+                # Lookup failed: keep the previous values, never write a 0/0 summary
+                failed_lookups += 1
+                consecutive_failures += 1
+                if previous is not None and schulnummer in previous.index:
+                    prev_vals = previous.loc[schulnummer].dropna()
+                    for col, val in prev_vals.items():
+                        df.at[idx, col] = val
+                    if len(prev_vals):
+                        kept_previous += 1
+                if not api_down and consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                    api_down = True
+                    print(f"\nWARNING: {consecutive_failures} consecutive BVG API failures — "
+                          f"assuming the API is down, skipping remaining lookups (previous values kept)")
 
             # Rate limiting
-            time.sleep(REQUEST_DELAY_S)
+            if not api_down:
+                time.sleep(REQUEST_DELAY_S)
+
+    # Make sure every transit column exists even if no lookup succeeded
+    for col in transit_columns():
+        if col not in df.columns:
+            df[col] = None
 
     # Save results
     print("\n" + "="*70)
@@ -367,6 +496,8 @@ def main():
     df.to_excel(OUTPUT_XLSX, index=False, engine='openpyxl')
     print(f"Saved: {OUTPUT_XLSX}")
 
+    update_transit_cache(fresh_rows)
+
     # Summary statistics
     print("\n" + "="*70)
     print("SUMMARY")
@@ -374,6 +505,16 @@ def main():
 
     print(f"\nProcessed: {processed} schools")
     print(f"Errors: {errors}")
+    if failed_lookups:
+        print(f"\nWARNING: {failed_lookups} BVG lookups failed"
+              f"{' (API assumed down)' if api_down else ''}: "
+              f"{kept_previous} schools kept their previous transit values, "
+              f"{failed_lookups - kept_previous} have none (left empty, not 0)")
+    empty_summary = int(df[SUMMARY_COLS].isna().all(axis=1).sum())
+    zero_summary = int((df[SUMMARY_COLS] == 0).all(axis=1).sum())
+    if empty_summary or zero_summary:
+        print(f"WARNING: transit summary empty for {empty_summary} schools, "
+              f"0/0 (failure marker) for {zero_summary} schools")
 
     # Count new columns
     transit_cols = [c for c in df.columns if c.startswith('transit_')]

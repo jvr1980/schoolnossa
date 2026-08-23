@@ -54,7 +54,7 @@ UNFALLATLAS_URL_TEMPLATE = "https://www.opengeodata.nrw.de/produkte/transport_ve
 
 # Configuration
 SEARCH_RADIUS_M = 500  # Radius around school for accident counting
-YEARS_TO_DOWNLOAD = [2024, 2023, 2022]  # Most recent years
+YEARS_TO_DOWNLOAD = [2025, 2024, 2023]  # Most recent years
 NRW_ULAND_CODE = '05'  # NRW Bundesland code
 
 HEADERS = {

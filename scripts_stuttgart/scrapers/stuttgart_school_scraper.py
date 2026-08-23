@@ -97,6 +97,73 @@ def get_all_directory_urls() -> List[str]:
     return urls
 
 
+# Stuttgart + immediate surroundings: every school in the city directory has a
+# 70xxx/71xxx postal code. Anything else (e.g. the directory entry id) is bogus.
+PLZ_RE = re.compile(r'^7[01]\d{3}$')
+
+
+def is_valid_plz(plz, school_id=None) -> bool:
+    """True if `plz` is a plausible Stuttgart postal code and not the entry id."""
+    s = str(plz or '').strip()
+    if not PLZ_RE.match(s):
+        return False
+    if school_id is not None and s == str(school_id)[:5]:
+        return False
+    return True
+
+
+def extract_address_from_html(html: str, school_id=None) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    """Extract (plz, ort, street) from a stuttgart.de directory detail page.
+
+    Sources, in order of preference:
+      1. schema.org JSON-LD  <script id="CityovSerializer-<id>" type="application/ld+json">
+         -> address.postalCode / addressLocality / streetAddress
+      2. the "Anschrift" contact box:  Name<br>Straße Nr<br>70xxx Stuttgart
+      3. first "7[01]xxx Stuttgart" in the page body *before* the site footer
+         (the footer carries the Rathaus address "Marktplatz 1, 70173 Stuttgart").
+
+    Never falls back to an arbitrary 5-digit number: the first one on the page
+    is the directory entry id (the bug that produced plz == schulnummer digits).
+    """
+    # 1. JSON-LD
+    for m in re.finditer(r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>',
+                         html, re.DOTALL | re.IGNORECASE):
+        try:
+            j = json.loads(m.group(1))
+        except json.JSONDecodeError:
+            continue
+        items = j if isinstance(j, list) else [j]
+        for item in items:
+            addr = item.get('address') if isinstance(item, dict) else None
+            if not isinstance(addr, dict):
+                continue
+            plz = str(addr.get('postalCode') or '').strip()
+            if is_valid_plz(plz, school_id):
+                return (plz,
+                        (addr.get('addressLocality') or '').strip() or None,
+                        (addr.get('streetAddress') or '').strip() or None)
+
+    # 2. "Anschrift" contact box
+    m = re.search(r'Anschrift\s*</h4>\s*<div[^>]*>(.*?)</div>', html, re.DOTALL | re.IGNORECASE)
+    if m:
+        box = re.sub(r'<br\s*/?>', '\n', m.group(1))
+        box = re.sub(r'<[^>]+>', '', box)
+        lines = [l.strip() for l in box.split('\n') if l.strip()]
+        for i, line in enumerate(lines):
+            pm = re.match(r'^(\d{5})\s+(.+)$', line)
+            if pm and is_valid_plz(pm.group(1), school_id):
+                street = lines[i - 1] if i >= 1 else None
+                return pm.group(1), pm.group(2).strip(), street
+
+    # 3. page body before the footer
+    body = re.split(r'<footer|id="kontakt"|SP-Headline--footer', html, maxsplit=1)[0]
+    for pm in re.finditer(r'(7[01]\d{3})\s+Stuttgart', body):
+        if is_valid_plz(pm.group(1), school_id):
+            return pm.group(1), 'Stuttgart', None
+
+    return None, None, None
+
+
 def scrape_detail_page(url: str) -> Optional[Dict]:
     """Scrape a single detail page for school data."""
     try:
@@ -165,28 +232,67 @@ def scrape_detail_page(url: str) -> Optional[Dict]:
         if fax_match:
             school['fax'] = fax_match.group(1).strip()
 
-        # 6. Parse address into street + PLZ
+        # 6. Street + PLZ. citygov_address only carries the street; the PLZ
+        #    lives in the schema.org JSON-LD block / the "Anschrift" box.
         addr = school.get('address_raw', '')
         if addr:
-            # Format: "Straße Nr" or "Straße Nr, PLZ Stadt"
-            plz_match = re.search(r'(\d{5})\s*(Stuttgart)?', html)
-            if plz_match:
-                school['plz'] = plz_match.group(1)
-
-            # The citygov_address usually just has the street
             school['strasse'] = addr.strip()
 
-        # If PLZ not found in address, search the full page text
-        if 'plz' not in school:
-            plz_matches = re.findall(r'(70\d{3})\s+Stuttgart', html)
-            if plz_matches:
-                school['plz'] = plz_matches[0]
+        plz, _ort, street = extract_address_from_html(html, school.get('id'))
+        if plz:
+            school['plz'] = plz
+        if street and not school.get('strasse'):
+            school['strasse'] = street
 
         return school
 
     except Exception as e:
         logger.warning(f"Failed to scrape {url}: {e}")
         return None
+
+
+def repair_cached_plz(schools: List[Dict], cache_file: Path) -> List[Dict]:
+    """Re-fetch the PLZ for cached entries whose plz is not a valid Stuttgart
+    postal code (caches written before 2026-08-23 stored the directory entry
+    id as plz). Only plz (and a missing strasse) are touched; the cache is rewritten."""
+    bad = [s for s in schools if not is_valid_plz(s.get('plz'), s.get('id'))]
+    if not bad:
+        return schools
+    logger.info(f"Cache PLZ repair: {len(bad)}/{len(schools)} entries have an "
+                f"invalid plz — re-fetching their detail pages")
+
+    def refetch(entry):
+        time.sleep(SCRAPE_DELAY)
+        try:
+            r = requests.get(entry['url'], headers=HEADERS, timeout=15)
+            if r.status_code != 200:
+                return entry, (None, None, None)
+            return entry, extract_address_from_html(r.text, entry.get('id'))
+        except Exception as e:
+            logger.warning(f"PLZ re-fetch failed for {entry.get('url')}: {e}")
+            return entry, (None, None, None)
+
+    fixed = 0
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [executor.submit(refetch, e) for e in bad]
+        iterator = as_completed(futures)
+        if TQDM_AVAILABLE:
+            iterator = tqdm(iterator, total=len(futures), desc="Repairing PLZ")
+        for fut in iterator:
+            entry, (plz, _ort, street) = fut.result()
+            if plz:
+                entry['plz'] = plz
+                if street and not entry.get('strasse'):
+                    entry['strasse'] = street
+                fixed += 1
+            else:
+                # never keep a bogus value around
+                entry['plz'] = ''
+    logger.info(f"Cache PLZ repair: fixed {fixed}/{len(bad)}")
+
+    with open(cache_file, 'w', encoding='utf-8') as f:
+        json.dump(schools, f, ensure_ascii=False, indent=2)
+    return schools
 
 
 def scrape_all_schools() -> List[Dict]:
@@ -198,7 +304,8 @@ def scrape_all_schools() -> List[Dict]:
         if age < 7:
             logger.info(f"Using cached directory data ({age:.0f} days old)")
             with open(cache_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                schools = json.load(f)
+            return repair_cached_plz(schools, cache_file)
 
     # Get all URLs
     all_urls = get_all_directory_urls()

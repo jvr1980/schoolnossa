@@ -98,12 +98,15 @@ class HamburgTrafficEnrichment:
         """Load school data with coordinates."""
         logger.info("Loading school data...")
 
-        # Try different possible input files
+        # Prefer the freshly scraped raw file: the combiner joins enrichment
+        # outputs on schulnummer, so this script only needs the current school
+        # list — reading the old final table first would silently pin the
+        # enrichment to a stale school set after a base refresh.
         possible_files = [
-            FINAL_DIR / "hamburg_school_master_table.parquet",
-            FINAL_DIR / "hamburg_school_master_table.csv",
+            DATA_DIR / "raw" / "hamburg_secondary_schools.csv",
             INTERMEDIATE_DIR / "hamburg_schools_with_transit.csv",
-            DATA_DIR / "raw" / "hamburg_secondary_schools.csv"
+            FINAL_DIR / "hamburg_school_master_table.parquet",
+            FINAL_DIR / "hamburg_school_master_table.csv"
         ]
 
         for filepath in possible_files:
