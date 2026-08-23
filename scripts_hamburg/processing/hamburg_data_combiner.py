@@ -504,6 +504,48 @@ def print_summary(df: pd.DataFrame):
     print("\n" + "="*70)
 
 
+# Columns recovered by the April 2026 website-metadata enrichment (Gemini).
+# The base Transparenzportal feed never carries them, so a base refresh must
+# fill them back from the (one-off) metadata intermediate — fill-gaps only.
+METADATA_COLS = ['besonderheiten', 'gruendungsjahr', 'lehrer_2024_25',
+                 'schueler_2024_25', 'sprachen', 'leitung',
+                 'description_de', 'description_en', 'description']
+
+
+def load_metadata_data(candidates) -> pd.DataFrame:
+    """Load the website-metadata enrichment output (first existing candidate)."""
+    for path in candidates:
+        if path.exists():
+            df = pd.read_csv(path, low_memory=False)
+            logger.info(f"Loaded website metadata for {len(df)} schools from {path.name}")
+            df['schulnummer'] = df['schulnummer'].astype(str)
+            keep = ['schulnummer'] + [c for c in METADATA_COLS if c in df.columns]
+            return df[keep]
+    logger.warning("No website-metadata intermediate found — metadata columns stay as-is")
+    return pd.DataFrame()
+
+
+def merge_fill_gaps(schools_df: pd.DataFrame, data_df: pd.DataFrame, data_name: str) -> pd.DataFrame:
+    """Merge on schulnummer, filling only empty cells (fresh base values win)."""
+    if data_df.empty or 'schulnummer' not in data_df.columns:
+        return schools_df
+    df = schools_df.copy()
+    df['schulnummer'] = df['schulnummer'].astype(str)
+    layer = data_df.drop_duplicates('schulnummer').set_index('schulnummer')
+    filled = {}
+    for col in layer.columns:
+        src = df['schulnummer'].map(layer[col])
+        if col not in df.columns:
+            df[col] = None
+        empty = df[col].isna() | (df[col].astype(str).str.strip().isin(['', 'nan', 'None']))
+        take = empty & src.notna()
+        if take.any():
+            df.loc[take, col] = src[take]
+            filled[col] = int(take.sum())
+    logger.info(f"Merged {data_name} (fill-gaps): {filled}")
+    return df
+
+
 def merge_generic_data(schools_df: pd.DataFrame, data_df: pd.DataFrame, data_name: str) -> pd.DataFrame:
     """Generic merge function for enrichment data on schulnummer."""
     if data_df.empty:
@@ -553,6 +595,10 @@ def main():
         combined_df = merge_generic_data(combined_df, traffic_df, "traffic")
         combined_df = merge_generic_data(combined_df, crime_df, "crime")
         combined_df = merge_generic_data(combined_df, poi_df, "POI")
+        combined_df = merge_fill_gaps(
+            combined_df,
+            load_metadata_data([INTERMEDIATE_DIR / "hamburg_secondary_schools_with_metadata.csv"]),
+            "website metadata")
 
         # Clean and standardize
         combined_df = clean_data(combined_df)

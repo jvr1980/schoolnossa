@@ -91,6 +91,18 @@ def transform_hamburg_to_berlin_schema():
         'crime_street_crime_yoy_pct': 'crime_neighborhood_crimes_yoy_pct',
     }
 
+    # Guard: when a rename target already exists (e.g. `leitung` restored by
+    # the combiner's metadata merge while the raw `name_schulleiter` is still
+    # present), fill the target's gaps from the source and drop the source —
+    # a blind rename would create duplicate column names.
+    for _old, _new in list(column_renames.items()):
+        if _old in hamburg.columns and _new in hamburg.columns:
+            _mask = hamburg[_new].isna() | (hamburg[_new].astype(str).str.strip().isin(['', 'nan', 'None']))
+            hamburg.loc[_mask, _new] = hamburg.loc[_mask, _old]
+            hamburg = hamburg.drop(columns=[_old])
+            del column_renames[_old]
+            print(f"  Fill-gaps instead of rename (target exists): {_old} -> {_new}")
+
     # Apply renames
     hamburg_renamed = hamburg.rename(columns=column_renames)
 
@@ -230,6 +242,9 @@ def transform_hamburg_to_berlin_schema():
 
     print("\n  Key column population:")
     for col in key_cols:
+        if col not in output.columns:
+            print(f"    - {col}: not in Berlin reference schema (skipped)")
+            continue
         non_null = output[col].notna().sum()
         pct = non_null / len(output) * 100
         status = "✓" if pct > 50 else "○" if pct > 0 else "✗"
