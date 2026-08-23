@@ -56,3 +56,7 @@ wheels/
 .DS_Store
 Thumbs.db
 data_*/
+
+# macOS AppleDouble sidecar files
+._*
+**/._*
