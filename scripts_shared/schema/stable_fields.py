@@ -67,8 +67,10 @@ def add_stable_fields(df: pd.DataFrame) -> pd.DataFrame:
     for stable, (pattern, fallbacks) in {**_SCHOOL_YEAR_FAMILIES,
                                          **_CALENDAR_YEAR_FAMILIES}.items():
         candidates = _year_columns(df, pattern)
-        values = pd.Series(pd.NA, index=df.index, dtype='object')
-        vintage = pd.Series(pd.NA, index=df.index, dtype='object')
+        # Plain None (not pd.NA): pd.NA in object columns leaks through
+        # float-based isna checks downstream and str()s to '<NA>'.
+        values = pd.Series([None] * len(df), index=df.index, dtype='object')
+        vintage = pd.Series([None] * len(df), index=df.index, dtype='object')
         for year, col in candidates:  # newest first
             fill = values.isna() & df[col].notna()
             values[fill] = df.loc[fill, col]

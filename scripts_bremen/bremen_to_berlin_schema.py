@@ -223,8 +223,13 @@ def transform_bremen_to_berlin_schema():
             output[col] = None
 
     # Preserve Bremen-specific columns the Supabase uploader expects but that
-    # aren't in the Berlin reference (e.g. description_en).
-    preserve_extras = ['description_en']
+    # aren't in the Berlin reference (e.g. description_en). Bremen's crime
+    # data is a 2023 vintage; since Berlin's reference moved on to 2024/2025
+    # columns, the renamed crime_*_2023 columns must be kept explicitly or
+    # they vanish (and crime_total_crimes_current can't be derived).
+    preserve_extras = ['description_en'] + sorted(
+        c for c in bremen_renamed.columns
+        if c.startswith('crime_') and c.endswith('_2023'))
     for col in preserve_extras:
         if col in bremen_renamed.columns and col not in output.columns:
             output[col] = bremen_renamed[col].values
