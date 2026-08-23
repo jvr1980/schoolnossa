@@ -142,11 +142,61 @@ def get_berlin_schema(school_type: str) -> list:
     return cols
 
 
+# Saxon Schuldatenbank school_type_key -> Schulart name (fallback when the
+# textual school_type_name is no longer in the frame, e.g. on a re-run).
+_SAXON_TYPE_BY_KEY = {11: 'Grundschule', 12: 'Oberschule', 13: 'Gymnasium', 14: 'Förderschule'}
+
+
+def _derive_school_types(df: pd.DataFrame, school_type: str, saxon_type_name) -> pd.DataFrame:
+    """Fill `schulart` / `school_type` the way the live Supabase rows carry them
+    (set by hand in April 2026; the pipeline never produced them, so a full
+    re-import would have wiped them):
+
+      schulart     = Saxon Schulart (Grundschule / Oberschule / Gymnasium / Förderschule)
+      school_type  = primary table: 'Grundschule';
+                     secondary: the combiner's cross-level label (`schultyp`:
+                     Waldorfschule / Internationale Schule / Gemeinschaftsschule)
+                     when present, Förderschule -> 'Gemeinschaftsschule', else = schulart.
+    Fill-gaps only.
+    """
+    df = df.copy()
+    for col in ('schulart', 'school_type'):
+        if col not in df.columns:
+            df[col] = None
+
+    key_name = (pd.to_numeric(df['school_type_key'], errors='coerce').map(_SAXON_TYPE_BY_KEY)
+                if 'school_type_key' in df.columns else pd.Series(None, index=df.index, dtype=object))
+    if saxon_type_name is not None:
+        saxon = saxon_type_name.reindex(df.index)
+        schulart = saxon.where(saxon.notna(), key_name)
+    else:
+        schulart = key_name
+
+    mask = df['schulart'].isna()
+    df.loc[mask, 'schulart'] = schulart[mask]
+
+    if school_type == 'primary':
+        derived_type = pd.Series('Grundschule', index=df.index)
+    else:
+        cross = df['schultyp'] if 'schultyp' in df.columns else pd.Series(None, index=df.index, dtype=object)
+        derived_type = cross.where(cross.notna(), df['schulart'])
+        derived_type = derived_type.where(df['schulart'].ne('Förderschule') | cross.notna(),
+                                          'Gemeinschaftsschule')
+    mask = df['school_type'].isna()
+    df.loc[mask, 'school_type'] = derived_type[mask]
+    logger.info(f"  school_type derived: {df['school_type'].notna().sum()}/{len(df)}; "
+                f"schulart: {df['schulart'].notna().sum()}/{len(df)}")
+    return df
+
+
 def transform_to_berlin_schema(df: pd.DataFrame, school_type: str) -> pd.DataFrame:
     """Transform Dresden data to Berlin schema."""
     logger.info(f"Transforming {len(df)} {school_type} schools to Berlin schema...")
 
     df = df.copy()
+
+    # Keep the Saxon Schulart text before the rename below can drop it
+    saxon_type_name = df['school_type_name'].copy() if 'school_type_name' in df.columns else None
 
     # Only rename if the target column doesn't already exist
     for old, new in COLUMN_RENAMES.items():
@@ -158,6 +208,7 @@ def transform_to_berlin_schema(df: pd.DataFrame, school_type: str) -> pd.DataFra
 
     # Populate Berlin-canonical contact/location fields from Saxon source columns
     df = _fill_from_saxon_source(df)
+    df = _derive_school_types(df, school_type, saxon_type_name)
 
     # Student/teacher count passthrough (fill gaps only)
     for src_col in ['schueler_gesamt', 'schueler_2024_25_raw']:
