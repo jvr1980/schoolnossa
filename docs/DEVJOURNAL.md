@@ -1,5 +1,32 @@
 # SchoolNossa Development Journal
 
+## 2026-08-23 — Stable-Fields Upload Prep + New-School INSERTs (blocked on Lovable auth)
+
+**What:** Prepared everything for the Supabase side of the Wave A refresh so it is a handful of Lovable MCP SQL-tool calls: the stable-fields DDL, the stable fill as generated SQL, and the INSERTs for the schools the refresh found. Found and fixed three real bugs on the way. The Lovable MCP server was in "Needs authentication" state in this (non-interactive) session and no service-role key exists locally, so **nothing was written to Supabase yet**.
+
+**Why:** Lovable Cloud owns the DB: the anon key is read-only, DDL and writes have to go through Lovable (its MCP SQL tool). The April backfill needed temporary RLS UPDATE policies; emitting the fill as idempotent SQL avoids any policy window entirely.
+
+**Bugs found & fixed:**
+- `scripts_shared/schema/stable_fields.py` built the vintage stamps with `pd.NA`; `upload_to_supabase._is_empty()` only recognised float NaN, so `_coerce()` str()'d it to `'<NA>'` — **950 cells would have been written as the literal text `'<NA>'`** (REST and SQL paths alike). Root cause fixed (plain None) + `_is_empty()` now treats any scalar NA as empty. After the fix `abitur_year` (+196) = `abitur_durchschnitt_current`, `crime_data_year` (+2131) = `crime_total_crimes_current`.
+- `scripts_bremen/bremen_to_berlin_schema.py` never mapped `schulform` → `schulart`/`school_type`, so `_bucket()` saw NaN, all 254 rows went to the "secondary" split and the primary split file was stale from April 19. Now `schulart = schulform`, `school_type` bucketed like the live Bremen rows (Grundschule / Gymnasium / else Oberschule) → 114 primary + 140 secondary. Also: Berlin's reference schema moved to `crime_*_2024/2025`, so Bremen's 2023-vintage `crime_*_2023` columns were silently dropped from the output (and `crime_total_crimes_current` could not be derived) — now kept as extras (93 primary / 114 secondary rows restored).
+- Berlin transit: **every** Berlin row in the local finals has `transit_accessibility_score = 0` and `transit_stop_count_1000m = 0` (258/258 secondary, 489/490 primary) — the BVG API was down during Wave A and the summary was recomputed to zero while the nearest-stop columns were carried. Supabase is untouched (fill-gaps), but do **not** run `--groups transit_summary` for Berlin until the transit re-run; the insert script drops a 0/0 transit summary as a failure marker.
+
+**New tooling:**
+- `upload_to_supabase.py --emit-sql DIR` — same planning as `--dry-run`, but writes chunked `UPDATE t AS s SET col = COALESCE(s.col, v.col) FROM (VALUES ...)` statements with explicit casts (types inferred from live rows, DDL types for the still-missing stable columns). Output: `data_shared/supabase_sql/stable_2026-08-23/` — 24 files, 353 KB, 2,694 rows (`schueler_current` +2211, `lehrer_current` +1417, `crime_total_crimes_current` +2131, `migration_current` +244, `nachfrage_prozent_current` +231, `abitur_durchschnitt_current` +196, `data_school_year` +2174, `abitur_year` +196, `crime_data_year` +2131). Structurally validated (tuple/field counts, casts, quoting) and spot-checked against local data + Supabase ids.
+- `scripts_shared/insert_new_schools_to_supabase.py` — local rows whose (city, schulnummer) is absent from Supabase; list / `--emit-sql` (idempotent `INSERT ... SELECT ... WHERE NOT EXISTS`) / `--apply` (REST POST). Hamburg reads the Berlin-schema output (the `_final.csv` has no plz/strasse/email). `--assume-stable-cols` for SQL meant to run right after the DDL.
+
+**New schools found by the refresh (8 rows / 7 schools) → `data_shared/supabase_sql/insert_new_schools_2026-08-23.sql`:** Berlin `04A44` Willkommensschule TXL (ISS); Hamburg `5605-0` Schule Leuschnerstraße (Stadtteilschule), `7747-0` Academy of LIFE (schools + primary_schools, like the 30 other Hamburg Grund- und Stadtteilschulen), `5485-0` Grundschule am Schilfufer (opens 2027); Stuttgart `STG-19965` Kolping-Kolleg (adult Gymnasium — comparable Abendgymnasien/Kollegs already exist in Supabase); Bremen `449` Neue Oberschule Osterholz (schools), `138` Schule an der Luxemburger Straße (primary_schools; Bildungsgang `G`).
+
+**Pre-existing local↔Supabase drift surfaced by the same diff (NOT inserted — decide separately):** Munich 31 + 17 `MUCPRIV_*` researched private schools (commit 301fb50; synthetic ids, never uploaded); Frankfurt 34 local-only (Förderschulen/Berufsschulen/Grundschulen in the secondary file — April curation left them out) + 8 Supabase-only ids; Düsseldorf 3 (Waldorf + 2 international schools, ids 187410/990001/990002); Berlin `09S06`, `12A44`, `04P41` and Bremen `513` exist only in Supabase (closed locally). `python3 scripts_shared/insert_new_schools_to_supabase.py` lists all of them.
+
+**Also noticed:** Stuttgart `plz` equals the digits of `schulnummer` for 71/81 secondary rows (e.g. `STG-17965` → plz `17965`; Stuttgart is 70xxx) — already in Supabase and baked into LLM descriptions; needs a separate fix.
+
+**Next session (needs Lovable MCP re-auth: `/mcp` in an interactive `claude`, or `claude mcp add --transport http lovable https://mcp.lovable.dev`):**
+1. Run `scripts_shared/schema/supabase_stable_fields.sql` via the Lovable SQL tool.
+2. `python3 scripts_shared/upload_to_supabase.py --groups stable --dry-run` (now passes the ghost-column guard; expect the numbers above).
+3. Run `data_shared/supabase_sql/insert_new_schools_2026-08-23.sql` (8 statements), then the 24 files in `data_shared/supabase_sql/stable_2026-08-23/` via the SQL tool — or, if a service-role key / RLS policy is available instead, `upload_to_supabase.py --groups stable` and `insert_new_schools_to_supabase.py --ids ... --apply`.
+4. Re-run `--groups stable --dry-run` to confirm 0 remaining fills.
+
 ## 2026-08-22 — Wave A Free Data Refresh + Stable Fields Migration
 
 **What:** Executed the zero-API-cost half of the August source audit (`docs/DATA_REFRESH_PLAN_2026.md`): refreshed base data for Berlin (SJ 2026/27), Munich, Hamburg, Dresden, Stuttgart, Bremen; Unfallatlas 2025 everywhere; crime 2025 (Kriminalitätsatlas 2016-2025, Hamburg Stadtteilatlas 2025, BKA PKS 2025 T01 for Munich/Stuttgart); introduced stable year-agnostic fields so the Lovable app stops breaking on yearly refreshes. Zero paid API calls (verified by log grep + env-stripped runs).
