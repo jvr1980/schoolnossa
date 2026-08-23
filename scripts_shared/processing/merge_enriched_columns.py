@@ -72,6 +72,13 @@ DEFAULT_CARRY_EXACT = [
     'leitung',
     'profil',
     'website_scrape_status',
+    # Contact / operator data recovered by paid enrichment (Google Places
+    # contact pass, Gemini metadata recovery) — base sources such as
+    # jedeschule carry none of it, so a base refresh must not lose it.
+    'telefon',
+    'website',
+    'email',
+    'traegerschaft',
 ]
 # Year-suffixed statistics: for cities whose base source doesn't publish them
 # (e.g. Munich/Stuttgart, where they were LLM-scraped from school websites),
