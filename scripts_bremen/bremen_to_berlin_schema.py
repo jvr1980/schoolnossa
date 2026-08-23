@@ -104,6 +104,10 @@ def transform_bremen_to_berlin_schema():
         'website': 'website',
         # Location
         'stadtteil': 'ortsteil',
+        # School type: Bremen's combiner emits `schulform` (Grundschule,
+        # Oberschule, Gymnasium, Berufsbildende Schule, Sonstige, ...). It is
+        # the Berlin-canonical `schulart`; `school_type` is bucketed below.
+        'schulform': 'schulart',
         # Leadership
         'leitung': 'leitung',
         # Similar schools
@@ -126,6 +130,32 @@ def transform_bremen_to_berlin_schema():
     for old, new in column_renames.items():
         if old in bremen.columns:
             print(f"  Renamed: {old} -> {new}")
+
+    # Derive the Lovable filter-UI `school_type` from schulart (fill-gaps).
+    # Mirrors what the live Supabase rows carry for Bremen: Grundschule ->
+    # Grundschule, Gymnasium -> Gymnasium, everything else (Oberschule,
+    # Berufsbildende Schule, Sonstige, Waldorfschule, Foerderzentrum) ->
+    # Oberschule. Without this every row bucketed as 'secondary' below and
+    # the primary split file was never refreshed.
+    def _school_type_from_schulart(v):
+        if pd.isna(v):
+            return None
+        t = str(v).strip().lower()
+        if 'grund' in t:
+            return 'Grundschule'
+        if 'gymnasium' in t:
+            return 'Gymnasium'
+        return 'Oberschule'
+
+    if 'schulart' in bremen_renamed.columns:
+        derived = bremen_renamed['schulart'].apply(_school_type_from_schulart)
+        if 'school_type' not in bremen_renamed.columns:
+            bremen_renamed['school_type'] = derived
+        else:
+            mask = bremen_renamed['school_type'].isna()
+            bremen_renamed.loc[mask, 'school_type'] = derived[mask]
+        print(f"  school_type derived from schulart: "
+              f"{bremen_renamed['school_type'].notna().sum()}/{len(bremen_renamed)}")
 
     # Fill description gaps from summary_* fallback (Bremen's description pipeline
     # populated summary_en/summary_de more consistently than description_en/de)
