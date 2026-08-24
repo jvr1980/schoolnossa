@@ -10,6 +10,15 @@
 
 **Supabase:** `data_shared/supabase_sql/stuttgart_plz_fix_2026-08-23.sql` — 176 idempotent UPDATEs (schools 81, primary_schools 95), guarded on the old plz (verified read-only: 176/176 guards match), fixing `plz` and `replace()`-ing the old PLZ in description / description_de / description_en. Not executed (Lovable MCP auth). Note `insert_new_schools_2026-08-23.sql` still carries plz '19965' for STG-19965 (already present in Supabase, so the INSERT is a no-op).
 
+## 2026-08-24 (afternoon) — All four follow-ups executed
+
+1. **Lovable app adopts the stable fields** (agent commit `7465884`, 6.8 credits, typecheck+build green): both import whitelists carry the 9 stable columns; `useSchools` prefers `*_current` with vintage-stamp year labels (year-config chain kept as fallback); PinnedSchoolsContext, SchoolCard and SchoolDetailsModal (demand + crime) updated. Follow-up fix sent: Google retired `gemini-3-pro-preview`/`gemini-2.5-pro` — research + tuition edge functions moved to `gemini-3.1-pro-preview` (their admin buttons would have 404'd).
+2. **Description/embedding backlog cleared (337 rows, all cities)** via `scripts_shared/enrichment/replicate_lovable_description_jobs.py` — a faithful local replica of the three admin jobs (same prompts/models/params; research via `gemini-3.1-pro-preview` + Google Search for the 51 description-less rows incl. all 48 MUCPRIV, DE/EN via `gemini-3-flash-preview`, embeddings `gemini-embedding-001` 768-d). Writes went through a temporary IS-NULL-gated anon UPDATE policy (April pattern; created and dropped in the same session; 755 guarded column-writes, 0 failures). **Both tables now have 0 rows missing description / description_de / description_en / embedding.** `school_similarities` rebuilt in-database (pgvector, per-city batches): 11,860 pairs, 1,186/1,186 schools, sim 0.73–1.0.
+3. **Berlin transit refreshed live** — BVG API returned; both enrichers fetched fresh data (258/258 secondary and 489/490 primary non-zero summaries, incl. 04A44 and 6 schools that never had transit), finals rebuilt, embeddings/descriptions untouched. Supabase NULL gaps filled (8 rows); April values elsewhere left as-is (a full overwrite refresh remains a separate decision).
+4. **Wave B**: both source files still 404 (Hessen `verz-6_26_0.xlsx`, NRW `schulliste_sj_26_27_open_data.csv`) — on schedule for ~Sept 9 / ~Sept 23.
+
+Known emitter sharp edge (minor): `--emit-sql` with `assume_missing` also emits columns that legitimately don't exist on a table (e.g. `transit_all_lines_1000m` on primary_schools) — discard those files; the dry-run is authoritative.
+
 ## 2026-08-24 — Supabase handoff COMPLETE (applied via Lovable MCP SQL tool)
 
 All pending SQL applied from this session through `mcp__lovable__query_database` (project 01ef7680, DB whzvzoumldeqgyrqlilt), everything idempotent, one transient 499 retried:
