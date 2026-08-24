@@ -10,6 +10,15 @@
 
 **Supabase:** `data_shared/supabase_sql/stuttgart_plz_fix_2026-08-23.sql` — 176 idempotent UPDATEs (schools 81, primary_schools 95), guarded on the old plz (verified read-only: 176/176 guards match), fixing `plz` and `replace()`-ing the old PLZ in description / description_de / description_en. Not executed (Lovable MCP auth). Note `insert_new_schools_2026-08-23.sql` still carries plz '19965' for STG-19965 (already present in Supabase, so the INSERT is a no-op).
 
+## 2026-08-24 — Supabase handoff COMPLETE (applied via Lovable MCP SQL tool)
+
+All pending SQL applied from this session through `mcp__lovable__query_database` (project 01ef7680, DB whzvzoumldeqgyrqlilt), everything idempotent, one transient 499 retried:
+- 7 remaining stable-fill files (612 rows; `ALTER TABLE primary_schools ADD COLUMN nachfrage_prozent_current numeric` was missing from the original DDL — added, and `supabase_stable_fields.sql` updated to match).
+- Stuttgart PLZ fix (176 rows compressed into 2 set-based UPDATEs): 81+95 rows now all 70xxx, 0 descriptions with the old bogus PLZ.
+- 48 Munich private INSERTs + 21 non-Munich DELETEs (both blocks incl. Garching/Kirchheim) + Munich metadata fill (136 rows: leitung, gruendungsjahr, schueler/lehrer, sprachen, traegerschaft, besonderheiten).
+**Final state**: `schools` 1,186 rows / `primary_schools` 1,639; Munich 129/154 matching the local finals row-for-row; `upload_to_supabase.py --groups stable --dry-run` reports **0 remaining fills**. Stable coverage: sec schueler_current 901, lehrer_current 640; pri schueler_current 1,303, nachfrage_prozent_current 85.
+**Still open (Lovable-side)**: add stable columns to the import whitelist + adopt in useYearConfig/useSchools (doc §3); run description research + embeddings for the 48 new Munich private rows (they have base data only); Berlin BVG re-run when the API returns; Wave B ~Sept 9/23.
+
 ## 2026-08-23 (afternoon) — Munich cleanup, Berlin transit restore, Supabase handoff applied
 
 **Evening follow-up — Wave A regression repair (Dresden/Munich/Hamburg):** the code study showed several "Lovable-side" fields were really April pipeline uploads whose local columns the Wave A rebuild lost. All three restored locally, verified against live Supabase, embeddings/descriptions untouched:

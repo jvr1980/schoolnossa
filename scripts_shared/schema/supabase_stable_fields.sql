@@ -25,6 +25,7 @@ ALTER TABLE primary_schools
   ADD COLUMN IF NOT EXISTS schueler_current integer,
   ADD COLUMN IF NOT EXISTS lehrer_current integer,
   ADD COLUMN IF NOT EXISTS migration_current numeric,
+  ADD COLUMN IF NOT EXISTS nachfrage_prozent_current numeric,
   ADD COLUMN IF NOT EXISTS crime_total_crimes_current numeric,
   ADD COLUMN IF NOT EXISTS data_school_year text,
   ADD COLUMN IF NOT EXISTS crime_data_year text;
