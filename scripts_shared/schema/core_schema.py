@@ -65,13 +65,18 @@ GEO_COLUMNS = [
 # STUDENT / TEACHER STATISTICS — maps to Berlin cols 14-19
 # =============================================================================
 STUDENT_TEACHER_COLUMNS = [
-    "students_current",      # Maps to schueler_2024_25 (most recent year)
+    "students_current",      # Most recent year available for this country
     "students_previous",     # Maps to schueler_2023_24
     "students_2yr_ago",      # Maps to schueler_2022_23
-    "teachers_current",      # Maps to lehrer_2024_25
+    "teachers_current",      # Most recent year available for this country
     "teachers_previous",     # Maps to lehrer_2023_24
     "teachers_2yr_ago",      # Maps to lehrer_2022_23
     "student_teacher_ratio", # Computed: students_current / teachers_current
+    # Vintage of students_current/teachers_current, e.g. "2024_25". Countries
+    # refresh on their own calendars, so the year travels with the data rather
+    # than being implied by the Berlin column name it maps onto. Consumed by
+    # international_to_berlin_schema to stamp data_school_year correctly.
+    "students_data_year",
 ]
 
 # =============================================================================

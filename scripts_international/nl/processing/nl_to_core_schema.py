@@ -15,6 +15,7 @@ Usage:
 """
 
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -148,8 +149,25 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     output["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
 
     # === STUDENT / TEACHER ===
-    output["students_current"] = pd.to_numeric(df.get("students_2024_25"), errors="coerce")
-    output["students_previous"] = pd.to_numeric(df.get("students_2023_24"), errors="coerce")
+    # Resolve the newest students_<year> column DUO actually delivered rather
+    # than pinning a year: a DUO refresh otherwise lands silently in the
+    # previous year's slot and mislabels the vintage downstream.
+    student_years = sorted(
+        (m.group(1) for c in df.columns if (m := re.match(r"^students_(20\d\d_\d\d)$", c))),
+        reverse=True,
+    )
+    if student_years:
+        newest = student_years[0]
+        output["students_current"] = pd.to_numeric(df[f"students_{newest}"], errors="coerce")
+        output["students_data_year"] = newest
+        if len(student_years) > 1:
+            output["students_previous"] = pd.to_numeric(
+                df[f"students_{student_years[1]}"], errors="coerce")
+        logger.info(f"  Student vintage: {newest} (available: {', '.join(student_years)})")
+    else:
+        logger.warning("  No students_<year> column found — students_current empty")
+        output["students_data_year"] = None
+
     output["teachers_current"] = pd.to_numeric(df.get("teachers_current"), errors="coerce")
     output["teachers_previous"] = pd.to_numeric(df.get("teachers_previous"), errors="coerce")
 

@@ -120,8 +120,10 @@ def enrich_schools(schools: pd.DataFrame, crime: pd.DataFrame) -> pd.DataFrame:
     if "crime_total_per_1000" in merged.columns:
         merged["crime_safety_rank"] = merged["crime_total_per_1000"].rank(method="min").astype("Int64")
         pct = merged["crime_total_per_1000"].rank(pct=True)
+        # Vocabulary must match the German tertiles (safe/moderate/elevated) —
+        # the UI filters on these literals across all countries.
         merged["crime_safety_category"] = pd.cut(
-            pct, bins=[0, 0.33, 0.66, 1.0], labels=["safe", "moderate", "high"]
+            pct, bins=[0, 0.33, 0.66, 1.0], labels=["safe", "moderate", "elevated"]
         )
 
     merged["crime_data_source"] = "CBS StatLine 83648NED"
