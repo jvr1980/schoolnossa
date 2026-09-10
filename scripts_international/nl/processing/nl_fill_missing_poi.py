@@ -45,6 +45,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", default="nl_schools_with_pois.csv")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--refresh-source", metavar="LABEL",
+                        help="Also overwrite rows whose poi_data_source starts "
+                             "with LABEL — for re-running a corrected free "
+                             "enrichment without touching paid Places rows.")
     args = parser.parse_args()
 
     final_path = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_final.parquet"
@@ -70,6 +74,11 @@ def main():
     if PRESENCE_COL not in final.columns:
         final[PRESENCE_COL] = pd.NA
     gaps = final[PRESENCE_COL].isna()
+    if args.refresh_source and "poi_data_source" in final.columns:
+        stale = final["poi_data_source"].astype(str).str.startswith(args.refresh_source)
+        logger.info(f"--refresh-source {args.refresh_source!r}: "
+                    f"{int(stale.sum())} existing rows also eligible")
+        gaps = gaps | stale
     fillable = gaps & final["school_id"].isin(lookup.index)
     logger.info(f"Rows without POI: {int(gaps.sum())}/{len(final)} "
                 f"({int(fillable.sum())} of them present in {src_path.name})")

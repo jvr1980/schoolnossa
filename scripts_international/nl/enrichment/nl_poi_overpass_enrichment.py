@@ -194,7 +194,10 @@ def load_school_category(name: str, rel_path: str) -> pd.DataFrame:
         logger.warning(f"  {name}: {rel_path} not found — category left empty")
         return pd.DataFrame(columns=["name", "address", "latitude", "longitude"])
     df = pd.read_csv(path, low_memory=False)
+    id_src = "vestiging_code" if "vestiging_code" in df.columns else "school_id"
     out = pd.DataFrame({
+        # Keep the id so a school is not returned as its own nearest POI.
+        "poi_id": df.get(id_src, pd.Series(dtype=str)).astype(str),
         "name": df.get("school_name", pd.Series(dtype=str)),
         "address": (df.get("street_address", pd.Series(dtype=str)).fillna("").astype(str)
                     + ", " + df.get("city", pd.Series(dtype=str)).fillna("").astype(str)).str.strip(", "),
@@ -221,6 +224,8 @@ def enrich(schools: pd.DataFrame, catalogs: dict[str, pd.DataFrame]) -> pd.DataF
 
     school_lat = pd.to_numeric(schools["latitude"], errors="coerce").to_numpy()
     school_lon = pd.to_numeric(schools["longitude"], errors="coerce").to_numpy()
+    id_col = next((c for c in ("vestiging_code", "school_id") if c in schools.columns), None)
+    school_ids = schools[id_col].astype(str).to_numpy() if id_col else None
 
     for cat, cat_df in catalogs.items():
         counts = np.full(len(schools), np.nan)
@@ -236,6 +241,11 @@ def enrich(schools: pd.DataFrame, catalogs: dict[str, pd.DataFrame]) -> pd.DataF
             plon = cat_df["longitude"].to_numpy()
             pname = cat_df["name"].fillna("").to_numpy()
             paddr = cat_df["address"].fillna("").to_numpy()
+            # A school is in its own school-category catalog, so without this
+            # every primary school's nearest primary school is itself at 0m,
+            # and the within-500m counts are all inflated by one.
+            pid = (cat_df["poi_id"].astype(str).to_numpy()
+                   if "poi_id" in cat_df.columns else None)
             grid = _grid_index(plat, plon, cell_deg)
 
             for i, (sla, slo) in enumerate(zip(school_lat, school_lon)):
@@ -250,6 +260,11 @@ def enrich(schools: pd.DataFrame, catalogs: dict[str, pd.DataFrame]) -> pd.DataF
                     counts[i] = 0
                     continue
                 idx = np.asarray(near)
+                if pid is not None and school_ids is not None:
+                    idx = idx[pid[idx] != school_ids[i]]
+                    if idx.size == 0:
+                        counts[i] = 0
+                        continue
                 dy_m = (plat[idx] - sla) * m_per_deg_lat
                 dx_m = (plon[idx] - slo) * m_per_deg_lon
                 dist = np.hypot(dx_m, dy_m)
