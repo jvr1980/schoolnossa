@@ -205,8 +205,12 @@ def compute_similar(df: pd.DataFrame, top_n: int = 3) -> pd.DataFrame:
     normalized = matrix / norms
     sim = normalized @ normalized.T
 
-    if "schulnummer" not in df.columns:
-        logger.warning("  no schulnummer column — skipping similar-school write-back")
+    # German tables key on schulnummer, international ones on school_id. Without
+    # this the similarity matrix was computed and then silently discarded, so NL
+    # got embeddings but no most_similar_school_* values.
+    id_col = next((c for c in ("schulnummer", "school_id") if c in df.columns), None)
+    if id_col is None:
+        logger.warning("  no schulnummer/school_id column — skipping similar-school write-back")
         return df
 
     for i, idx in enumerate(valid_idx):
@@ -215,7 +219,7 @@ def compute_similar(df: pd.DataFrame, top_n: int = 3) -> pd.DataFrame:
         top = np.argsort(scores)[-top_n:][::-1]
         for rank, j in enumerate(top):
             neighbor_idx = valid_idx[j]
-            df.at[idx, f"most_similar_school_{rank + 1:02d}"] = df.at[neighbor_idx, "schulnummer"]
+            df.at[idx, f"most_similar_school_{rank + 1:02d}"] = df.at[neighbor_idx, id_col]
     return df
 
 
