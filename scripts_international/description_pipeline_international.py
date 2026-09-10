@@ -48,10 +48,14 @@ logger = logging.getLogger(__name__)
 # Pass 0: Gemini Flash (latest) + Google Search grounding (web research)
 # Pass 1: Gemini Flash (latest) (description generation — fast, cheap)
 # Pass 2: GPT 5.4 mini with reasoning (structured extraction — needs precision)
+# GEMINI_MODEL overrides the default. flash-lite grounds just as well for
+# thinly-documented schools and is ~3x faster; grounding is billed per request,
+# so the model choice buys wall-clock, not money.
 DEFAULT_MODELS = {
-    "gemini": "gemini-flash-latest",      # Pass 0 + Pass 1 (resolves to newest flash)
+    "gemini": os.environ.get("GEMINI_MODEL", "gemini-flash-latest"),
     "openai": "gpt-5.4-mini",            # Pass 2: structured data extraction
 }
+MAX_WORKERS = int(os.environ.get("DESC_WORKERS", "5"))
 
 # Columns that Pass 2 can populate for international schools
 # Mapped from JSON key → core schema column name
@@ -728,28 +732,45 @@ def run_description_pipeline(country_code: str, passes: set = None,
     skipped = total - needs_count
     logger.info(f"Schools needing API calls: {needs_count}/{total} (skipping {skipped} already complete)")
 
-    # Process
-    processed = 0
-    for i, (_, row) in enumerate(df.iterrows()):
+    # Process. Work is network-bound — grounded search dominates the ~6s/school —
+    # so a thread pool converts a 6k-school run from many hours to a couple.
+    # Each school owns its own cache entry, so workers never contend on a key;
+    # the periodic snapshot takes a lock so it never serialises a dict mid-write.
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    import threading
+
+    todo = []
+    for _, row in df.iterrows():
         row_dict = row.to_dict()
-        # Normalize school_name for the prompt
         if "school_name" not in row_dict:
-            row_dict["school_name"] = row_dict.get("schulname", row_dict.get("school_name", "Unknown"))
-
-        school_id = str(row_dict.get(id_col, row_dict.get("school_name", "")))
-
-        # Check if this school needs work (log at different levels)
+            row_dict["school_name"] = row_dict.get("schulname", "Unknown")
         p0, p1, p2 = school_needs_processing(row_dict, passes)
-        if not force_rerun and not p0 and not p1 and not p2:
-            continue  # Skip silently — already complete
-        processed += 1
-        logger.info(f"[{processed}/{needs_count}] {row_dict.get('school_name', school_id)}")
-        process_school(row_dict, code, passes, cache, api_keys, force_rerun)
+        if force_rerun or p0 or p1 or p2:
+            todo.append(row_dict)
 
-        if (i + 1) % 10 == 0:
-            with open(cache_path, "w", encoding="utf-8") as f:
-                json.dump(cache, f, ensure_ascii=False, indent=2)
-            logger.info(f"  Cache saved ({i+1}/{total})")
+    cache_lock = threading.Lock()
+    counter = {"done": 0}
+
+    def _run(row_dict):
+        school_id = str(row_dict.get(id_col, row_dict.get("school_name", "")))
+        try:
+            process_school(row_dict, code, passes, cache, api_keys, force_rerun)
+        except Exception as exc:
+            logger.warning(f"  [{school_id}] failed: {exc}")
+        with cache_lock:
+            counter["done"] += 1
+            n = counter["done"]
+            if n % 25 == 0 or n == len(todo):
+                logger.info(f"[{n}/{len(todo)}] {row_dict.get('school_name', school_id)}")
+            if n % 100 == 0:
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    json.dump(cache, f, ensure_ascii=False, indent=2)
+                logger.info(f"  Cache saved ({n}/{len(todo)})")
+
+    if todo:
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+            list(as_completed([pool.submit(_run, r) for r in todo]))
+    processed = counter["done"]
 
     # Final cache save
     with open(cache_path, "w", encoding="utf-8") as f:
