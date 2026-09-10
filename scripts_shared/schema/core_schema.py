@@ -105,7 +105,14 @@ SOCIOECONOMIC_COLUMNS = [
     "deprivation_index_national", # Original national index (IMD decile, CBS social index, etc.)
     "deprivation_data_year",     # Vintage of the national index (annual, lagged)
     "deprivation_data_source",   # Which national index the value came from
+    # PUPIL-level share with a migration background, as Berlin's migration_2024_25
+    # reports it. Only fill this from a school statistic — an area figure is a
+    # different measurement and must go in area_foreign_born_pct instead.
+    # NL has no per-school equivalent, so it stays empty there; the CBS
+    # achterstandsscore in deprivation_index_national is the school-level signal.
     "migration_background_pct",  # Maps to migration_2024_25
+    # AREA-level share of residents born abroad (first generation).
+    "area_foreign_born_pct",
     "area_median_income",        # Mapped from census/statistics (EUR or local currency)
     "area_population_density",   # People per km²
     "area_unemployment_rate",    # Percent
