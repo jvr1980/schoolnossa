@@ -455,6 +455,21 @@ def school_needs_processing(row: dict, passes: set) -> tuple:
     )
 
 
+def _cached_ok(entry: dict, *keys: str) -> bool:
+    """True only if every key holds a non-empty value.
+
+    Presence is not success: a failed generation stored as "" looks identical to
+    a cached result to an `in entry` test, so the school is skipped forever and
+    the gap never closes. This is the same trap as the cached HTTP 429s that
+    left GB crime at zero — check the value, not the key.
+    """
+    for key in keys:
+        val = entry.get(key)
+        if val is None or (isinstance(val, str) and not val.strip()):
+            return False
+    return True
+
+
 def process_school(row: dict, country_code: str, passes: set, cache: dict,
                    api_keys: dict, force_rerun: bool = False) -> dict:
     """Process a single school through all requested passes."""
@@ -478,7 +493,7 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
 
     # --- Pass 0: Web Research (Gemini + Google Search grounding) ---
     if 0 in active_passes:
-        if "pass0_raw" not in entry or force_rerun:
+        if not _cached_ok(entry, "pass0_raw") or force_rerun:
             gkey = api_keys.get("gemini")
             if gkey:
                 prompt = build_pass0_prompt(row, country_code)
@@ -496,7 +511,7 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
 
     # --- Pass 1: Description Generation (Gemini — cheaper than GPT) ---
     if 1 in active_passes:
-        if ("pass1_local" not in entry or "pass1_en" not in entry) or force_rerun:
+        if not _cached_ok(entry, "pass1_local", "pass1_en") or force_rerun:
             gkey = api_keys.get("gemini")
             okey = api_keys.get("openai")  # fallback
             raw_research = entry.get("pass0_raw")
