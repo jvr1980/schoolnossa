@@ -55,6 +55,13 @@ MERGE_COLUMNS = [
     "deprivation_index_national",
     "deprivation_data_year",
     "deprivation_data_source",
+    # Verified profile labels + Amsterdam contact backfill
+    "nl_tto_tracks",
+    "nl_bilingual_tto",
+    "nl_verified_profiles",
+    "email",
+    "phone",
+    "website",
 ]
 
 # Core-schema columns filled from source columns under a different name.
@@ -68,7 +75,7 @@ RENAME_INTO = {
 # analogue of Berlin's belastungsstufe) but covers 89% of schools, while the
 # previous CBS buurt-level area deprivation covered 99.8%. Overwriting would
 # trade 10 points of coverage for the better definition; coalescing keeps both.
-COALESCE_COLUMNS = {"deprivation_index"}
+COALESCE_COLUMNS = {"deprivation_index", "email", "phone", "website"}
 
 ID_LEFT = "school_id"
 ID_RIGHT = "vestiging_code"
