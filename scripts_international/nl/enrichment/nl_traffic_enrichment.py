@@ -2,28 +2,27 @@
 """
 NL Phase 3: Traffic/Road Safety Enrichment
 
-Downloads BRON accident data from Rijkswaterstaat file server (not WFS),
-then computes accident density near each school.
+Per-school accident counts within 500m/1000m, mirroring the German Unfallatlas
+enrichment and the GB STATS19 one.
 
-The BRON CSV links accidents to NWB road segments (hectometer+letter combos).
-For geo-matching we use a simplified approach: download the accident data and,
-since direct lat/lon isn't in the CSV, we use a municipality-level aggregation
-(accidents per gemeente) as an area-level traffic safety indicator.
+Source: Rijkswaterstaat "Verkeersongevallen Nederland" (BRON) WFS — the geocoded
+release. Note this is NOT the flat ZIP on downloads.rijkswaterstaatdata.nl: that
+one links accidents to NWB road segments (wegvak_id + hectometer) and carries no
+coordinates, which is why the previous gemeente-level fallback here produced no
+usable per-school signal. The WFS serves point geometry directly.
 
-For per-school radius-based analysis, we'd need the NWB geometry file to
-geocode each accident — this is a future enhancement.
-
-Data source: https://downloads.rijkswaterstaatdata.nl/bron/
-Format: ZIP containing CSV
+  Layer:    ongevallen_2022_2024 (single-year layers also exist)
+  CRS:      EPSG:28992 (RD New) — metric, so radius maths is plain Euclidean
+  Geometry: 'shape' column as WKT POINT
+  Severity: 'verkeersongeval_afloop' -> Dodelijk / Letsel / Uitsluitend materiele schade
+  Licence:  CC0 1.0
 
 Input:  data_nl/intermediate/nl_school_master_geocoded.csv
 Output: data_nl/intermediate/nl_schools_with_traffic.csv
 """
 
-import io
 import logging
 import sys
-import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -38,164 +37,180 @@ CACHE_DIR = DATA_DIR / "cache"
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# Use single-year file — 2023 is most recent complete year (~300MB)
-BRON_URL = "https://downloads.rijkswaterstaatdata.nl/bron/01-01-2023_31-12-2023.zip"
-BRON_ZIP_PATH = None  # Set by download function
+WFS_URL = "https://geo.rijkswaterstaat.nl/services/ogc/gdr/verkeersongevallen_nederland/ows"
+WFS_LAYER = "ongevallen_2022_2024"
+ACCIDENT_YEARS = "2022-2024"
+RD_NEW = "EPSG:28992"
+
+SEVERITY_COL = "verkeersongeval_afloop"
+YEAR_COL = "jaar_ongeval"
+FATAL_VALUE = "Dodelijk"
+INJURY_VALUE = "Letsel"
+
+# WGS84 school coordinates -> RD New. pyproj is the accurate route; without it
+# we fall back to a local equirectangular approximation, which is well within
+# tolerance for 500m/1000m counting at Dutch latitudes.
+NL_LAT0, NL_LON0 = 52.15517440, 5.38720621  # Amersfoort, RD New origin
+RD_X0, RD_Y0 = 155000.0, 463000.0
 
 
-def download_and_parse_bron(cache_path: Path) -> pd.DataFrame:
-    """Download BRON accident data and aggregate per gemeente."""
+def _download_accidents(cache_path: Path) -> pd.DataFrame:
+    """Fetch geocoded accidents from the WFS, cached as a slim local CSV."""
     if cache_path.exists():
-        logger.info(f"Loading cached BRON data: {cache_path.name}")
+        logger.info(f"Loading cached accidents: {cache_path.name}")
         return pd.read_csv(cache_path)
 
-    # Download to disk — file is ~300MB, use curl for reliable resume
-    zip_path = CACHE_DIR / "bron_2023.zip"
-    expected_min_size = 250 * 1024 * 1024  # At least 250MB for a valid file
+    params = {
+        "service": "WFS",
+        "version": "2.0.0",
+        "request": "GetFeature",
+        "typeName": WFS_LAYER,
+        "outputFormat": "csv",
+        "srsName": RD_NEW,
+    }
+    logger.info(f"Downloading {WFS_LAYER} from Rijkswaterstaat WFS (~100MB, one-off)...")
+    resp = requests.get(WFS_URL, params=params, timeout=1800, stream=True)
+    resp.raise_for_status()
 
-    if not zip_path.exists() or zip_path.stat().st_size < expected_min_size:
-        logger.info(f"Downloading BRON accident data with curl (supports resume)...")
-        import subprocess
-        result = subprocess.run(
-            ["curl", "-L", "-C", "-", "--retry", "5", "--retry-delay", "5",
-             "-o", str(zip_path), BRON_URL],
-            capture_output=True, text=True, timeout=600,
-        )
-        if result.returncode != 0:
-            logger.warning(f"  curl failed: {result.stderr[:200]}")
-            if zip_path.exists() and zip_path.stat().st_size < expected_min_size:
-                logger.warning(f"  Incomplete download ({zip_path.stat().st_size / 1024 / 1024:.0f} MB). "
-                               f"Run manually: curl -L -C - --retry 5 -o {zip_path} {BRON_URL}")
-                return pd.DataFrame()
-        logger.info(f"  Downloaded: {zip_path.stat().st_size / 1024 / 1024:.0f} MB")
-    else:
-        logger.info(f"  Using cached ZIP: {zip_path.name} ({zip_path.stat().st_size / 1024 / 1024:.0f} MB)")
+    raw_path = CACHE_DIR / f"bron_{WFS_LAYER}_raw.csv"
+    raw_path.parent.mkdir(parents=True, exist_ok=True)
+    written = 0
+    with open(raw_path, "wb") as fh:
+        for chunk in resp.iter_content(chunk_size=1 << 20):
+            fh.write(chunk)
+            written += len(chunk)
+    logger.info(f"  Downloaded {written / 1024 / 1024:.0f} MB")
 
-    # Extract CSV from ZIP
-    with zipfile.ZipFile(zip_path) as zf:
-        csv_names = [n for n in zf.namelist() if n.endswith(".csv")]
-        logger.info(f"  ZIP contains: {csv_names}")
-        if not csv_names:
-            logger.warning("  No CSV in BRON ZIP!")
-            return pd.DataFrame()
+    df = pd.read_csv(raw_path, low_memory=False)
+    logger.info(f"  Raw: {len(df)} accidents, {len(df.columns)} columns")
 
-        with zf.open(csv_names[0]) as f:
-            df = pd.read_csv(f, sep=";", low_memory=False, dtype=str, encoding="latin1")
+    geom_col = next((c for c in df.columns if c.lower() in ("shape", "geom", "geometry")), None)
+    if geom_col is None:
+        logger.error(f"  No geometry column found. Columns: {list(df.columns)[:20]}")
+        return pd.DataFrame()
 
-    logger.info(f"  Raw BRON: {len(df)} accidents, {len(df.columns)} columns")
-    logger.info(f"  Columns: {list(df.columns)[:15]}")
+    # "POINT (131437.148 422301.464)" -> x, y
+    coords = df[geom_col].astype(str).str.extract(
+        r"POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)")
+    slim = pd.DataFrame({
+        "x": pd.to_numeric(coords[0], errors="coerce"),
+        "y": pd.to_numeric(coords[1], errors="coerce"),
+        "severity": df.get(SEVERITY_COL),
+        "year": pd.to_numeric(df.get(YEAR_COL), errors="coerce"),
+    }).dropna(subset=["x", "y"])
 
-    # Find relevant columns (names vary by year)
-    cols_lower = {c.lower(): c for c in df.columns}
-    gemeente_col = next((cols_lower[k] for k in cols_lower if "gemeente" in k and "naam" in k), None)
-    gemeente_code_col = next((cols_lower[k] for k in cols_lower if "gemeente" in k and ("code" in k or "nr" in k)), None)
-    severity_col = next((cols_lower[k] for k in cols_lower if "ernst" in k or "afloop" in k or "severity" in k), None)
-
-    logger.info(f"  Gemeente name col: {gemeente_col}")
-    logger.info(f"  Gemeente code col: {gemeente_code_col}")
-    logger.info(f"  Severity col: {severity_col}")
-
-    # Aggregate per gemeente
-    if gemeente_code_col:
-        group_col = gemeente_code_col
-    elif gemeente_col:
-        group_col = gemeente_col
-    else:
-        # Try to find any gemeente-like column
-        for c in df.columns:
-            if "gme" in c.lower() or "gem" in c.lower():
-                group_col = c
-                break
-        else:
-            logger.warning("  Cannot find gemeente column in BRON data")
-            logger.info(f"  All columns: {list(df.columns)}")
-            return pd.DataFrame()
-
-    agg = df.groupby(group_col).size().reset_index(name="accidents_total")
-    agg.columns = ["gemeente_ref", "accidents_total"]
-
-    # Count fatal/severe if severity column exists
-    if severity_col:
-        fatal_mask = df[severity_col].str.upper().isin(["DOD", "UMS", "DOOD", "DODELIJK"])
-        agg_fatal = df[fatal_mask].groupby(group_col).size().reset_index(name="accidents_fatal")
-        agg_fatal.columns = ["gemeente_ref", "accidents_fatal"]
-        agg = agg.merge(agg_fatal, on="gemeente_ref", how="left")
-        agg["accidents_fatal"] = agg["accidents_fatal"].fillna(0).astype(int)
-
-    agg.to_csv(cache_path, index=False)
-    logger.info(f"  Aggregated: {len(agg)} gemeenten with accident counts")
-    return agg
+    logger.info(f"  Geocoded: {len(slim)}/{len(df)} accidents")
+    logger.info(f"  Severity mix: {slim['severity'].value_counts().head(4).to_dict()}")
+    slim.to_csv(cache_path, index=False)
+    return slim
 
 
-def enrich_schools(schools: pd.DataFrame, accidents: pd.DataFrame) -> pd.DataFrame:
-    """Join accident data to schools on gemeente."""
+def _to_rd_new(lat: pd.Series, lon: pd.Series) -> tuple[pd.Series, pd.Series]:
+    """WGS84 -> RD New (EPSG:28992) metres."""
+    try:
+        from pyproj import Transformer
+        transformer = Transformer.from_crs("EPSG:4326", RD_NEW, always_xy=True)
+        x, y = transformer.transform(lon.values, lat.values)
+        return pd.Series(x, index=lat.index), pd.Series(y, index=lat.index)
+    except ImportError:
+        logger.warning("  pyproj unavailable — using equirectangular approximation")
+        m_per_deg_lat = 111132.0
+        m_per_deg_lon = 111320.0 * np.cos(np.radians(NL_LAT0))
+        x = RD_X0 + (lon - NL_LON0) * m_per_deg_lon
+        y = RD_Y0 + (lat - NL_LAT0) * m_per_deg_lat
+        return x, y
+
+
+def enrich_with_traffic(schools: pd.DataFrame, accidents: pd.DataFrame) -> pd.DataFrame:
+    """Count accidents within 500m/1000m of each school (Berlin/GB semantics)."""
     if accidents.empty:
-        logger.warning("No accident data — filling with NaN")
-        schools["traffic_accidents_gemeente"] = np.nan
-        schools["traffic_volume_index"] = np.nan
-        schools["traffic_data_source"] = "BRON (no data)"
+        logger.error("No accident data — traffic columns left empty. "
+                     "This is a failure, not a valid result.")
+        for col in ("traffic_accidents_500m", "traffic_accidents_1000m",
+                    "traffic_accidents_fatal_1000m", "traffic_volume_index"):
+            schools[col] = np.nan
+        schools["traffic_data_source"] = "BRON (download failed)"
         return schools
 
-    # Try joining on gemeente code first, then name
-    schools["_gem_name"] = schools["gemeente_name"].astype(str).str.strip().str.upper()
-    accidents["_gem_ref"] = accidents["gemeente_ref"].astype(str).str.strip().str.upper()
+    lat = pd.to_numeric(schools["latitude"], errors="coerce")
+    lon = pd.to_numeric(schools["longitude"], errors="coerce")
+    sx, sy = _to_rd_new(lat, lon)
 
-    # Also try numeric gemeente code
-    schools["_gem_code"] = schools["gemeente_code"].astype(str).str.strip().str.zfill(4)
-    accidents["_gem_code"] = accidents["gemeente_ref"].astype(str).str.strip().str.zfill(4)
+    ax = accidents["x"].to_numpy()
+    ay = accidents["y"].to_numpy()
+    severity = accidents["severity"].astype(str)
+    fatal = severity.eq(FATAL_VALUE).to_numpy()
+    injury = severity.isin([FATAL_VALUE, INJURY_VALUE]).to_numpy()
 
-    # Try code join first
-    merged = schools.merge(
-        accidents[["_gem_code", "accidents_total"]].rename(columns={"accidents_total": "traffic_accidents_gemeente"}),
-        on="_gem_code", how="left"
-    )
+    n500 = np.full(len(schools), np.nan)
+    n1000 = np.full(len(schools), np.nan)
+    nfatal = np.full(len(schools), np.nan)
+    ninjury = np.full(len(schools), np.nan)
 
-    code_filled = merged["traffic_accidents_gemeente"].notna().sum()
+    # Bucket accidents into a 1km grid so each school only tests nearby cells
+    # instead of all ~380k points (1626 x 380k would be ~600M distance pairs).
+    cell = 1000.0
+    grid: dict[tuple[int, int], list[int]] = {}
+    for idx, (gx, gy) in enumerate(zip((ax // cell).astype(int), (ay // cell).astype(int))):
+        grid.setdefault((gx, gy), []).append(idx)
 
-    # If code join got less than 50%, try name join
-    if code_filled < len(schools) * 0.5:
-        logger.info(f"  Code join got {code_filled}/{len(schools)}, trying name join...")
-        merged2 = schools.merge(
-            accidents[["_gem_ref", "accidents_total"]].rename(
-                columns={"_gem_ref": "_gem_name", "accidents_total": "traffic_accidents_gemeente"}
-            ),
-            on="_gem_name", how="left"
-        )
-        name_filled = merged2["traffic_accidents_gemeente"].notna().sum()
-        if name_filled > code_filled:
-            merged = merged2
-            logger.info(f"  Name join: {name_filled}/{len(schools)}")
+    for i, (x, y) in enumerate(zip(sx.to_numpy(), sy.to_numpy())):
+        if not np.isfinite(x) or not np.isfinite(y):
+            continue
+        gx, gy = int(x // cell), int(y // cell)
+        near: list[int] = []
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                near.extend(grid.get((gx + dx, gy + dy), ()))
+        if not near:
+            n500[i] = n1000[i] = nfatal[i] = ninjury[i] = 0
+            continue
+        near_idx = np.asarray(near)
+        d = np.hypot(ax[near_idx] - x, ay[near_idx] - y)
+        within_1000 = d <= 1000
+        n500[i] = int(np.sum(d <= 500))
+        n1000[i] = int(np.sum(within_1000))
+        nfatal[i] = int(np.sum(within_1000 & fatal[near_idx]))
+        ninjury[i] = int(np.sum(within_1000 & injury[near_idx]))
+        if (i + 1) % 500 == 0:
+            logger.info(f"  [{i + 1}/{len(schools)}] schools processed")
 
-    # Normalize to 0-10 index
-    max_acc = merged["traffic_accidents_gemeente"].max()
-    if max_acc and max_acc > 0:
-        merged["traffic_volume_index"] = (merged["traffic_accidents_gemeente"] / max_acc * 10).round(1)
-    else:
-        merged["traffic_volume_index"] = np.nan
+    schools["traffic_accidents_500m"] = n500
+    schools["traffic_accidents_1000m"] = n1000
+    schools["traffic_accidents_fatal_1000m"] = nfatal
+    schools["traffic_accidents_injury_1000m"] = ninjury
+    schools["traffic_accidents_year"] = ACCIDENT_YEARS
 
-    merged["traffic_data_source"] = "BRON 2023 (Rijkswaterstaat)"
-    merged["traffic_accidents_year"] = "2023"
+    max_acc = np.nanmax(n1000) if np.isfinite(n1000).any() else 0
+    schools["traffic_volume_index"] = (
+        (n1000 / max_acc * 10).round(1) if max_acc > 0 else np.nan)
+    schools["traffic_data_source"] = f"BRON {ACCIDENT_YEARS} (Rijkswaterstaat, CC0)"
 
-    merged = merged.drop(columns=["_gem_name", "_gem_code"], errors="ignore")
-    filled = merged["traffic_accidents_gemeente"].notna().sum()
-    logger.info(f"Schools with traffic data: {filled}/{len(merged)}")
-    return merged
+    filled = int(np.isfinite(n1000).sum())
+    logger.info(f"Schools with traffic data: {filled}/{len(schools)}")
+    if filled == 0:
+        raise RuntimeError("Traffic enrichment produced zero rows — refusing to "
+                           "report success (see April 2026 silent no-op).")
+    logger.info(f"  Median accidents within 1000m: {np.nanmedian(n1000):.0f}")
+    return schools
 
 
 def main():
     logger.info("=" * 60)
-    logger.info("NL Phase 3: Traffic Enrichment (BRON)")
+    logger.info("NL Phase 3: Traffic Enrichment (BRON geocoded)")
     logger.info("=" * 60)
 
     input_path = INTERMEDIATE_DIR / "nl_school_master_geocoded.csv"
     if not input_path.exists():
-        logger.error(f"Input not found: {input_path}"); sys.exit(1)
+        logger.error(f"Input not found: {input_path}")
+        sys.exit(1)
 
     schools = pd.read_csv(input_path, low_memory=False)
     logger.info(f"Loaded {len(schools)} schools")
 
-    accidents = download_and_parse_bron(CACHE_DIR / "bron_gemeente_2023.csv")
-    enriched = enrich_schools(schools, accidents)
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    accidents = _download_accidents(CACHE_DIR / f"bron_points_{WFS_LAYER}.csv")
+    enriched = enrich_with_traffic(schools, accidents)
 
     output = INTERMEDIATE_DIR / "nl_schools_with_traffic.csv"
     enriched.to_csv(output, index=False)
