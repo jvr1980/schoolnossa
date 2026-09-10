@@ -31,6 +31,9 @@ EXPECT_CONSTANT_EXACT = {
     "data_source_version", "metadata_source", "school_quality_source",
     "academic_data_source", "students_data_year", "education_type",
     "school_type", "geocode_precision",
+    # Type descriptors are constant by construction in a single-level table
+    # (the primary set is filtered to TYPE_PO=BO).
+    "school_type_national", "school_subtype", "ownership_national",
 }
 
 

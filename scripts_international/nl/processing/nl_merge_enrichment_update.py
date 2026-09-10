@@ -27,7 +27,13 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-DATA_DIR = PROJECT_ROOT / "data_nl"
+# Overridable so the primary (basisonderwijs) pipeline reuses this unchanged:
+# NL_DATA_DIR=data_nl_po. Output filenames are derived from it too, so the two
+# levels never write over each other.
+import os
+NL_DATA_DIR = os.environ.get("NL_DATA_DIR", "data_nl")
+DATA_DIR = PROJECT_ROOT / NL_DATA_DIR
+TABLE_PREFIX = "nl_po" if NL_DATA_DIR.endswith("_po") else "nl"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 FINAL_DIR = DATA_DIR / "final"
 
@@ -83,7 +89,7 @@ ID_RIGHT = "vestiging_code"
 
 def merge_update(source_name: str, dry_run: bool = False) -> pd.DataFrame:
     src_path = INTERMEDIATE_DIR / source_name
-    final_path = FINAL_DIR / "nl_school_master_table_final.parquet"
+    final_path = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_final.parquet"
     if not src_path.exists():
         logger.error(f"Source not found: {src_path}")
         sys.exit(1)
@@ -135,7 +141,7 @@ def merge_update(source_name: str, dry_run: bool = False) -> pd.DataFrame:
 
     backup = FINAL_DIR / f"backup_{date.today().isoformat()}"
     backup.mkdir(parents=True, exist_ok=True)
-    for existing in FINAL_DIR.glob("nl_school_master_table_*"):
+    for existing in FINAL_DIR.glob(f"{TABLE_PREFIX}_school_master_table_*"):
         if existing.is_file():
             shutil.copy2(existing, backup / existing.name)
     logger.info(f"\nBacked up previous finals to {backup}")

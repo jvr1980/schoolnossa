@@ -29,7 +29,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from scripts_shared.schema.core_schema import CORE_COLUMNS, schema_coverage_report
 from scripts_shared.schema.country_extensions import get_full_schema, NL_EXTENSION
 
-DATA_DIR = PROJECT_ROOT / "data_nl"
+# Overridable so the primary (basisonderwijs) pipeline reuses this unchanged:
+# NL_DATA_DIR=data_nl_po. Output filenames are derived from it too, so the two
+# levels never write over each other.
+import os
+NL_DATA_DIR = os.environ.get("NL_DATA_DIR", "data_nl")
+DATA_DIR = PROJECT_ROOT / NL_DATA_DIR
+TABLE_PREFIX = "nl_po" if NL_DATA_DIR.endswith("_po") else "nl"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 FINAL_DIR = DATA_DIR / "final"
 FINAL_DIR.mkdir(parents=True, exist_ok=True)
@@ -129,7 +135,13 @@ def transform(input_path: Path = None) -> pd.DataFrame:
 
     # Map school type
     output["school_type_national"] = df["education_type"]
-    output["school_type"] = df["education_type"].map(SCHOOL_TYPE_MAP).fillna("secondary")
+    # The map covers VO onderwijstypes only. Primary rows arrive with school_type
+    # already set to "primary"; without this the fillna would relabel all 6,060
+    # basisscholen as secondary.
+    if "school_type" in df.columns and df["school_type"].notna().any():
+        output["school_type"] = df["school_type"]
+    else:
+        output["school_type"] = df["education_type"].map(SCHOOL_TYPE_MAP).fillna("secondary")
     output["school_subtype"] = df["education_type"]
 
     # Ownership
@@ -175,33 +187,40 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     output["student_teacher_ratio"] = (output["students_current"] / teachers).round(1)
 
     # === NORMALIZED ACADEMIC ===
-    output["academic_performance_score"] = df.apply(compute_academic_score, axis=1)
-    output["academic_data_source"] = "DUO Exam Results"
+    # Exam results are a VO concept: DUO publishes no per-school results for
+    # basisonderwijs, so primary rows carry no exam_* columns at all. Skip the
+    # whole block rather than let df.get() return None and blow up on .notna().
+    has_exams = any(c.startswith("exam_") for c in df.columns)
+    if not has_exams:
+        logger.info("  No exam_* columns (primary) — skipping academic block")
+    if has_exams:
+        output["academic_performance_score"] = df.apply(compute_academic_score, axis=1)
+        output["academic_data_source"] = "DUO Exam Results"
 
-    # Year of data
-    has_2025 = pd.to_numeric(df.get("exam_avg_overall_2024_25"), errors="coerce").notna()
-    output["academic_data_year"] = np.where(has_2025, "2024-25", "2023-24")
+        # Year of data
+        has_2025 = pd.to_numeric(df.get("exam_avg_overall_2024_25"), errors="coerce").notna()
+        output["academic_data_year"] = np.where(has_2025, "2024-25", "2023-24")
 
-    # Compute percentile within dataset
-    scores = output["academic_performance_score"]
-    output["academic_performance_percentile"] = scores.rank(pct=True).multiply(100).round(1)
+        # Compute percentile within dataset
+        scores = output["academic_performance_score"]
+        output["academic_performance_percentile"] = scores.rank(pct=True).multiply(100).round(1)
 
-    # Trend
-    score_current = pd.to_numeric(df.get("exam_avg_overall_2024_25"), errors="coerce")
-    score_prev = pd.to_numeric(df.get("exam_avg_overall_2023_24"), errors="coerce")
-    output["academic_performance_trend"] = (score_current - score_prev).round(2)
+        # Trend
+        score_current = pd.to_numeric(df.get("exam_avg_overall_2024_25"), errors="coerce")
+        score_prev = pd.to_numeric(df.get("exam_avg_overall_2023_24"), errors="coerce")
+        output["academic_performance_trend"] = (score_current - score_prev).round(2)
 
-    # CE-SE difference as value-added proxy
-    ce = pd.to_numeric(df.get("exam_avg_ce_2024_25"), errors="coerce")
-    se = pd.to_numeric(df.get("exam_avg_se_2024_25"), errors="coerce")
-    output["academic_value_added"] = (ce - se).round(2)
+        # CE-SE difference as value-added proxy
+        ce = pd.to_numeric(df.get("exam_avg_ce_2024_25"), errors="coerce")
+        se = pd.to_numeric(df.get("exam_avg_se_2024_25"), errors="coerce")
+        output["academic_value_added"] = (ce - se).round(2)
 
-    # === NL EXTENSION COLUMNS ===
-    output["nl_exam_pass_rate"] = pd.to_numeric(df.get("exam_pass_rate_2024_25"), errors="coerce")
-    output["nl_exam_avg_grade_ce"] = pd.to_numeric(df.get("exam_avg_ce_2024_25"), errors="coerce")
-    output["nl_exam_avg_grade_se"] = pd.to_numeric(df.get("exam_avg_se_2024_25"), errors="coerce")
-    output["nl_exam_ce_se_difference"] = output["nl_exam_avg_grade_ce"] - output["nl_exam_avg_grade_se"]
-    output["nl_exam_year"] = "2024-25"
+        # === NL EXTENSION COLUMNS ===
+        output["nl_exam_pass_rate"] = pd.to_numeric(df.get("exam_pass_rate_2024_25"), errors="coerce")
+        output["nl_exam_avg_grade_ce"] = pd.to_numeric(df.get("exam_avg_ce_2024_25"), errors="coerce")
+        output["nl_exam_avg_grade_se"] = pd.to_numeric(df.get("exam_avg_se_2024_25"), errors="coerce")
+        output["nl_exam_ce_se_difference"] = output["nl_exam_avg_grade_ce"] - output["nl_exam_avg_grade_se"]
+        output["nl_exam_year"] = "2024-25"
     output["nl_denomination"] = df["denomination"]
     output["nl_brin_code"] = df["brin_code"]
     output["nl_gemeente_code"] = df["gemeente_code"]
@@ -287,8 +306,8 @@ def main():
     output = transform()
 
     # Save
-    parquet_path = FINAL_DIR / "nl_school_master_table_final.parquet"
-    csv_path = FINAL_DIR / "nl_school_master_table_final.csv"
+    parquet_path = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_final.parquet"
+    csv_path = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_final.csv"
 
     output.to_parquet(parquet_path, index=False)
     logger.info(f"Saved: {parquet_path}")

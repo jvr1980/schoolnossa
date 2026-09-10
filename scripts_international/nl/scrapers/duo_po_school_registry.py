@@ -237,7 +237,7 @@ def main(force_download: bool = False):
     logger.info(f"\n  Dropped {before - len(master)} vestigingen with no {PO_TYPE} pupils "
                 f"(closed, or SBO/SO-only locations)")
 
-    output = INTERMEDIATE_DIR / "nl_po_school_master_base.csv"
+    output = INTERMEDIATE_DIR / "nl_school_master_base.csv"
     master.to_csv(output, index=False)
     logger.info(f"\n  Final: {len(master)} primary schools, {len(master.columns)} columns")
     logger.info(f"  Saved: {output}")

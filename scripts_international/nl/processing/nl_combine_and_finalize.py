@@ -19,7 +19,13 @@ from pathlib import Path
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data_nl"
+# Overridable so the primary (basisonderwijs) pipeline reuses this unchanged:
+# NL_DATA_DIR=data_nl_po. Output filenames are derived from it too, so the two
+# levels never write over each other.
+import os
+NL_DATA_DIR = os.environ.get("NL_DATA_DIR", "data_nl")
+DATA_DIR = PROJECT_ROOT / NL_DATA_DIR
+TABLE_PREFIX = "nl_po" if NL_DATA_DIR.endswith("_po") else "nl"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 FINAL_DIR = DATA_DIR / "final"
 
@@ -82,7 +88,7 @@ def find_best_input() -> Path:
 
 def carry_paid_columns(fresh: pd.DataFrame) -> pd.DataFrame:
     """Gap-fill paid columns from the previous final table on school_id."""
-    previous_path = FINAL_DIR / "nl_school_master_table_final.parquet"
+    previous_path = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_final.parquet"
     if not previous_path.exists():
         logger.info("No previous final table — nothing to carry forward")
         return fresh
@@ -127,14 +133,14 @@ def main(skip_embeddings: bool = False):
     output = carry_paid_columns(output)
 
     # Save final outputs
-    parquet_path = FINAL_DIR / "nl_school_master_table_final.parquet"
-    csv_path = FINAL_DIR / "nl_school_master_table_final.csv"
+    parquet_path = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_final.parquet"
+    csv_path = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_final.csv"
     if parquet_path.exists():
         import shutil
         from datetime import date
         backup = FINAL_DIR / f"backup_{date.today().isoformat()}"
         backup.mkdir(parents=True, exist_ok=True)
-        for existing in FINAL_DIR.glob("nl_school_master_table_*"):
+        for existing in FINAL_DIR.glob(f"{TABLE_PREFIX}_school_master_table_*"):
             if existing.is_file():
                 shutil.copy2(existing, backup / existing.name)
         logger.info(f"Backed up previous finals to {backup}")
@@ -167,8 +173,8 @@ def main(skip_embeddings: bool = False):
     try:
         from scripts_international.international_to_berlin_schema import transform_to_berlin
         berlin_df = transform_to_berlin(output, "NL")
-        berlin_parquet = FINAL_DIR / "nl_school_master_table_berlin_schema.parquet"
-        berlin_csv = FINAL_DIR / "nl_school_master_table_berlin_schema.csv"
+        berlin_parquet = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_berlin_schema.parquet"
+        berlin_csv = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_berlin_schema.csv"
         berlin_df.to_parquet(berlin_parquet, index=False)
         berlin_df.to_csv(berlin_csv, index=False)
 

@@ -38,7 +38,7 @@ def main(force: bool = False):
     logger.info("NL Primary Phase 2: Geocoding")
     logger.info("=" * 60)
 
-    input_path = INTERMEDIATE_DIR / "nl_po_school_master_base.csv"
+    input_path = INTERMEDIATE_DIR / "nl_school_master_base.csv"
     if not input_path.exists():
         logger.error(f"Input not found: {input_path}")
         sys.exit(1)
@@ -79,7 +79,7 @@ def main(force: bool = False):
     df["longitude"] = lons
     CACHE_FILE.write_text(json.dumps(cache))
 
-    output = INTERMEDIATE_DIR / "nl_po_school_master_geocoded.csv"
+    output = INTERMEDIATE_DIR / "nl_school_master_geocoded.csv"
     df.to_csv(output, index=False)
 
     have = df["latitude"].notna().sum()
