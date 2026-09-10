@@ -85,6 +85,10 @@ TARGETS: List[tuple[str, str]] = [
     ("nrw_secondary",       "data_nrw/final/nrw_secondary_school_master_table_final_with_embeddings.parquet"),
     ("stuttgart_primary",   "data_stuttgart/final/stuttgart_primary_school_master_table_final_with_embeddings.parquet"),
     ("stuttgart_secondary", "data_stuttgart/final/stuttgart_secondary_school_master_table_final_with_embeddings.parquet"),
+    # International. Same model and dimensionality, so these share the German
+    # vector space; similarity is still computed within each target.
+    ("nl",                  "data_nl/final/nl_school_master_table_final.parquet"),
+    ("nl_primary",          "data_nl_po/final/nl_po_school_master_table_final.parquet"),
 ]
 
 
@@ -99,10 +103,11 @@ def _text_for_row(row: pd.Series) -> str:
             val = row[col]
             if pd.notna(val) and str(val).strip() and str(val).lower() not in ("nan", "none", "null"):
                 return str(val).strip()
-    # Final fallback — cheap synthesized blurb
-    name = row.get("schulname") or ""
+    # Final fallback — cheap synthesized blurb. Accept the core-schema names
+    # too, or international rows fall back to an empty string and embed noise.
+    name = row.get("schulname") or row.get("school_name") or ""
     stype = row.get("school_type") or row.get("schulart") or ""
-    city = row.get("stadt") or ""
+    city = row.get("stadt") or row.get("city") or row.get("district") or ""
     return f"{name} — {stype} in {city}".strip(" —")
 
 
