@@ -1,5 +1,30 @@
 # SchoolNossa Development Journal
 
+## 2026-09-10 (afternoon) — NL refresh, primary pipeline, and three cached-failure bugs
+
+**What:** Acted on the answers to the open questions: refreshed DUO, brought primary (basisonderwijs) into scope, filled descriptions, added the private-school roster, and drafted the Scholen op de Kaart licence request. Branch `feature/nl-pipeline-improvements`.
+
+**The recurring bug of this session — a failure cached in the shape of a success.** Three instances, all of which reported healthy coverage:
+- **NL traffic** (morning): fell back to a coordinate-less source, wrote nothing, logged `[OK] OK`.
+- **GB crime**: `data.police.uk` rate-limits hard; 8 unthrottled threads draw HTTP 429 for ~68% of requests. `except Exception: crimes = []` swallowed the 429 and **wrote the empty result to disk**. All 5,144 cached files were byte-identical `{"_total": 0}`, so no re-run could ever repair it, and `crime_data_source`/`_year` were stamped unconditionally — coverage read 100% with every value zero.
+- **NL descriptions**: Pass 0/1 guarded on key *presence*, so a generation that failed and was stored as `""` read as cached success. 246 schools had a Dutch description and an empty English one, skipped in milliseconds by every re-run.
+
+The lesson for QA: **check distinct values, not null rates.** All three passed a coverage check. `_cached_ok()` now guards on value, and the traffic and crime enrichers raise rather than write a constant.
+
+**DUO refresh — we were a year *newer* than labelled, not staler.** "Leerlingen 2025" carries peildatum 1 oktober 2025, i.e. school year 2025/26, but the scraper labelled it 2024_25. Labels now derive from each file's own peildatum year and `build_urls()` probes forward for a newer vintage rather than pinning a filename (how Munich sat 19 months stale). NL is now `data_school_year` 2025_26, ahead of Berlin's 2024_25 — exactly what the stable-field stamps exist to express.
+
+**Teacher counts were not teachers.** DUO's staff sheet counts all personnel — directie, support, trainees — at *instelling* level while students are per *vestiging*, so every location of a scholengemeenschap carried the institution's full headcount (Het Stedelijk: 498 at each of 6 locations) and `student_teacher_ratio` had a median of **2.3**. Now filtered to FUNCTIEGROEP "Onderwijsgevend personeel" and apportioned across locations by student share: median **10.7** headcount, 13.8 per FTE at the observed 0.774 average — consistent with the published national figure.
+
+**Chain order preferred a stale paid file.** Demographics and the finalizer selected `nl_schools_with_pois.csv` (by column count — 81 POI columns beat everything), which is only refreshed for new schools and so is routinely older and shorter. That silently reverted each run to the previous row count. The free chain is now linear and POI is merged back by column instead.
+
+**Primary (basisonderwijs) — new pipeline.** 6,060 regular primary schools (TYPE_PO=BO) with enrollment, apportioned teaching staff and contacts; ratio median 12.8 headcount ≈ 16.6 per FTE. SBO/SO/VSO excluded — separate systems with their own admission routes, not primary schools with a flag. Rather than duplicate seven enrichment scripts, `NL_DATA_DIR` selects the data root and `NL_SECTOR` the Inspectorate sector; location-keyed caches (BRON accidents, the 250MB GTFS feed, CBS tables) stay under `data_nl` so both levels share one download.
+
+**Geocoding moved to PDOK Locatieserver** (official BAG-backed, no 1 req/s cap, returns RD New alongside WGS84 — which the traffic enricher works in natively). Nominatim stays as fallback. 1,629 secondary in ~5 minutes at 100%; it is what makes 6k primary schools tractable at all.
+
+**Also:** private (particulier/B3) roster — 35 VO schools that have no BRIN and appear nowhere in DUO, added with stable synthetic ids (`NLPRIV_<slug>`) and city-centroid coordinates, flagged as such. `area_foreign_born_pct` derived from CBS herkomstland columns (the old matcher looked for "niet-westers", which CBS retired) and deliberately **not** mapped into `migration_background_pct`, which carries Berlin's pupil-level figure — an area statistic there would repeat the unscaled-crime category error. A `--limit` run used to write its sampled head back over the full final table; it now writes a sample file.
+
+**Still open for NL:** POI for the 6,060 primary schools is **~$932** at the observed rate ($0.154/school, 4.8 Places calls each) — deliberately not spent, since the earlier go-ahead was given in a ~$250 context; Overpass/OSM is the free alternative if lower POI quality is acceptable. Also: embeddings + similar-schools (needs the Supabase table decision, not just a pipeline run); CBS achterstandsscore for PO (the VO edition URLs would not join); tuition for the 35 private schools; enrollment pressure (Amsterdam OSVO, PDF-only); Technasium/Cultuurprofiel/Topsport lists (two need a headless browser, ~85 schools between them).
+
 ## 2026-09-10 — NL retrospective fixes + international schema alignment
 
 **What:** Audited the April NL pipeline before extending it, fixed what the audit found, aligned the international schema with the August stable-fields refresh, and filled four gaps from free national sources. Branch `feature/nl-pipeline-improvements`. No paid API calls (POI/descriptions/embeddings untouched; verified by the merge-update path).
