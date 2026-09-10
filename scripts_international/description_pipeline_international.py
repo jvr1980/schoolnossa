@@ -726,8 +726,17 @@ def run_description_pipeline(country_code: str, passes: set = None,
     # Apply to DataFrame
     df = apply_cache_to_dataframe(df, cache, passes, id_col=id_col)
 
-    # Save
-    output_path = csv_path  # Overwrite the input file
+    # Save. NEVER overwrite the full table from a --limit run: df holds only the
+    # sampled head, so writing it back truncates the deliverable to N rows. The
+    # cache is the real output of this pipeline anyway — the finalizer reads it
+    # back — so a limited run writes a throwaway sample file instead.
+    if limit:
+        output_path = csv_path.with_name(csv_path.stem + f".limit{limit}_sample.csv")
+        logger.warning(f"--limit run: writing sample to {output_path.name}, "
+                       f"leaving {csv_path.name} untouched "
+                       f"(cache updated as normal)")
+    else:
+        output_path = csv_path  # Overwrite the input file
     df.to_csv(output_path, index=False)
     logger.info(f"Saved: {output_path}")
 
