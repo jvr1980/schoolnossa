@@ -35,9 +35,15 @@ import pandas as pd
 import requests
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data_nl"
+# Data dir is overridable so the primary (basisonderwijs) pipeline can reuse
+# these enrichers unchanged: NL_DATA_DIR=data_nl_po. Caches keyed by location
+# rather than by school (accidents, GTFS, CBS tables) still live under data_nl,
+# so both levels share one download.
+import os
+DATA_DIR = PROJECT_ROOT / os.environ.get("NL_DATA_DIR", "data_nl")
+SHARED_CACHE_DIR = PROJECT_ROOT / "data_nl" / "cache"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
-CACHE_DIR = DATA_DIR / "cache"
+CACHE_DIR = SHARED_CACHE_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -83,8 +89,11 @@ def load_inspectorate() -> pd.DataFrame:
     df = pd.read_excel(path, engine="odf", dtype=str)
     logger.info(f"  {len(df)} rows, {len(df.columns)} columns")
 
-    vo = df[df["Sector"].astype(str).str.upper().eq("VO")].copy()
-    logger.info(f"  VO rows: {len(vo)}")
+    # The workbook covers PO, SO and VO. NL_SECTOR selects which, so the
+    # primary pipeline reuses this unchanged (NL_SECTOR=PO).
+    sector = os.environ.get("NL_SECTOR", "VO").upper()
+    vo = df[df["Sector"].astype(str).str.upper().eq(sector)].copy()
+    logger.info(f"  {sector} rows: {len(vo)}")
 
     vo["_brin6"] = (vo["BRIN"].astype(str).str.strip().str.upper()
                     + vo["Vestiging"].astype(str).str.strip().str.zfill(2))
@@ -107,6 +116,14 @@ def load_inspectorate() -> pd.DataFrame:
 def load_cbs_ses() -> pd.DataFrame:
     """Per-vestiging achterstandsscore (zonder drempel) + pupil counts."""
     logger.info("CBS achterstandsscores...")
+    sector = os.environ.get("NL_SECTOR", "VO").upper()
+    if sector != "VO":
+        # CBS publishes the achterstandsscore per sector; only the VO edition
+        # URLs are pinned here. Skip rather than join a VO table onto PO ids.
+        logger.info(f"  Sector {sector}: no CBS achterstandsscore source wired "
+                    f"yet — skipping (VO edition would not join)")
+        return pd.DataFrame(columns=["_brin6", "ses_score_raw", "ses_pupils"])
+
     frames = []
     for url, label in ((CBS_SES_URL, "vhv"), (CBS_SES_PRO_URL, "pro")):
         try:
