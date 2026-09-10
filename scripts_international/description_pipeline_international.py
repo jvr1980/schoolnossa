@@ -72,6 +72,7 @@ PASS2_COLUMN_MAP_INTERNATIONAL = {
 # Country-specific school type labels for prompts
 SCHOOL_TYPE_LABELS = {
     "NL": "secondary schools (voortgezet onderwijs)",
+    "NL_PO": "primary schools (basisonderwijs, ages 4-12)",
     "GB": "secondary schools",
     "FR": "secondary schools (lycées and collèges)",
     "IT": "secondary schools (scuole superiori)",
@@ -220,6 +221,21 @@ def call_gemini(system: str, user: str, api_key: str,
     return raw
 
 
+# Measured API usage, so a --limit sample gives a real per-school cost rather
+# than an estimate. Grounded search is billed per request on top of tokens.
+USAGE = {"prompt_tokens": 0, "output_tokens": 0, "calls": 0, "grounded_calls": 0}
+
+
+def _record_usage(result: dict, grounded: bool) -> None:
+    meta = result.get("usageMetadata", {}) or {}
+    USAGE["prompt_tokens"] += int(meta.get("promptTokenCount", 0) or 0)
+    USAGE["output_tokens"] += int(
+        meta.get("candidatesTokenCount", meta.get("totalTokenCount", 0)) or 0)
+    USAGE["calls"] += 1
+    if grounded:
+        USAGE["grounded_calls"] += 1
+
+
 def call_gemini_with_search(prompt: str, api_key: str,
                             model: str = "gemini-2.5-flash",
                             delay: float = 1.0) -> tuple:
@@ -243,6 +259,7 @@ def call_gemini_with_search(prompt: str, api_key: str,
         result = json.loads(resp.read().decode("utf-8"))
 
     time.sleep(delay)
+    _record_usage(result, grounded=True)
 
     # Extract text content
     content = result["candidates"][0]["content"]["parts"][0]["text"]
@@ -754,6 +771,22 @@ def run_description_pipeline(country_code: str, passes: set = None,
         output_path = csv_path  # Overwrite the input file
     df.to_csv(output_path, index=False)
     logger.info(f"Saved: {output_path}")
+
+    # Measured cost of this run, and the extrapolation to the full set.
+    if USAGE["calls"]:
+        processed_n = max(processed, 1)
+        logger.info(f"\n{'='*60}")
+        logger.info("API USAGE (measured)")
+        logger.info(f"{'='*60}")
+        logger.info(f"  schools processed : {processed_n}")
+        logger.info(f"  API calls         : {USAGE['calls']} "
+                    f"({USAGE['grounded_calls']} grounded)")
+        logger.info(f"  prompt tokens     : {USAGE['prompt_tokens']:,}")
+        logger.info(f"  output tokens     : {USAGE['output_tokens']:,}")
+        logger.info(f"  per school        : {USAGE['calls']/processed_n:.1f} calls, "
+                    f"{USAGE['prompt_tokens']/processed_n:,.0f} in / "
+                    f"{USAGE['output_tokens']/processed_n:,.0f} out tokens, "
+                    f"{USAGE['grounded_calls']/processed_n:.1f} grounded")
 
     # Summary
     logger.info(f"\n{'='*60}")

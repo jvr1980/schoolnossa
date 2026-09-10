@@ -156,6 +156,33 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     output["website"] = df["website"]
     output["metadata_source"] = "DUO Open Onderwijsdata"
 
+    # === ADMIN HIERARCHY (country -> region -> gemeente) ===
+    # DUO ships gemeente and plaats in caps ("S GRAVENHAGE"), which is not
+    # presentable, so store a display-cased form. Dutch name particles stay
+    # lowercase and the 's-Gravenhage / 't forms keep their leading apostrophe.
+    _PARTICLES = {"van", "de", "den", "der", "des", "het", "op", "aan", "bij",
+                  "in", "ter", "te", "tot", "uit", "en"}
+
+    def _display_place(value):
+        raw = str(value or "").strip()
+        if not raw:
+            return None
+        words = []
+        for i, word in enumerate(raw.lower().split()):
+            if word in ("s", "t") and i == 0:
+                words.append(f"'{word}-")   # S GRAVENHAGE -> 's-Gravenhage
+                continue
+            piece = "-".join(w.capitalize() for w in word.split("-"))
+            if i > 0 and word in _PARTICLES:
+                piece = word
+            words.append(piece)
+        out = " ".join(words).replace("' ", "'").replace("- ", "-")
+        return out[0].lower() + out[1:] if out.startswith("'") else out
+
+    output["geo_country"] = "NL"
+    output["geo_region"] = df["province"].astype(str).str.strip()
+    output["geo_municipality"] = df["gemeente_name"].map(_display_place)
+
     # === GEO ===
     output["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
     output["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")

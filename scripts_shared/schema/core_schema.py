@@ -59,6 +59,15 @@ IDENTITY_COLUMNS = [
 GEO_COLUMNS = [
     "latitude",
     "longitude",
+    # Explicit administrative hierarchy for the country -> region -> municipality
+    # UI chain. These exist because the Berlin-derived names are ambiguous across
+    # countries: `bezirk` is a *sub-municipal* district in Berlin (Mitte) but a
+    # province in NL (Drenthe), and `ortsteil` is a neighbourhood vs a gemeente.
+    # Binding the UI to those would mean per-country logic; these three always
+    # mean the same thing.
+    "geo_country",        # ISO code — NL, DE, ...
+    "geo_region",         # Province (NL) / Bundesland (DE)
+    "geo_municipality",   # Gemeente (NL) / Stadt (DE), display-cased
 ]
 
 # =============================================================================

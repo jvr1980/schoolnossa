@@ -249,6 +249,8 @@ COUNTRY_EXTENSIONS = {
 COUNTRY_NAMES = {
     "DE": "Germany",
     "NL": "Netherlands",
+    # Primary variant: same country, separate data dir (data_nl_po).
+    "NL_PO": "Netherlands",
     "GB": "United Kingdom",
     "FR": "France",
     "IT": "Italy",
@@ -258,6 +260,7 @@ COUNTRY_NAMES = {
 COUNTRY_LANGUAGES = {
     "DE": "de",
     "NL": "nl",
+    "NL_PO": "nl",
     "GB": "en",
     "FR": "fr",
     "IT": "it",
