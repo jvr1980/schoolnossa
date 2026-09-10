@@ -213,9 +213,25 @@ def compute_similar(df: pd.DataFrame, top_n: int = 3) -> pd.DataFrame:
         logger.warning("  no schulnummer/school_id column — skipping similar-school write-back")
         return df
 
+    # Suppress other locations of the SAME institution. Dutch schools are
+    # registered per vestiging, so a scholengemeenschap appears many times with
+    # one shared name and near-identical descriptions — 66% of NL top matches
+    # were another campus of the same school, which is useless to a parent
+    # comparing options. German tables have one row per school and no grouping
+    # column, so this is a no-op there.
+    group_col = next((c for c in ("nl_brin_code", "brin_code") if c in df.columns), None)
+    if group_col is not None:
+        groups = np.asarray([str(df.at[idx, group_col]) for idx in valid_idx])
+        logger.info(f"  suppressing same-{group_col} matches "
+                    f"({len(set(groups))} institutions across {len(valid_idx)} rows)")
+    else:
+        groups = None
+
     for i, idx in enumerate(valid_idx):
         scores = sim[i].copy()
         scores[i] = -1
+        if groups is not None:
+            scores[groups == groups[i]] = -1
         top = np.argsort(scores)[-top_n:][::-1]
         for rank, j in enumerate(top):
             neighbor_idx = valid_idx[j]
