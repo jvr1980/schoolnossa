@@ -56,6 +56,8 @@ USER_AGENT = "SchoolNossa/1.0 (school comparison platform; contact@schoolnossa.c
 
 # Netherlands bounding box (S, W, N, E) — includes the Wadden islands.
 NL_BBOX = (50.70, 3.20, 53.60, 7.25)
+# Dense categories time out as one national query; 4x4 tiles serve reliably.
+TILE_ROWS, TILE_COLS = 4, 4
 
 # Berlin POI category -> the OSM selectors that populate it.
 OSM_CATEGORIES = {
@@ -76,24 +78,55 @@ NEAREST_N = 3
 EARTH_R = 6371000.0
 
 
-def _overpass_query(selectors: list[str], timeout: int = 600) -> list[dict]:
+def _tiles(rows: int = TILE_ROWS, cols: int = TILE_COLS) -> list[tuple]:
+    """Split the national bbox into a grid of smaller query areas."""
     s, w, n, e = NL_BBOX
-    body = "".join(f"{sel}({s},{w},{n},{e});" for sel in selectors)
+    dlat = (n - s) / rows
+    dlon = (e - w) / cols
+    return [(s + r * dlat, w + c * dlon, s + (r + 1) * dlat, w + (c + 1) * dlon)
+            for r in range(rows) for c in range(cols)]
+
+
+def _overpass_query_bbox(selectors: list[str], bbox: tuple,
+                         timeout: int = 180) -> list[dict]:
+    s, w, n, e = bbox
+    body = "".join(f"{sel}({s:.4f},{w:.4f},{n:.4f},{e:.4f});" for sel in selectors)
     query = f"[out:json][timeout:{timeout}];({body});out center tags;"
 
     last_error = None
-    for endpoint in OVERPASS_ENDPOINTS:
-        try:
-            logger.info(f"    querying {endpoint.split('/')[2]}...")
-            resp = requests.post(endpoint, data={"data": query},
-                                 headers={"User-Agent": USER_AGENT}, timeout=timeout + 60)
-            resp.raise_for_status()
-            return resp.json().get("elements", [])
-        except Exception as exc:  # try the mirror before giving up
-            last_error = exc
-            logger.warning(f"    {endpoint.split('/')[2]} failed: {exc}")
-            time.sleep(5)
-    raise RuntimeError(f"All Overpass endpoints failed: {last_error}")
+    for attempt in range(2):
+        for endpoint in OVERPASS_ENDPOINTS:
+            try:
+                resp = requests.post(endpoint, data={"data": query},
+                                     headers={"User-Agent": USER_AGENT},
+                                     timeout=timeout + 60)
+                resp.raise_for_status()
+                return resp.json().get("elements", [])
+            except Exception as exc:
+                last_error = exc
+                time.sleep(4)
+    raise RuntimeError(f"All Overpass endpoints failed for bbox {bbox}: {last_error}")
+
+
+def _overpass_query(selectors: list[str], timeout: int = 180) -> list[dict]:
+    """Fetch a category nationwide by tiling.
+
+    A single nationwide query for a dense category (restaurants, cafes) times
+    out on every public endpoint — both overpass-api.de and kumi.systems
+    return 504. Tiling keeps each request small enough to serve, at the cost of
+    a few more round trips. Elements are de-duplicated by OSM id because a way
+    straddling a tile edge is returned by both tiles.
+    """
+    seen: dict[tuple, dict] = {}
+    tiles = _tiles()
+    for i, bbox in enumerate(tiles, 1):
+        elements = _overpass_query_bbox(selectors, bbox, timeout)
+        for el in elements:
+            seen[(el.get("type"), el.get("id"))] = el
+        logger.info(f"    tile {i}/{len(tiles)}: +{len(elements)} "
+                    f"(total {len(seen)})")
+        time.sleep(1.5)  # courtesy gap between tiles
+    return list(seen.values())
 
 
 def _address_from_tags(tags: dict) -> str:
