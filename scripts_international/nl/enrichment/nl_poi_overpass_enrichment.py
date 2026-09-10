@@ -108,7 +108,8 @@ def _overpass_query_bbox(selectors: list[str], bbox: tuple,
     raise RuntimeError(f"All Overpass endpoints failed for bbox {bbox}: {last_error}")
 
 
-def _overpass_query(selectors: list[str], timeout: int = 180) -> list[dict]:
+def _overpass_query(selectors: list[str], timeout: int = 180,
+                    category: str = "category") -> list[dict]:
     """Fetch a category nationwide by tiling.
 
     A single nationwide query for a dense category (restaurants, cafes) times
@@ -116,16 +117,29 @@ def _overpass_query(selectors: list[str], timeout: int = 180) -> list[dict]:
     return 504. Tiling keeps each request small enough to serve, at the cost of
     a few more round trips. Elements are de-duplicated by OSM id because a way
     straddling a tile edge is returned by both tiles.
+
+    Each tile is cached on its own: the dense Randstad tiles take minutes, and
+    without this a failure on the last tile would throw away every tile already
+    paid for and re-request the lot from a donated service.
     """
     seen: dict[tuple, dict] = {}
     tiles = _tiles()
+    tile_dir = SHARED_CACHE_DIR / "overpass_tiles"
+    tile_dir.mkdir(parents=True, exist_ok=True)
+
     for i, bbox in enumerate(tiles, 1):
-        elements = _overpass_query_bbox(selectors, bbox, timeout)
+        tile_cache = tile_dir / f"{category}_{i:02d}.json"
+        if tile_cache.exists() and tile_cache.stat().st_size > 1:
+            elements = json.loads(tile_cache.read_text())
+            logger.info(f"    tile {i}/{len(tiles)}: {len(elements)} from cache")
+        else:
+            elements = _overpass_query_bbox(selectors, bbox, timeout)
+            tile_cache.write_text(json.dumps(elements))
+            logger.info(f"    tile {i}/{len(tiles)}: +{len(elements)} "
+                        f"(total {len(seen) + len(elements)})")
+            time.sleep(1.5)  # courtesy gap between live requests
         for el in elements:
             seen[(el.get("type"), el.get("id"))] = el
-        logger.info(f"    tile {i}/{len(tiles)}: +{len(elements)} "
-                    f"(total {len(seen)})")
-        time.sleep(1.5)  # courtesy gap between tiles
     return list(seen.values())
 
 
@@ -147,7 +161,7 @@ def fetch_category(name: str, selectors: list[str]) -> pd.DataFrame:
         logger.info(f"  {name}: {len(elements)} from cache")
     else:
         logger.info(f"  {name}: downloading from Overpass...")
-        elements = _overpass_query(selectors)
+        elements = _overpass_query(selectors, category=name)
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_text(json.dumps(elements))
         logger.info(f"  {name}: {len(elements)} elements")
