@@ -98,6 +98,22 @@ def run_phase_9():
     main()
 
 
+def run_phase_10():
+    """Phase 10: Merge a refreshed free layer into the final table.
+
+    Phase 9 rebuilds the final table from scratch, which means re-running the
+    paid phases (6 POI, 8 LLM descriptions/embeddings). When only a free layer
+    has been refreshed — e.g. phase 5 after the April all-zero crime bug — this
+    updates just those columns in place on school_id and leaves the paid ones
+    untouched. Free refresh end to end: --phases 5,10
+    """
+    from scripts_international.gb.processing.gb_merge_enrichment_update import merge_update
+    merge_update("gb_schools_with_crime.csv")
+
+    from scripts_international.international_to_berlin_schema import transform_file
+    transform_file("GB")
+
+
 AVAILABLE_PHASES = {
     1: ("GIAS + DfE + IMD Download", run_phase_1),
     3: ("Traffic Enrichment (STATS19)", run_phase_3),
@@ -106,6 +122,7 @@ AVAILABLE_PHASES = {
     6: ("POI Enrichment (Google Places)", run_phase_6),
     8: ("Descriptions + Data Extraction (gpt-5.3-mini)", run_phase_8),
     9: ("Schema Transform + Berlin Output", run_phase_9),
+    10: ("Merge Free-Layer Refresh (no paid re-run)", run_phase_10),
 }
 
 

@@ -173,14 +173,23 @@ def transform_to_berlin(df: pd.DataFrame, country_code: str) -> pd.DataFrame:
     # --- Stable (year-agnostic) fields, as in every German mapper -----------
     from scripts_shared.schema.stable_fields import add_stable_fields
     final = add_stable_fields(final)
-    # add_stable_fields stamps data_school_year only from year-suffixed columns
-    # it recognises. When the reference carries no column for this vintage the
-    # value still reached schueler_current, so stamp the vintage explicitly.
-    if "schueler_current" in final.columns:
+
+    # add_stable_fields walks the Berlin year-suffixed columns newest-first. When
+    # the country's vintage has no column in the Berlin reference, the newest
+    # column it can see is the one holding students_previous — so it would report
+    # last year's figure as current, stamped with last year's label. The country
+    # frame is authoritative about its own vintage, so override from it.
+    for core_col, stable_col in (("students_current", "schueler_current"),
+                                 ("teachers_current", "lehrer_current")):
+        if core_col in df.columns:
+            final[stable_col] = pd.to_numeric(df[core_col], errors="coerce").values
+    if "students_current" in df.columns:
+        known = pd.to_numeric(df["students_current"], errors="coerce").notna().values
         if "data_school_year" not in final.columns:
             final["data_school_year"] = None
-        needs_stamp = final["schueler_current"].notna() & final["data_school_year"].isna()
-        final.loc[needs_stamp, "data_school_year"] = vintage
+        final["data_school_year"] = final["data_school_year"].astype("object")
+        final.loc[known, "data_school_year"] = vintage
+        final.loc[~known, "data_school_year"] = None
 
     # Stable fields are additive; the canonical block keeps its order.
     tail = [c for c in final.columns if c not in berlin_columns]

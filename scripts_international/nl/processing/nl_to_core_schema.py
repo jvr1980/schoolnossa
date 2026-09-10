@@ -205,6 +205,9 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     output["nl_denomination"] = df["denomination"]
     output["nl_brin_code"] = df["brin_code"]
     output["nl_gemeente_code"] = df["gemeente_code"]
+    # DUO ships the schoolbestuur as BEVOEGD GEZAG NUMMER -> school_board_id.
+    if "school_board_id" in df.columns:
+        output["nl_school_board"] = df["school_board_id"]
 
     # === DESCRIPTIONS from cache ===
     import json
@@ -247,7 +250,13 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     # Transit, crime, demographics, traffic columns have identical names in intermediate
     # and core schema — just copy them directly if not already set.
     passthrough_prefixes = ["transit_", "crime_", "traffic_", "area_", "deprivation_",
-                            "poi_", "description", "woz_", "enrollment_"]
+                            "poi_", "description", "woz_", "enrollment_",
+                            # Inspectorate verdicts, NL-extension fields and the
+                            # student vintage stamp all arrive from enrichment
+                            # under their final names; without these prefixes
+                            # they were silently dropped at output[full_schema].
+                            "school_quality_", "nl_", "students_data_year",
+                            "academic_", "migration_"]
     copied = 0
     for col in full_schema:
         if col in output.columns and output[col].notna().any():

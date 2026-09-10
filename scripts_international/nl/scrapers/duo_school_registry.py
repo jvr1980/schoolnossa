@@ -22,6 +22,7 @@ Usage:
 
 import argparse
 import logging
+import re
 import sys
 from io import StringIO
 from pathlib import Path
@@ -48,16 +49,81 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # DUO URLs
+#
+# Vintage convention — verified against the DUO download table at
+# duo.nl/open_onderwijsdata/voortgezet-onderwijs/aantal-leerlingen/:
+# "Leerlingen <YYYY>" carries **peildatum 1 oktober YYYY**, i.e. the count taken
+# at the start of school year YYYY/YYYY+1. So the 2025 file is SY 2025_26, NOT
+# 2024_25 — it was mislabelled here until Sept 2026, which understated the
+# asset's freshness by a year. Exam files are named with an explicit range
+# (2024-2025 = SY 2024_25) and were already correct; exams necessarily lag
+# enrollment by one year because they report a completed school year.
 DUO_BASE = "https://duo.nl/open_onderwijsdata/images"
-URLS = {
-    "addresses": f"{DUO_BASE}/02.-alle-vestigingen-vo.csv",
-    "enrollment_2025": f"{DUO_BASE}/01.-leerlingen-vo-per-vestiging-naar-onderwijstype-2025.csv",
-    "enrollment_2024": f"{DUO_BASE}/01.-leerlingen-vo-per-vestiging-naar-onderwijstype-2024.csv",
-    "exams_2025": f"{DUO_BASE}/geslaagden-gezakten-en-cijfers-2024-2025.csv",
-    "exams_2024": f"{DUO_BASE}/geslaagden-gezakten-en-cijfers-2023-2024.csv",
-    "exams_5yr": f"{DUO_BASE}/examenkandidaten-en-geslaagden-2020-2025.csv",
-    "staff": f"{DUO_BASE}/01.-onderwijspersoneel-vo-in-personen-2011-2025.xlsx",
-}
+
+# Newest enrollment peildatum year available. Resolved at runtime by
+# resolve_latest_enrollment_year(); this is the floor, not a pin — a hardcoded
+# snapshot URL is how the Munich scraper silently sat 19 months stale
+# (docs/DATA_REFRESH_PLAN_2026.md section 4).
+ENROLLMENT_YEAR_FLOOR = 2025
+
+# Addresses: peildatum-dated, refreshed monthly. The CKAN resource id is stable
+# across refreshes; the duo.nl/images mirror is semicolon-delimited and unquoted.
+ADDRESSES_URL = ("https://onderwijsdata.duo.nl/dataset/"
+                 "c8e6ffdd-cc2b-44ee-880f-0ff03f72e868/resource/"
+                 "5187f8d5-ff9c-4284-8e06-4311f0354956/download/vestigingenvo.csv")
+
+
+def resolve_latest_enrollment_year(floor: int = ENROLLMENT_YEAR_FLOOR,
+                                   lookahead: int = 2) -> int:
+    """Probe forward from the known floor for a newer DUO enrollment file."""
+    latest = floor
+    for year in range(floor + 1, floor + 1 + lookahead):
+        url = f"{DUO_BASE}/01.-leerlingen-vo-per-vestiging-naar-onderwijstype-{year}.csv"
+        try:
+            resp = requests.head(url, headers=HEADERS, timeout=30, allow_redirects=False)
+        except requests.RequestException:
+            break
+        if resp.status_code != 200:
+            break
+        latest = year
+    if latest != floor:
+        logger.info(f"  Newer DUO enrollment vintage found: {latest}")
+    return latest
+
+
+def build_urls(latest_year: int = None) -> dict:
+    """URL set for the newest enrollment vintage and the year before it."""
+    latest = latest_year or resolve_latest_enrollment_year()
+    prev = latest - 1
+    return {
+        "addresses": ADDRESSES_URL,
+        f"enrollment_{latest}": (
+            f"{DUO_BASE}/01.-leerlingen-vo-per-vestiging-naar-onderwijstype-{latest}.csv"),
+        f"enrollment_{prev}": (
+            f"{DUO_BASE}/01.-leerlingen-vo-per-vestiging-naar-onderwijstype-{prev}.csv"),
+        # Exams report the last COMPLETED school year, so they trail by one.
+        "exams_current": (
+            f"{DUO_BASE}/geslaagden-gezakten-en-cijfers-{prev}-{latest}.csv"),
+        "exams_previous": (
+            f"{DUO_BASE}/geslaagden-gezakten-en-cijfers-{prev - 1}-{prev}.csv"),
+        "exams_5yr": f"{DUO_BASE}/examenkandidaten-en-geslaagden-{latest - 5}-{latest}.csv",
+        "staff": f"{DUO_BASE}/01.-onderwijspersoneel-vo-in-personen-2011-{latest}.xlsx",
+    }
+
+
+def school_year_label(peildatum_year: int) -> str:
+    """Peildatum year -> school-year label, e.g. 2025 -> '2025_26'."""
+    return f"{peildatum_year}_{str(peildatum_year + 1)[-2:]}"
+
+
+def _newest(df, prefix: str):
+    """Newest `<prefix><year>_<yy>` column present, or None."""
+    hits = sorted(c for c in df.columns
+                  if re.match(rf"^{re.escape(prefix)}20\d\d_\d\d$", c))
+    return hits[-1] if hits else None
+
+
+URLS = build_urls(ENROLLMENT_YEAR_FLOOR)
 
 # Request headers
 HEADERS = {
@@ -98,10 +164,27 @@ def download_all(force: bool = False):
     return files
 
 
+def _sniff_delimiter(path: Path) -> str:
+    """DUO serves the same table two ways: the duo.nl/images mirror is
+    semicolon-delimited and unquoted, the CKAN resource is comma-delimited and
+    quoted. Sniff rather than pin, or a mirror switch silently yields a
+    single-column frame and every rename misses."""
+    for encoding in ("utf-8", "latin1"):
+        try:
+            with open(path, encoding=encoding) as fh:
+                header = fh.readline()
+            break
+        except UnicodeDecodeError:
+            continue
+    else:
+        return ";"
+    return ";" if header.count(";") >= header.count(",") else ","
+
+
 def parse_duo_csv(path: Path, **kwargs) -> pd.DataFrame:
-    """Parse a DUO semicolon-delimited CSV with Dutch conventions."""
+    """Parse a DUO CSV with Dutch conventions."""
     default_kwargs = {
-        "sep": ";",
+        "sep": _sniff_delimiter(path),
         "encoding": "utf-8",
         "low_memory": False,
         "dtype": str,  # Read everything as string first, convert later
@@ -198,12 +281,18 @@ def load_enrollment(files: dict) -> pd.DataFrame:
     """Parse enrollment data — aggregate total students per vestiging."""
     logger.info("\nParsing enrollment data...")
 
+    # Label from the file's own peildatum year rather than a fixed pair, so a
+    # newer DUO vintage cannot land in the previous year's column name.
+    enrollment_keys = sorted(
+        (k for k in files if k.startswith("enrollment_")), reverse=True)
     results = []
-    for key, year_label in [("enrollment_2025", "2024_25"), ("enrollment_2024", "2023_24")]:
+    for key in enrollment_keys:
+        year_label = school_year_label(int(key.rsplit("_", 1)[1]))
         path = files.get(key)
         if path is None or not path.exists():
             logger.warning(f"  {key} not found, skipping")
             continue
+        logger.info(f"  {key} -> school year {year_label}")
 
         df = parse_duo_csv(path)
         logger.info(f"  {key}: {len(df)} rows")
@@ -248,7 +337,13 @@ def load_exams(files: dict) -> pd.DataFrame:
     logger.info("\nParsing exam results...")
 
     results = []
-    for key, year_label in [("exams_2025", "2024_25"), ("exams_2024", "2023_24")]:
+    # Exam files report the last completed school year, one behind enrollment.
+    latest_enrollment = max(
+        (int(k.rsplit("_", 1)[1]) for k in files if k.startswith("enrollment_")),
+        default=ENROLLMENT_YEAR_FLOOR)
+    exam_keys = [("exams_current", school_year_label(latest_enrollment - 1)),
+                 ("exams_previous", school_year_label(latest_enrollment - 2))]
+    for key, year_label in exam_keys:
         path = files.get(key)
         if path is None or not path.exists():
             logger.warning(f"  {key} not found, skipping")
@@ -322,28 +417,41 @@ def load_staff(files: dict) -> pd.DataFrame:
         logger.warning("  Staff file not found")
         return pd.DataFrame()
 
-    # Read the institution-level sheet
+    # Use the per-FUNCTIEGROEP sheet so we can isolate actual teaching staff.
+    # The plain institution sheet counts ALL personnel — directie, support staff
+    # (OOP/OBP) and trainees included — which inflated "teachers" enough to make
+    # student_teacher_ratio meaningless (median 2.3 against a real NL VO figure
+    # nearer 15-20).
+    sheet = "owtype-best-instelling-functie"
     try:
-        df = pd.read_excel(path, sheet_name="owtype-best-instelling", dtype=str)
+        df = pd.read_excel(path, sheet_name=sheet, dtype=str)
     except Exception as e:
-        logger.warning(f"  Failed to read staff Excel: {e}")
-        return pd.DataFrame()
+        logger.warning(f"  Failed to read staff sheet {sheet}: {e}")
+        try:
+            df = pd.read_excel(path, sheet_name="owtype-best-instelling", dtype=str)
+        except Exception as e2:
+            logger.warning(f"  Failed to read staff Excel: {e2}")
+            return pd.DataFrame()
 
     logger.info(f"  Raw staff: {len(df)} rows, {len(df.columns)} columns")
 
-    # Get most recent year columns
-    year_cols = {}
-    for col in df.columns:
-        if "PERSONEN 2025" in col.upper() or "PERSONEN 2024" in col.upper():
-            year_cols[col] = col
+    if "FUNCTIEGROEP" in df.columns:
+        before = len(df)
+        teaching = df["FUNCTIEGROEP"].astype(str).str.strip().str.lower()
+        # "Onderwijsgevend personeel" = teaching staff; LIO are trainee teachers
+        # and are counted separately by DUO, so they stay out of the headline.
+        df = df[teaching.eq("onderwijsgevend personeel")]
+        logger.info(f"  Teaching staff rows: {len(df)}/{before} "
+                    f"(excluded directie, OOP/OBP, LIO)")
 
-    # Find the total headcount column for 2025 and 2024
     staff_result = pd.DataFrame()
     staff_result["brin_code"] = df["INSTELLINGSCODE"] if "INSTELLINGSCODE" in df.columns else None
 
     if staff_result["brin_code"] is None:
         return pd.DataFrame()
 
+    # Values are suppressed as '*' where the count is small enough to identify
+    # individuals; dutch_to_int yields NaN for those rather than 0.
     for year_suffix, label in [("2025", "teachers_current"), ("2024", "teachers_previous")]:
         col_name = f"PERSONEN {year_suffix}"
         if col_name in df.columns:
@@ -377,6 +485,47 @@ def load_staff(files: dict) -> pd.DataFrame:
     return staff_result
 
 
+def apportion_staff_to_vestigingen(master: pd.DataFrame) -> pd.DataFrame:
+    """Split institution-level staff counts across a BRIN's vestigingen.
+
+    DUO publishes staff per *instelling* (BRIN4) while students are per
+    *vestiging* (BRIN6). Merging on BRIN gives every location of a
+    scholengemeenschap the institution's full staff count — Het Stedelijk's 6
+    locations each showed the same 498 — which makes any per-location ratio
+    meaningless. Split by each location's share of the institution's students,
+    the standard apportionment, and keep the raw institution figure beside it so
+    the derivation stays visible.
+    """
+    students_col = _newest(master, "students_")
+    if students_col is None or "teachers_current" not in master.columns:
+        return master
+
+    master = master.copy()
+    brin = master["brin_code"].astype(str)
+    students = pd.to_numeric(master[students_col], errors="coerce")
+
+    locations = brin.map(brin.value_counts())
+    institution_students = students.groupby(brin).transform("sum")
+    # Fall back to an even split when an institution reports no students at all.
+    share = (students / institution_students).where(
+        institution_students.gt(0), 1.0 / locations)
+
+    for col, raw_col in (("teachers_current", "teachers_institution_current"),
+                         ("teachers_previous", "teachers_institution_previous")):
+        if col not in master.columns:
+            continue
+        institution_total = pd.to_numeric(master[col], errors="coerce")
+        master[raw_col] = institution_total
+        master[col] = (institution_total * share).round(1)
+
+    master["teachers_apportioned"] = locations.gt(1)
+    multi = int(locations.gt(1).sum())
+    logger.info(f"  + Staff apportioned by student share across "
+                f"{multi} multi-location vestigingen "
+                f"({int(locations.eq(1).sum())} single-location unchanged)")
+    return master
+
+
 def merge_all(addresses: pd.DataFrame, enrollment: pd.DataFrame,
               exams: pd.DataFrame, staff: pd.DataFrame) -> pd.DataFrame:
     """Merge all datasets into a single school master table."""
@@ -390,27 +539,33 @@ def merge_all(addresses: pd.DataFrame, enrollment: pd.DataFrame,
         master = master.merge(
             enrollment, on=["brin_code", "vestiging_code"], how="left"
         )
-        filled = master["students_2024_25"].notna().sum() if "students_2024_25" in master.columns else 0
-        logger.info(f"  + Enrollment: {filled}/{len(master)} schools with student counts")
+        students_col = _newest(master, "students_")
+        filled = master[students_col].notna().sum() if students_col else 0
+        logger.info(f"  + Enrollment: {filled}/{len(master)} schools with student counts"
+                    f" ({students_col})")
 
     # Merge exams (vestiging level)
     if not exams.empty:
         master = master.merge(
             exams, on=["brin_code", "vestiging_code"], how="left"
         )
-        filled = master["exam_pass_rate_2024_25"].notna().sum() if "exam_pass_rate_2024_25" in master.columns else 0
-        logger.info(f"  + Exams: {filled}/{len(master)} schools with exam data")
+        exam_col = _newest(master, "exam_pass_rate_")
+        filled = master[exam_col].notna().sum() if exam_col else 0
+        logger.info(f"  + Exams: {filled}/{len(master)} schools with exam data"
+                    f" ({exam_col})")
 
     # Merge staff (BRIN level — not vestiging)
     if not staff.empty:
         master = master.merge(staff, on="brin_code", how="left")
         filled = master["teachers_current"].notna().sum() if "teachers_current" in master.columns else 0
-        logger.info(f"  + Staff: {filled}/{len(master)} schools with teacher counts")
+        logger.info(f"  + Staff: {filled}/{len(master)} institutions with teacher counts")
+        master = apportion_staff_to_vestigingen(master)
 
     # Compute student-teacher ratio
-    if "students_2024_25" in master.columns and "teachers_current" in master.columns:
+    students_col = _newest(master, "students_")
+    if students_col and "teachers_current" in master.columns:
         teachers = master["teachers_current"].where(master["teachers_current"] > 0)
-        master["student_teacher_ratio"] = (master["students_2024_25"] / teachers).round(1)
+        master["student_teacher_ratio"] = (master[students_col] / teachers).round(1)
 
     logger.info(f"\n  Final: {len(master)} schools, {len(master.columns)} columns")
     return master

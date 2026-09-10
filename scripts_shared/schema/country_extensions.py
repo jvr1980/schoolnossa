@@ -132,6 +132,12 @@ NL_EXTENSION = [
     "nl_buurt_code",                  # CBS buurtcode for joins
     "nl_wijk_code",                   # CBS wijkcode for joins
     "nl_gemeente_code",               # CBS gemeentecode
+    # Verified profile labels (Nuffic TTO register, Amsterdam Schoolwijzer).
+    # Kept apart from the LLM-generated special_features text: these are
+    # register-backed booleans, not prose.
+    "nl_bilingual_tto",               # In the Nuffic tweetalig-onderwijs register
+    "nl_tto_tracks",                  # tvwo / thavo / tvmbo ... offered
+    "nl_verified_profiles",           # technasium, gymnasium, cultuurprofiel, ...
 ]
 
 # =============================================================================

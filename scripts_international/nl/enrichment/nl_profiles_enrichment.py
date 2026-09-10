@@ -299,8 +299,9 @@ def main():
     logger.info("NL Phase 3c: verified profiles + Amsterdam contacts")
     logger.info("=" * 60)
 
-    for candidate in ("nl_schools_with_quality.csv", "nl_schools_with_traffic.csv",
-                      "nl_school_master_geocoded.csv"):
+    # Last link in the free chain: …demographics -> quality -> here.
+    for candidate in ("nl_schools_with_quality.csv", "nl_schools_with_demographics.csv",
+                      "nl_schools_with_crime.csv", "nl_school_master_geocoded.csv"):
         input_path = INTERMEDIATE_DIR / candidate
         if input_path.exists():
             break

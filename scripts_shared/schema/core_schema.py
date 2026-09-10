@@ -91,6 +91,10 @@ NORMALIZED_ACADEMIC_COLUMNS = [
     "academic_data_year",               # Year of the academic data
     "school_quality_rating",            # Normalized: excellent/good/adequate/inadequate
     "school_quality_rating_national",   # Original rating (Ofsted Outstanding, Inspectorate voldoende, etc.)
+    # Inspection ratings go stale — Dutch oordelen can be up to 10 years old —
+    # so the assessment date travels with the verdict for staleness display.
+    "school_quality_assessed_date",
+    "school_quality_source",
 ]
 
 # =============================================================================
@@ -99,6 +103,8 @@ NORMALIZED_ACADEMIC_COLUMNS = [
 SOCIOECONOMIC_COLUMNS = [
     "deprivation_index",         # Maps to belastungsstufe — normalized 1-10 scale
     "deprivation_index_national", # Original national index (IMD decile, CBS social index, etc.)
+    "deprivation_data_year",     # Vintage of the national index (annual, lagged)
+    "deprivation_data_source",   # Which national index the value came from
     "migration_background_pct",  # Maps to migration_2024_25
     "area_median_income",        # Mapped from census/statistics (EUR or local currency)
     "area_population_density",   # People per km²
@@ -112,6 +118,10 @@ TRAFFIC_COLUMNS = [
     "traffic_accidents_500m",        # Accident count within 500m radius
     "traffic_accidents_1000m",       # Accident count within 1000m radius
     "traffic_accidents_fatal_1000m", # Fatal accidents within 1000m
+    # Injury (incl. fatal) accidents. Most registers are dominated by
+    # material-damage-only collisions, which say little about danger to
+    # children on foot; the injury subset is the meaningful signal.
+    "traffic_accidents_injury_1000m",
     "traffic_accidents_year",        # Year of accident data
     "traffic_volume_index",          # Normalized 0-10 traffic intensity (from sensors or modeled)
     "traffic_speed_zone_kmh",        # Speed limit or measured speed near school

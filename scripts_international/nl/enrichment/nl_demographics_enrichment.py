@@ -179,8 +179,11 @@ def main():
     logger.info("NL Phase 7: Demographics Enrichment (CBS Kerncijfers)")
     logger.info("=" * 60)
 
+    # Follow the free chain (…→crime), never the POI output. POI is paid and
+    # therefore only refreshed for new schools, so it is routinely older than
+    # the rest — preferring it here silently reverted the whole pipeline to the
+    # previous run's row count and stale enrichment values.
     candidates = [
-        INTERMEDIATE_DIR / "nl_schools_with_pois.csv",
         INTERMEDIATE_DIR / "nl_schools_with_crime.csv",
         INTERMEDIATE_DIR / "nl_schools_with_transit.csv",
         INTERMEDIATE_DIR / "nl_schools_with_traffic.csv",

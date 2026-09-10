@@ -29,24 +29,80 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 
-def find_best_input() -> Path:
-    """Find the most enriched intermediate file — by column count, since any
-    enrichment phase may have been run last (pois can run after demographics)."""
-    candidates = [
-        INTERMEDIATE_DIR / "nl_schools_with_pois.csv",
-        INTERMEDIATE_DIR / "nl_schools_with_demographics.csv",
-        INTERMEDIATE_DIR / "nl_schools_with_crime.csv",
-        INTERMEDIATE_DIR / "nl_schools_with_transit.csv",
-        INTERMEDIATE_DIR / "nl_schools_with_traffic.csv",
-        INTERMEDIATE_DIR / "nl_school_master_geocoded.csv",
-        INTERMEDIATE_DIR / "nl_school_master_base.csv",
-    ]
-    existing = [p for p in candidates if p.exists()]
-    if not existing:
-        raise FileNotFoundError("No intermediate data found. Run earlier phases first.")
+# Tail of the free enrichment chain, newest link first. POI is deliberately
+# absent: it is paid, so it is only re-run for schools that lack it and is
+# therefore routinely older and shorter than the free chain. Selecting inputs by
+# column count used to pick it anyway (81 POI columns beat everything), which
+# silently reverted the pipeline to the previous run's rows and stale values.
+# POI and the other paid layers are merged back in by column instead.
+FREE_CHAIN = [
+    "nl_schools_with_profiles.csv",
+    "nl_schools_with_quality.csv",
+    "nl_schools_with_demographics.csv",
+    "nl_schools_with_crime.csv",
+    "nl_schools_with_transit.csv",
+    "nl_schools_with_traffic.csv",
+    "nl_school_master_geocoded.csv",
+    "nl_school_master_base.csv",
+]
 
-    # Pick the file with the most columns (= most enriched)
-    return max(existing, key=lambda p: len(pd.read_csv(p, nrows=0).columns))
+# Paid / expensive columns carried forward from the previous final, in core
+# schema names (the shared German carry list speaks Berlin names).
+NL_CARRY_PREFIXES = [
+    "poi_",              # Google Places, ~$250 a full run
+    "description",       # description, description_local, description_source
+    "summary_",
+    "embedding",
+    "most_similar",
+    "similar_schools",
+    "tuition",
+    "admission_",
+    "open_days",
+    "env_",
+]
+NL_CARRY_EXACT = [
+    "languages_offered",  # LLM-derived
+    "special_features",
+    "founding_year",
+    "principal",
+    "phone",
+    "website",
+    "email",
+]
+
+
+def find_best_input() -> Path:
+    """Newest available link in the free enrichment chain."""
+    for name in FREE_CHAIN:
+        path = INTERMEDIATE_DIR / name
+        if path.exists():
+            return path
+    raise FileNotFoundError("No intermediate data found. Run earlier phases first.")
+
+
+def carry_paid_columns(fresh: pd.DataFrame) -> pd.DataFrame:
+    """Gap-fill paid columns from the previous final table on school_id."""
+    previous_path = FINAL_DIR / "nl_school_master_table_final.parquet"
+    if not previous_path.exists():
+        logger.info("No previous final table — nothing to carry forward")
+        return fresh
+
+    from scripts_shared.processing.merge_enriched_columns import merge_enriched_columns
+    previous = pd.read_parquet(previous_path)
+    logger.info(f"Carrying paid columns from previous final "
+                f"({len(previous)} rows, {len(previous.columns)} cols)")
+
+    merged = merge_enriched_columns(
+        fresh, previous,
+        join_key="school_id",
+        carry_prefixes=NL_CARRY_PREFIXES,
+        carry_exact=NL_CARRY_EXACT,
+    )
+    new_ids = set(fresh["school_id"]) - set(previous["school_id"])
+    if new_ids:
+        logger.info(f"  {len(new_ids)} school(s) new since the last run — they carry "
+                    f"no POI/description yet: {sorted(new_ids)}")
+    return merged
 
 
 def main(skip_embeddings: bool = False):
@@ -67,9 +123,21 @@ def main(skip_embeddings: bool = False):
     from scripts_international.nl.processing.nl_to_core_schema import transform
     output = transform(input_path)
 
+    # Carry POI / descriptions / embeddings / tuition forward before overwriting
+    output = carry_paid_columns(output)
+
     # Save final outputs
     parquet_path = FINAL_DIR / "nl_school_master_table_final.parquet"
     csv_path = FINAL_DIR / "nl_school_master_table_final.csv"
+    if parquet_path.exists():
+        import shutil
+        from datetime import date
+        backup = FINAL_DIR / f"backup_{date.today().isoformat()}"
+        backup.mkdir(parents=True, exist_ok=True)
+        for existing in FINAL_DIR.glob("nl_school_master_table_*"):
+            if existing.is_file():
+                shutil.copy2(existing, backup / existing.name)
+        logger.info(f"Backed up previous finals to {backup}")
 
     output.to_parquet(parquet_path, index=False)
     output.to_csv(csv_path, index=False)

@@ -19,6 +19,7 @@ Usage:
 import argparse
 import json
 import logging
+import re
 import sys
 import time
 from pathlib import Path
@@ -44,6 +45,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Nominatim config
+PDOK_URL = "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 HEADERS = {"User-Agent": "SchoolNossa/1.0 (school comparison platform; contact@schoolnossa.com)"}
 RATE_LIMIT_SECONDS = 1.1  # Nominatim requires max 1 req/sec
@@ -63,21 +65,64 @@ def save_cache(cache: dict):
         json.dump(cache, f, indent=2)
 
 
+def _parse_point(wkt: str) -> tuple:
+    """'POINT(6.88021704 52.23480892)' -> (lat, lon) — WKT is x=lon first."""
+    m = re.match(r"POINT\(\s*([-\d.]+)\s+([-\d.]+)\s*\)", str(wkt or "").strip())
+    return (float(m.group(2)), float(m.group(1))) if m else (None, None)
+
+
+def _pdok_lookup(query: str, fq: str) -> tuple:
+    """One PDOK Locatieserver free-text lookup -> (lat, lon, rd_x, rd_y)."""
+    resp = requests.get(
+        PDOK_URL,
+        params={"q": query, "fq": fq, "rows": 1},
+        headers=HEADERS, timeout=20,
+    )
+    resp.raise_for_status()
+    docs = resp.json().get("response", {}).get("docs", [])
+    if not docs:
+        return None, None, None, None
+    lat, lon = _parse_point(docs[0].get("centroide_ll"))
+    rd_x, rd_y = _parse_point(docs[0].get("centroide_rd"))
+    # centroide_rd is (x y); _parse_point returns (y, x) for that ordering.
+    return lat, lon, rd_y, rd_x
+
+
 def geocode_address(street: str, postal_code: str, city: str, cache: dict) -> tuple:
     """
-    Geocode an address via Nominatim. Returns (lat, lon) or (None, None).
-    Tries street-level first, falls back to postal code centroid.
+    Geocode a Dutch address. Returns (lat, lon) or (None, None).
+
+    PDOK Locatieserver first — it is the official BAG-backed national geocoder:
+    authoritative for Dutch addresses, no 1 req/s cap (Nominatim's limit made
+    6k+ primary schools a two-hour job), and it returns RD New (EPSG:28992)
+    alongside WGS84, which the traffic enrichment works in natively.
+    Nominatim stays as the fallback.
     """
-    # Cache key
     key = f"{postal_code}|{street}|{city}"
     if key in cache:
         result = cache[key]
         return result.get("lat"), result.get("lon")
 
-    lat, lon = None, None
+    lat = lon = rd_x = rd_y = None
+    postcode_clean = str(postal_code or "").replace(" ", "").upper()
 
-    # Attempt 1: Full address
-    if street and postal_code:
+    # Attempt 1: PDOK, full address at adres precision
+    if street and postcode_clean:
+        try:
+            lat, lon, rd_x, rd_y = _pdok_lookup(
+                f"{street} {postcode_clean} {city}".strip(), "type:adres")
+        except Exception as e:
+            logger.debug(f"  PDOK address lookup failed for {key}: {e}")
+
+    # Attempt 2: PDOK, postcode centroid
+    if lat is None and postcode_clean:
+        try:
+            lat, lon, rd_x, rd_y = _pdok_lookup(postcode_clean, "type:postcode")
+        except Exception as e:
+            logger.debug(f"  PDOK postcode lookup failed for {postcode_clean}: {e}")
+
+    # Attempt 3: Nominatim fallback (rate-limited, so only for PDOK misses)
+    if lat is None and street and postcode_clean:
         params = {
             "q": f"{street}, {postal_code} {city}, Netherlands",
             "format": "json",
@@ -86,36 +131,16 @@ def geocode_address(street: str, postal_code: str, city: str, cache: dict) -> tu
         }
         try:
             time.sleep(RATE_LIMIT_SECONDS)
-            resp = requests.get(NOMINATIM_URL, params=params, headers=HEADERS, timeout=10)
+            resp = requests.get(NOMINATIM_URL, params=params, headers=HEADERS, timeout=15)
             resp.raise_for_status()
             results = resp.json()
             if results:
                 lat = float(results[0]["lat"])
                 lon = float(results[0]["lon"])
         except Exception as e:
-            logger.debug(f"  Geocode failed for {key}: {e}")
+            logger.debug(f"  Nominatim fallback failed for {key}: {e}")
 
-    # Attempt 2: Postal code only (centroid)
-    if lat is None and postal_code:
-        params = {
-            "postalcode": postal_code.replace(" ", ""),
-            "country": "Netherlands",
-            "format": "json",
-            "limit": 1,
-        }
-        try:
-            time.sleep(RATE_LIMIT_SECONDS)
-            resp = requests.get(NOMINATIM_URL, params=params, headers=HEADERS, timeout=10)
-            resp.raise_for_status()
-            results = resp.json()
-            if results:
-                lat = float(results[0]["lat"])
-                lon = float(results[0]["lon"])
-        except Exception as e:
-            logger.debug(f"  Postal code geocode failed for {postal_code}: {e}")
-
-    # Cache result (even if None)
-    cache[key] = {"lat": lat, "lon": lon}
+    cache[key] = {"lat": lat, "lon": lon, "rd_x": rd_x, "rd_y": rd_y}
     return lat, lon
 
 
