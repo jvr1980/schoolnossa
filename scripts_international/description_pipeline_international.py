@@ -28,6 +28,7 @@ import argparse
 import json
 import logging
 import os
+import random
 import sys
 import time
 from pathlib import Path
@@ -259,8 +260,24 @@ def call_gemini_with_search(prompt: str, api_key: str,
     req = urllib.request.Request(url, data=payload,
                                 headers={"Content-Type": "application/json"})
 
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
+    # Grounded search rate-limits hard under concurrency: a 5-worker run drew
+    # HTTP 429 on 76% of calls, and every one of those silently downgraded the
+    # school to a description written without any research. Back off and retry
+    # rather than let a transient limit decide the data quality.
+    last_error = None
+    result = None
+    for attempt in range(5):
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+            break
+        except urllib.error.HTTPError as exc:
+            last_error = exc
+            if exc.code not in (429, 500, 503):
+                raise
+            time.sleep(min(2 ** attempt * 2 + random.uniform(0, 1.5), 45))
+    if result is None:
+        raise last_error
 
     time.sleep(delay)
     _record_usage(result, grounded=True)
@@ -532,7 +549,12 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
 
     # --- Pass 1: Description Generation (Gemini — cheaper than GPT) ---
     if 1 in active_passes:
-        if not _cached_ok(entry, "pass1_local", "pass1_en") or force_rerun:
+        needs_regen = (not _cached_ok(entry, "pass1_local", "pass1_en")
+                       or force_rerun
+                       # Written without research, but research exists now.
+                       or (entry.get("pass1_grounded") is False
+                           and (entry.get("pass0_raw") or "").strip()))
+        if needs_regen:
             gkey = api_keys.get("gemini")
             okey = api_keys.get("openai")  # fallback
             raw_research = entry.get("pass0_raw")
@@ -540,6 +562,11 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
                 system, user = build_pass1_prompt(row, country_code, raw_research)
             else:
                 system, user = build_pass1_fallback_prompt(row, country_code)
+            # Stamp provenance: a fallback description is synthesised from the
+            # structured fields the page already shows, so it reads like content
+            # while telling a parent nothing new. Recording this is what lets a
+            # later run replace it once research succeeds.
+            entry["pass1_grounded"] = bool(raw_research)
 
             raw_resp = None
             if gkey:
