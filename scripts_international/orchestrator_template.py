@@ -205,7 +205,7 @@ def run_orchestrator(phases: list[int] = None, dry_run: bool = False):
     logger.info(f"Finished: {datetime.now().isoformat()}")
 
 
-if __name__ == "__main__":
+def _cli():
     parser = argparse.ArgumentParser(
         description=f"{COUNTRY_NAME} School Data Pipeline Orchestrator"
     )
@@ -228,3 +228,9 @@ if __name__ == "__main__":
         phases = [int(p.strip()) for p in args.phases.split(",")]
 
     run_orchestrator(phases=phases, dry_run=args.dry_run)
+
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts_shared"))
+    from failure_reporter import run_with_failure_reporting
+    run_with_failure_reporting(_cli, pipeline=f"international_{COUNTRY_NAME.lower()}")
