@@ -1,5 +1,13 @@
 # SchoolNossa Development Journal
 
+## 2026-09-14 — Web time tracking counts active time only
+
+**What:** Both web timers measured wall-clock time, so background tabs inflated session analytics (one session ≈23 h) and **consumed free-tier minutes**. Lovable (app commit `d596bb4`, 10.6 credits) added `src/lib/activeClock.ts` — counts only while the page is visible and within 5 min of the last input (5 vitest cases) — and used it in `SessionTrackingContext` (per-visit active `durationMs`, `wallMs` kept for reference, snapshot persists incl. the in-progress visit, no writes while hidden, `ended_at` = last active moment, `pagehide` flush) and `FreeTrialBlocker` (countdown + `record_usage` from active seconds). New column `user_sessions.tracking_version` (legacy rows = 1, new = 2); `src/lib/sessionDurations.ts` makes AdminAnalytics and `usage-report` cap only legacy visits at 30 min, with a note on the admin page that pre-14.09 sessions are estimated.
+
+**Review notes:** diff reviewed; `blur` also pauses the clock (focus in an iframe or another window stops counting — acceptable). Frontend parts go live on the next Lovable publish (together with the 13.09 web error reporting); `usage-report` is already deployed.
+
+**Found, not fixed (pre-existing):** anonymous sessions are never stored — the client inserts with `.select("id").single()`, and anon has no SELECT policy on `user_sessions`, so the RETURNING fails; 0 anonymous rows in May–Sept. Only matters for landing-page analytics since the app is behind sign-in.
+
 ## 2026-09-14 — Daily report fixes (tab minutes 1000× too high, pre-tracking counts)
 
 **What:** The first report showed `dashboard/ki 1372641min`. `user_sessions.tab_durations` is in **milliseconds** (SessionTrackingContext `durationMs`) but was divided by 60 as seconds; the tracker also keeps counting while a tab sits open in the background (that session: 82,358,484 ms ≈ 23 h). `usage-report` now reports *engaged time* from `journey` step durations capped at 30 min per visit (fallback: `tab_durations` capped per tab) → `dashboard/ki 30min, dashboard/search 3.4min, …`. Counts now come from source tables (`auth.users`, `user_access.test_started_at` / `subscription_started_at`) instead of `usage_events`, which only exists since 2026-09-13 — "New paid (7d)" went 0 → 2 (subscriptions of 09-09/09-10). Subject says "logins" instead of "active"; a ⚠️ subject now has an explanatory banner at the top of the body. A forced run returns the text body. Lovable app commit `bef92c7`, 3.9 credits (alerting total 37.5).
