@@ -1,5 +1,13 @@
 # SchoolNossa Development Journal
 
+## 2026-09-14 — Daily report fixes (tab minutes 1000× too high, pre-tracking counts)
+
+**What:** The first report showed `dashboard/ki 1372641min`. `user_sessions.tab_durations` is in **milliseconds** (SessionTrackingContext `durationMs`) but was divided by 60 as seconds; the tracker also keeps counting while a tab sits open in the background (that session: 82,358,484 ms ≈ 23 h). `usage-report` now reports *engaged time* from `journey` step durations capped at 30 min per visit (fallback: `tab_durations` capped per tab) → `dashboard/ki 30min, dashboard/search 3.4min, …`. Counts now come from source tables (`auth.users`, `user_access.test_started_at` / `subscription_started_at`) instead of `usage_events`, which only exists since 2026-09-13 — "New paid (7d)" went 0 → 2 (subscriptions of 09-09/09-10). Subject says "logins" instead of "active"; a ⚠️ subject now has an explanatory banner at the top of the body. A forced run returns the text body. Lovable app commit `bef92c7`, 3.9 credits (alerting total 37.5).
+
+**Why the earlier email looked broken besides that:** its ⚠️ and "4 failures" were artefacts of the 13.09 forced test (smoke-test events, since deleted; sweep heartbeat not yet written). The real 14.09 08:00 report had neither.
+
+**Open:** the web session tracker itself still counts background time, so the admin analytics page overstates durations the same way — separate fix (pause on `visibilitychange`) if wanted.
+
 ## 2026-09-13 — Ops alerting: failure + usage emails (StoryTeller port)
 
 **What:** Ported StoryTeller's `functions_alerts/` design to SchoolNossa across three repos; full reference in `docs/OPS_ALERTING.md`.
