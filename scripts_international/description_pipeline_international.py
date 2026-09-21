@@ -865,6 +865,15 @@ def run_description_pipeline(country_code: str, passes: set = None,
     df.to_csv(output_path, index=False)
     logger.info(f"Saved: {output_path}")
 
+    # Keep the parquet sibling in step with the CSV. The finalizer carries paid
+    # columns forward from the previous final *parquet*, so descriptions written
+    # to the CSV alone are silently dropped the next time the table is rebuilt.
+    if not limit:
+        parquet_path = output_path.with_suffix(".parquet")
+        if parquet_path.exists():
+            df.to_parquet(parquet_path, index=False)
+            logger.info(f"Saved: {parquet_path}")
+
     # Measured cost of this run, and the extrapolation to the full set.
     if USAGE["calls"]:
         processed_n = max(processed, 1)

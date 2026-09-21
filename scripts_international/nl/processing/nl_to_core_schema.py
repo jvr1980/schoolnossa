@@ -257,7 +257,10 @@ def transform(input_path: Path = None) -> pd.DataFrame:
 
     # === DESCRIPTIONS from cache ===
     import json
-    desc_cache_path = PROJECT_ROOT / "data_nl" / "cache" / "description_pipeline.json"
+    # DATA_DIR, not a hardcoded data_nl: primary runs (NL_DATA_DIR=data_nl_po)
+    # keep their own cache, and reading the secondary one matched no school at
+    # all — the transform silently emitted zero descriptions.
+    desc_cache_path = DATA_DIR / "cache" / "description_pipeline.json"
     if desc_cache_path.exists():
         with open(desc_cache_path) as f:
             desc_cache = json.load(f)
