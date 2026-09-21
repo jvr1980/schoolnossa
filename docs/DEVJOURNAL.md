@@ -1,5 +1,25 @@
 # SchoolNossa Development Journal
 
+## 2026-09-19 — Wave B1: Frankfurt student counts on school year 2025/26
+
+**What:** Hessen published Verzeichnis 6 edition 2026 on 2026-08-26 at `/sites/statistik.hessen.de/files/2026-08/verz-6_26.xlsx`, not at the expected `/2026-09/verz-6_26_0.xlsx`. It reports the survey of 1 Nov 2025, i.e. **SJ 2025/26**. It is now in the Frankfurt finals: `schueler_2025_26` added, `schueler_2024_25` replaced by the official edition-2025 figures, and `schueler_current` / `data_school_year` advanced to 2025_26 for **169 of 199 schools** (82 primary, 87 secondary). Row counts and embeddings unchanged.
+
+**Why the old data needed more than a URL bump:**
+- **The pinned URL rotted.** Hessen deleted `verz-6_25_0.xlsx` once edition 2026 appeared (404). `frankfurt_verz6_enrichment.get_verz6()` now reads the newest edition from `statistik.hessen.de/publikationen/verzeichnisse`, and every edition is archived in git as `data_frankfurt/cache/verz6_{EE}.xlsx`. The old `hessen_verz6.xlsx` is now `verz6_25.xlsx`; older editions exist only in that archive. The legacy master scraper uses the same resolver.
+- **Year labels come from the file.** Counts go into `schueler_{year}` taken from the edition's sentence "Erhebung ... vom 01. November 2025". Before, the column name `schueler_2024_25` was hardcoded, so a re-run would have written 2025/26 numbers under the 2024/25 label.
+- **The finals never had official counts.** Their `schueler_2024_25` equalled the web-researched `schueler_gesamt` (e.g. Adorno-Gymnasium 1300, Abendgymnasium 180) and matched Verz6 for only 4 schools.
+- **Two wrong IDs from the April fuzzy match.** "Klingerschule" carries Kirchnerschule's number (3161) and "Monikahausschule" carries Bonifatiusschule's (3168); both are in different postcodes. `apply_verz6_counts` now requires the same postcode or name similarity ≥ 0.85, and skips vocational schools. Verz6 counts only general-education branches: Wilhelm-Merton-Schule would have gone 1600 → 103. All three keep their previous values.
+
+**New tools:**
+- `scripts_frankfurt/processing/refresh_verz6_student_counts.py` updates the finals without a full pipeline run, like `refresh_traffic_columns.py`. It asserts that only `schueler_*`, the stable fields and `data_school_year` change; a re-run changes nothing.
+- `scripts_shared/emit_school_year_advance_sql.py`: `upload_to_supabase.py` only fills NULLs, so this emits UPDATEs that overwrite `schueler_current` + `data_school_year` only where Supabase holds an older or NULL year. Re-running it is a no-op. Reusable for NRW and Berlin.
+
+**Supabase (pending, needs the Lovable MCP in an interactive session):** `data_shared/supabase_sql/frankfurt_school_year_2025_26/` has 64 `schools` + 82 `primary_schools` rows. 23 advanced secondary schools are local-only (the known Förderschulen/IGS drift) and are not in the SQL. The legacy `schueler_2024_25` column in Supabase keeps its web values, because the app reads `schueler_current`.
+
+**Also:** one Frankfurt school closed between editions (4390 ASB Erasmus Frankfurter Stadtschule; it was never in our tables) and none opened. The `wave-b-school-data-check` scheduled task no longer probes Hessen and runs Mon + Thu until NRW lands (~Sept 23).
+
+**Still open:** fix the two wrong schulnummern (changing them also changes the Supabase join key), Wave B2 NRW, B3 Leipzig, B4 Berlin.
+
 ## 2026-09-14 — Web time tracking counts active time only
 
 **What:** Both web timers measured wall-clock time, so background tabs inflated session analytics (one session ≈23 h) and **consumed free-tier minutes**. Lovable (app commit `d596bb4`, 10.6 credits) added `src/lib/activeClock.ts` — counts only while the page is visible and within 5 min of the last input (5 vitest cases) — and used it in `SessionTrackingContext` (per-visit active `durationMs`, `wallMs` kept for reference, snapshot persists incl. the in-progress visit, no writes while hidden, `ended_at` = last active moment, `pagehide` flush) and `FreeTrialBlocker` (countdown + `record_usage` from active seconds). New column `user_sessions.tracking_version` (legacy rows = 1, new = 2); `src/lib/sessionDurations.ts` makes AdminAnalytics and `usage-report` cap only legacy visits at 30 min, with a note on the admin page that pre-14.09 sessions are estimated.
