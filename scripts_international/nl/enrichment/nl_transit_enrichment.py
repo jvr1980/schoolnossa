@@ -175,6 +175,35 @@ def download_and_parse_gtfs(cache_dir: Path) -> tuple:
     return stops, stop_routes
 
 
+
+def berlin_accessibility_score(rail_m, tram_m, bus_m, all_lines_1000m) -> int:
+    """0-100 score, identical to Berlin's calculate_accessibility_score
+    (scripts_berlin/enrichment/enrich_schools_with_transit.py), because the app
+    compares this value across cities on one axis and defaults to 50 when null.
+
+    The previous NL formula was min(10, stops/5*3 + modes*2.5): a 0-10 scale
+    that capped at ~17 stops within 1 km, so 93% of Dutch schools scored the
+    maximum and would have read as poor transit next to Berlin's 60s.
+    """
+    def dist(v):
+        try:
+            v = float(v)
+            return v if v == v else None
+        except (TypeError, ValueError):
+            return None
+
+    score = 0
+    rail, tram, bus = dist(rail_m), dist(tram_m), dist(bus_m)
+    if rail is not None:
+        score += 40 if rail <= 500 else 25 if rail <= 1000 else 10 if rail <= 2000 else 0
+    if tram is not None:
+        score += 25 if tram <= 500 else 15 if tram <= 1000 else 0
+    if bus is not None:
+        score += 20 if bus <= 300 else 10 if bus <= 500 else 0
+    lines = {l.strip() for l in str(all_lines_1000m or "").split(",") if l.strip()}
+    score += min(len(lines) // 3, 10)
+    return int(min(score, 100))
+
 def find_nearest_stops(school_lat, school_lon, stops_df, max_distance_m=1500):
     """Find nearest stops by mode for a single school."""
     # Pre-filter by bounding box (~1.5km ≈ 0.015 degrees)
@@ -243,8 +272,12 @@ def enrich_schools_with_transit(schools: pd.DataFrame, stops: pd.DataFrame) -> p
         # Accessibility score (0-10): weighted by stop count and mode diversity
         modes_found = sum(1 for mode in ["rail", "tram", "bus"]
                          if f"transit_{mode}_01_name" in result)
-        score = min(10, (stop_count / 5) * 3 + modes_found * 2.5)
-        result["transit_accessibility_score"] = round(score, 1)
+        result["transit_accessibility_score"] = berlin_accessibility_score(
+            result.get("transit_rail_01_distance_m"),
+            result.get("transit_tram_01_distance_m"),
+            result.get("transit_bus_01_distance_m"),
+            all_lines,
+        )
 
         all_results.append(result)
 

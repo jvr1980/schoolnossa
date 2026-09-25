@@ -120,17 +120,22 @@ def enrich_schools(schools: pd.DataFrame, crime: pd.DataFrame) -> pd.DataFrame:
     schools["_gem"] = schools["gemeente_code"].astype(str).str.strip().str.zfill(4)
     crime["_gem"] = crime["gemeente_code"].astype(str).str.strip().str.zfill(4)
 
-    merged = schools.merge(crime, on="_gem", how="left", suffixes=("", "_crime"))
-
-    # Safety rank + category
-    if "crime_total_per_1000" in merged.columns:
-        merged["crime_safety_rank"] = merged["crime_total_per_1000"].rank(method="min").astype("Int64")
-        pct = merged["crime_total_per_1000"].rank(pct=True)
+    # Rank and band the *areas*, then attach to schools. Berlin ranks its 12
+    # Bezirke (1..12); ranking school rows instead gave NL values up to 5,858,
+    # weighted every gemeente by how many schools it has, and gave the same
+    # gemeente a different rank in the primary and secondary tables. Computing
+    # it on the CBS table makes rank 1 = safest gemeente, identical everywhere.
+    if "crime_total_per_1000" in crime.columns:
+        rate = pd.to_numeric(crime["crime_total_per_1000"], errors="coerce")
+        crime["crime_safety_rank"] = rate.rank(method="min").astype("Int64")
         # Vocabulary must match the German tertiles (safe/moderate/elevated) —
         # the UI filters on these literals across all countries.
-        merged["crime_safety_category"] = pd.cut(
-            pct, bins=[0, 0.33, 0.66, 1.0], labels=["safe", "moderate", "elevated"]
-        )
+        crime["crime_safety_category"] = pd.cut(
+            rate.rank(pct=True), bins=[0, 1 / 3, 2 / 3, 1.0],
+            labels=["safe", "moderate", "elevated"], include_lowest=True,
+        ).astype("object")
+
+    merged = schools.merge(crime, on="_gem", how="left", suffixes=("", "_crime"))
 
     merged["crime_data_source"] = "CBS StatLine 83648NED"
     merged = merged.drop(columns=["_gem", "gemeente_code_crime"], errors="ignore")
