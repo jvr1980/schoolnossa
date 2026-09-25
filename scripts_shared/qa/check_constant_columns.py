@@ -34,6 +34,7 @@ EXPECT_CONSTANT_EXACT = {
     # Type descriptors are constant by construction in a single-level table
     # (the primary set is filtered to TYPE_PO=BO).
     "school_type_national", "school_subtype", "ownership_national",
+    "geo_country",  # one country per table
 }
 
 
@@ -44,6 +45,20 @@ def is_expected_constant(col: str) -> bool:
 def check(path: Path, min_rows: int = 50) -> list[dict]:
     df = pd.read_parquet(path) if path.suffix == ".parquet" else pd.read_csv(path, low_memory=False)
     findings = []
+    # Vector columns must hold arrays. A CSV round-trip stringifies them into
+    # 12k-char text that is 100% populated with distinct values — invisible to
+    # the constant check below, and unloadable into Supabase's vector(768).
+    if "embedding" in df.columns:
+        sample = df["embedding"].dropna()
+        if len(sample) and isinstance(sample.iloc[0], str):
+            findings.append({
+                "column": "embedding",
+                "rows": len(sample),
+                "coverage_pct": 100 * len(sample) / len(df),
+                "value": "<stored as str, not an array>",
+                "expected": False,
+            })
+
     for col in df.columns:
         if col.startswith("embedding"):
             continue

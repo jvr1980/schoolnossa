@@ -1,5 +1,15 @@
 # SchoolNossa Development Journal
 
+## 2026-09-25 — NL primary backfill complete; embeddings un-stringified
+
+**What:** The scheduled daily backfill finished on 2026-09-21: all 6,060 primary descriptions grounded, embedded and matched. Its runs also fixed two real bugs (`nl_to_core_schema` read the description cache from a hardcoded `data_nl`, so a primary rebuild matched nothing; and the description pipeline wrote CSV only, so the finalizer dropped descriptions on the next rebuild).
+
+**Why this entry:** the second fix introduced a new one. The pipeline began writing the parquet *from the frame it had read out of CSV*, and CSV cannot hold arrays — every 768-float embedding became a 12k-char string. 100% populated, all distinct, so invisible to the constant-column check, but unloadable into Supabase's `vector(768)`. The task also kept firing after completion (Sept 23, 24), re-stringifying the table each morning.
+
+**Fixes:** the pipeline now merges only the columns it owns (`PIPELINE_OWNED_COLUMNS`) into the existing parquet instead of overwriting it wholesale; primary embeddings restored as `float32[768]` (6,060/6,060 parse cleanly, and `most_similar_school_01` matches a fresh recompute on 100% of rows, so the matches were never wrong); `check_constant_columns.py` now flags vector columns stored as text; the scheduled task is paused.
+
+**Result:** both NL tables pass QA clean. Secondary 1,629 and primary 6,060 schools, all 262 Berlin columns, descriptions + embeddings + similar-schools 100%.
+
 ## 2026-09-10 (afternoon) — NL refresh, primary pipeline, and three cached-failure bugs
 
 **What:** Acted on the answers to the open questions: refreshed DUO, brought primary (basisonderwijs) into scope, filled descriptions, added the private-school roster, and drafted the Scholen op de Kaart licence request. Branch `feature/nl-pipeline-improvements`.

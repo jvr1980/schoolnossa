@@ -58,6 +58,16 @@ DEFAULT_MODELS = {
 }
 MAX_WORKERS = int(os.environ.get("DESC_WORKERS", "5"))
 
+# Columns this pipeline writes (Pass 1 descriptions + Pass 2 extracted facts).
+# Everything else in the final table belongs to other stages and must survive
+# a description run untouched.
+PIPELINE_OWNED_COLUMNS = [
+    "description", "description_local", "description_de", "description_en",
+    "summary_en", "summary_de", "summary_local",
+    "website", "founding_year", "languages_offered", "special_features",
+    "principal", "phone", "email", "teachers_current", "students_current",
+]
+
 # Columns that Pass 2 can populate for international schools
 # Mapped from JSON key → core schema column name
 PASS2_COLUMN_MAP_INTERNATIONAL = {
@@ -868,11 +878,29 @@ def run_description_pipeline(country_code: str, passes: set = None,
     # Keep the parquet sibling in step with the CSV. The finalizer carries paid
     # columns forward from the previous final *parquet*, so descriptions written
     # to the CSV alone are silently dropped the next time the table is rebuilt.
+    #
+    # Update only the columns this pipeline owns. df was read from CSV, which
+    # cannot hold arrays: writing it wholesale turned every 768-float embedding
+    # into a 12k-char string — valid-looking, 100% populated, and unloadable
+    # into Supabase's vector(768). Merging keeps native types for everything
+    # the pipeline does not write.
     if not limit:
         parquet_path = output_path.with_suffix(".parquet")
         if parquet_path.exists():
-            df.to_parquet(parquet_path, index=False)
-            logger.info(f"Saved: {parquet_path}")
+            base = pd.read_parquet(parquet_path)
+            owned = [c for c in PIPELINE_OWNED_COLUMNS if c in df.columns]
+            if id_col in base.columns and id_col in df.columns and owned:
+                upd = (df.drop_duplicates(id_col)
+                         .set_index(df.drop_duplicates(id_col)[id_col].astype(str))[owned])
+                keys = base[id_col].astype(str)
+                for col in owned:
+                    new = keys.map(upd[col])
+                    base[col] = new.where(new.notna(), base[col]) if col in base.columns else new
+                base.to_parquet(parquet_path, index=False)
+                logger.info(f"Saved: {parquet_path} ({len(owned)} owned columns merged)")
+            else:
+                logger.warning(f"Skipped parquet update: no shared id column "
+                               f"({id_col}) — refusing to overwrite wholesale")
 
     # Measured cost of this run, and the extrapolation to the full set.
     if USAGE["calls"]:
