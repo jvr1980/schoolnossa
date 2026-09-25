@@ -146,7 +146,12 @@ def transform(input_path: Path = None) -> pd.DataFrame:
 
     # Ownership
     output["ownership_national"] = df["denomination"]
-    output["ownership"] = df["denomination"].map(DENOMINATION_TO_OWNERSHIP).fillna("public")
+    # Every school in DUO's registry is bekostigd (state-funded). Bijzonder
+    # (denominational) schools are privately *governed* but publicly funded
+    # under Article 23 and charge no tuition — mapping them to "private" marked
+    # 3,662 primary schools private, which drives the app's public/private
+    # filter and its tuition passes. Denomination stays in ownership_national.
+    output["ownership"] = "public"
 
     output["street_address"] = df["street_address"]
     output["postal_code"] = df["postal_code"]

@@ -109,6 +109,26 @@ def transform_to_berlin(df: pd.DataFrame, country_code: str) -> pd.DataFrame:
     # matching the real vintage and let the stable fields below carry the value
     # regardless of which year columns the reference happens to have.
     vintage = _student_vintage(df)
+
+    def _year_back(label: str, years: int) -> str:
+        start = int(label.split("_")[0]) - years
+        return f"{start}_{str(start + 1)[-2:]}"
+
+    # CORE_TO_BERLIN_MAP also pins *_previous to *_2023_24. With a 2025_26
+    # vintage the previous year is 2024_25, so the pin put last year's figures
+    # under a label two years old. Place each at its real year, or drop it if
+    # the reference has no such column.
+    for core_col, prefix in (("students_previous", "schueler"),
+                             ("teachers_previous", "lehrer")):
+        if core_col not in df.columns or vintage == DEFAULT_SCHOOL_YEAR:
+            continue
+        pinned = f"{prefix}_{_year_back(DEFAULT_SCHOOL_YEAR, 1)}"
+        real = f"{prefix}_{_year_back(vintage, 1)}"
+        if pinned in output.columns:
+            output[pinned] = None
+        if real in berlin_columns:
+            output[real] = df[core_col]
+
     for core_col, prefix in (("students_current", "schueler"),
                              ("teachers_current", "lehrer")):
         if core_col not in df.columns:
@@ -119,8 +139,10 @@ def transform_to_berlin(df: pd.DataFrame, country_code: str) -> pd.DataFrame:
             continue  # CORE_TO_BERLIN_MAP already placed it correctly
         if dated in berlin_columns:
             output[dated] = df[core_col]
-        # Either way the default-year copy is now mislabelled.
-        if default_col in output.columns:
+        # The default-year copy of the *current* value is now mislabelled —
+        # unless the previous-year value legitimately lives there.
+        prev_col = f"{prefix}_{_year_back(vintage, 1)}"
+        if default_col in output.columns and default_col != prev_col:
             output[default_col] = None
 
     # --- Crime --------------------------------------------------------------
