@@ -1,5 +1,15 @@
 # SchoolNossa Development Journal
 
+## 2026-09-26 (late) — school_similarities rebuilt, per country
+
+**What:** full rebuild of `school_similarities` in one SQL transaction via the Lovable MCP. Same method as the `compute-school-similarities` edge function: cosine over the 768-dim embeddings, top 10 per school, ranks 1–10. Unlike the edge function, candidates are restricted to the same country (prefix of `city`: `nl-*` → NL, otherwise DE).
+
+**Why:** add the new Düsseldorf school 100255 to other schools' lists and restore the 10th entry lost when the Erkrath rows were deleted. The edge function compares every school with every other one; since the NL rows (1,629 with embeddings) arrived, running it would have mixed Dutch schools into German lists.
+
+**Result:** DE 1,185 schools / 11,850 pairs, NL 1,629 / 16,290 (new), 10 per school everywhere, 0 cross-country pairs, 100255 appears in 2 other lists.
+
+**Watch out:** the admin "compute similarities" button in the web app still runs the all-countries version. Before using it, add a same-country filter to the edge function.
+
 ## 2026-09-26 (evening) — Per-value vintage stamps + app year labels
 
 **Why:** after the Berlin/Frankfurt advance, an audit of both apps showed the web app labelled teacher counts and the migration share with `data_school_year`. So 67 Berlin schools whose portraits had no 2025/26 teacher figure, and every Berlin migration share (still 2024/25), were shown as '25. Neither app had a "data as of" line, compare views showed no years, the web crime section hardcoded '23/'24, and a school without a student count showed "0".
