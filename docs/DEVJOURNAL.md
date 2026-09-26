@@ -1,5 +1,32 @@
 # SchoolNossa Development Journal
 
+## 2026-09-26 — Wave B: Frankfurt live, NRW SJ 2026/27 deltas applied, Berlin 2025/26 via school portraits
+
+**Approach:** new vintages are applied as deltas only — column-scoped refresh scripts on the finals plus targeted Supabase UPDATEs, with a pre-update snapshot kept as rollback SQL. No pipeline re-runs, no description/embedding regeneration.
+
+**Frankfurt (B1) — Supabase:** applied the prepared SQL through the Lovable MCP. 64 `schools` + 82 `primary_schools` rows now read `data_school_year = 2025_26`. Remaining Frankfurt rows on 2024_25 (1 secondary, 15 primary) are the vocational/unmatched schools that keep their earlier values by design. Rollback: `data_shared/supabase_sql/frankfurt_school_year_2025_26/rollback_snapshot_2026-09-26.sql`.
+
+**NRW (B2):** the ministry published the SJ 26/27 Schulsozialindex list on 2026-09-21, but under a **new filename** (`schulsozialindex_schulliste_sj_26_27.csv`, the old pattern stays 404) and in **cp1252** instead of cp850. The scraper now resolves the newest edition across both naming schemes and chooses the codec that yields real umlauts; the old parser would have mangled every name. Both editions are archived (git-tracked) in `data_nrw/cache/nrw_schulsozialindex_sj_{2025_26,2026_27}.csv`.
+
+New `scripts_nrw/processing/refresh_nrw_master_delta.py` diffs `schuldaten.csv` against the previous snapshot (baseline now `data_nrw/cache/nrw_schuldaten_baseline.csv`), writes only the fields that changed at the source, sets `sozialindexstufe` from the newest list, asserts no other column moves, and emits Supabase UPDATEs. A re-run is a no-op. Delta found:
+- Sozialindex: statewide only 16 of 4,151 schools changed; in scope 4 Köln schools founded recently got their first value (100218 → 1, 100231 → 2, 100233 → 6, 100235 → 8). Supabase has no Sozialindex column (it only feeds the Abitur regression), so this change is local only.
+- Renames (7): e.g. Hermann Gmeiner → Frida Kahlo Schule (Düsseldorf), Gymnasium Bernburger Straße → Elisabeth-Selbert-Gymnasium, GE Weidenpesch → Ernst-Simons-Gesamtschule, Ursulinenschule; two Köln primaries went from Kath. to Gem. Grundschule.
+- Relocations (3): Luisen-Gymnasium Düsseldorf (Bastionstr. → Völklinger Str. 122-124, ~2.4 km), Gesamtschule Ossendorf (Am Wassermann → Fitzmauricestr. 5, ~3.5 km), Friedrich-Wilhelm-Gymnasium Köln (~200 m). Their traffic/transit/crime/POI values still describe the old site.
+- 2 website updates. Supabase: 13 rows updated and verified; rollback in `data_shared/supabase_sql/nrw_master_delta_2026-09/rollback_snapshot_2026-09-26.sql`.
+
+**Berlin (B4):** `bildungsstatistik.berlin.de` retired `ListGen/SVZ_Fakt5` (404); its `/next/` successor is an Auth0-gated staff tool (all API routes 401), and a Wayback copy from 2026-07-14 shows it never published 2025/26. daten.berlin.de, Statistik BB and *Blickpunkt Schule* only have aggregates. The one public per-school source is the **bildung.berlin.de school portraits** (students as of 06.10.2025, staff 01.11.2025), which show the current year only — so they are scraped now and the HTML is kept in `data_berlin/cache/schulportrait_2026-09/` as the archive.
+- New `scripts_berlin/scrapers/scrape_schulportrait_statistics.py` (resumable, 1 req/s, BSN verified on the tab heading; searches returning several hits are resolved by opening each) → `data_berlin/raw/bildungsstatistik_2025_26.csv` in the SVZ_Fakt5 shape: 785 schools, 707 with teachers. Teacher w/m left empty (portraits give only percentages).
+- Plausibility vs 2024/25 (778 matched): students 446,055 → 447,008, teachers 37,805 → 37,201, median teacher ratio 1.04; every >40 % teacher jump is a school still growing (students grew too), so the portrait's "Lehrkräfte" matches the old definition.
+- New `scripts_berlin/processing/refresh_bildungsstatistik_counts.py` wrote `schueler_2025_26` / `lehrer_2025_26` and re-derived the stable fields: 238/258 secondary and 451/490 primary rows now on 2025_26; the rest (mostly private schools that publish no 2025/26 figures) keep 2024/25. Re-run is a no-op.
+- `emit_school_year_advance_sql.py` now also advances `lehrer_current` (COALESCE keeps the live value where the new year has none). Berlin SQL: `data_shared/supabase_sql/berlin_school_year_2025_26/` (238 schools + 451 primary) — **not applied yet**, pending approval.
+- Side finding: for several private schools the finals' `schueler_2024_25` held web-researched values far from the official list (Private Kant-Schule Berlin International 66 vs official 846, Freie Schule Pankow 616 vs 117, Ev. Schule Köpenick 82 vs 611). The 2025/26 advance replaces them with official figures.
+
+**Open decisions (not applied):**
+- New school 100255 "Düsseldorf, GY Heinzelmännchenweg" (Schlüterstr. 18-20, operating since 2026-08-01) is not in our tables; adding it needs the full enrichment chain for one row.
+- Gymnasium Hochdahl (165669) and Realschule Hochdahl (183246) were listed at an interim Düsseldorf site (Hospitalstr. 45) in April and are now back at Rankestr. 8 in **Erkrath**, outside our scope. They are still in the Düsseldorf finals and in Supabase; removing them is a product call.
+- Re-enrich location layers for the two schools that moved >2 km.
+
+
 ## 2026-09-19 — Wave B1: Frankfurt student counts on school year 2025/26
 
 **What:** Hessen published Verzeichnis 6 edition 2026 on 2026-08-26 at `/sites/statistik.hessen.de/files/2026-08/verz-6_26.xlsx`, not at the expected `/2026-09/verz-6_26_0.xlsx`. It reports the survey of 1 Nov 2025, i.e. **SJ 2025/26**. It is now in the Frankfurt finals: `schueler_2025_26` added, `schueler_2024_25` replaced by the official edition-2025 figures, and `schueler_current` / `data_school_year` advanced to 2025_26 for **169 of 199 schools** (82 primary, 87 secondary). Row counts and embeddings unchanged.

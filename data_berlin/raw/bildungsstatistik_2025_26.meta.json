@@ -1,0 +1,31 @@
+{
+  "source": "https://www.bildung.berlin.de/Schulverzeichnis/Schulportrait.aspx",
+  "scraped": "2026-09-26",
+  "school_year": "2025/26",
+  "schools": 785,
+  "with_students": 785,
+  "with_teachers": 707,
+  "stand_schueler": [
+    "06.10.2025"
+  ],
+  "stand_personal": [
+    "01.11.2025"
+  ],
+  "not_found": [
+    "01P14",
+    "02P29",
+    "02S01",
+    "02S02",
+    "03P08",
+    "03P42",
+    "03P44",
+    "03P46",
+    "04P09",
+    "05P18",
+    "08P08",
+    "08P15",
+    "09P05",
+    "10P25",
+    "12A44"
+  ]
+}
