@@ -1,5 +1,19 @@
 # SchoolNossa Development Journal
 
+## 2026-09-26 (late) — Location data recomputed for two relocated NRW schools
+
+**What:** new `scripts_nrw/processing/refresh_school_locations.py`. It runs the real NRW phases for the moved schools in a sandbox, reusing `add_new_schools.run_phases` with the website phase skipped, and overwrites only location columns: traffic, transit, POIs, crime and `bezirk`. Each POI/transit group is replaced as a whole, so slots from the old site cannot survive. The crime rank/category comes from the schools of the new Bezirk (ranks are uniform per Bezirk). All other columns and rows are asserted unchanged. `--reuse` applies a dry run's sandbox output without new API calls, and `--emit-sql` writes the Supabase UPDATEs plus a rollback snapshot.
+
+**Applied (finals + Supabase):**
+- **Luisen-Gymnasium Düsseldorf (164501):** Bezirk 1 → **Bezirk 3**; crime rank 11 "Stark belastet" → 8 "Belastet"; accidents nearby 183 → 80; transit stops within 1 km 0 → 74 (the old value was itself broken); nearest rail: Düsseldorf Völklinger Straße, 738 m.
+- **Gesamtschule Ossendorf Köln (100212):** stays in Ehrenfeld (rank 9); new stops (39 within 1 km, nearest tram Alter Flughafen Butzweilerhof), accidents 24 → 30, POIs at Fitzmauricestr.
+
+**Notes:**
+- Overpass returned 504/429 for parts of the combined Düsseldorf–Köln bounding box. Every skipped tile was ≥1.7 km from both schools, and all reported stops are closer, so no nearer stop was missed. Run one city at a time next time.
+- Fixed while doing this: all-NULL columns get a guessed `text` type, and `NULL::text` cannot be written into integer columns, so the emitter now writes bare `NULL`.
+- Friedrich-Wilhelm-Gymnasium (moved ~200 m) was not recomputed.
+- Luisen-Gymnasium's DE/EN descriptions still mention the old site (Bastionstr./Carlstadt).
+
 ## 2026-09-26 (late) — school_similarities rebuilt: same city (DE), country-wide (NL)
 
 **Rule (user decision):** similar schools are matched **within the same city** for German schools, and **across the whole Netherlands** for Dutch schools. Dutch `city` values are municipalities, and 87 of them have a single school, so a same-city rule would leave those schools with no matches.

@@ -78,7 +78,7 @@ def master_rows(schulnummern: set):
     return {'primary': primary, 'secondary': secondary}
 
 
-def run_phases(school_type: str, box: dict, skip_poi: bool):
+def run_phases(school_type: str, box: dict, skip_poi: bool, skip_website: bool = False):
     import nrw_traffic_enrichment as traffic
     import nrw_transit_enrichment as transit
     import nrw_crime_enrichment as crime
@@ -99,7 +99,9 @@ def run_phases(school_type: str, box: dict, skip_poi: bool):
              ('crime', crime.enrich_schools)]
     if not skip_poi:
         steps.append(('POI', poi.enrich_schools))
-    steps += [('website metadata', website.enrich_schools), ('combine', combiner.combine_school_type)]
+    if not skip_website:  # the combiner falls back to the POI output
+        steps.append(('website metadata', website.enrich_schools))
+    steps.append(('combine', combiner.combine_school_type))
     for name, fn in steps:
         logger.info(f"── {school_type}: {name}")
         fn(school_type)
