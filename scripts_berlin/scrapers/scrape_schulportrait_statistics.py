@@ -86,46 +86,50 @@ def _is_tab(page: str) -> bool:
     return NO_DATA in page or '<table' in page
 
 
+def _heading(page: str) -> str:
+    h = re.findall(r'lblUebSchule[^>]*>([^<]*)', page)
+    return html.unescape(h[0]).strip() if h else ''
+
+
 def fetch(bsn: str):
     """Return (schuelerschaft_html, schulpersonal_html), or None if the BSN is not found."""
     s = requests.Session()
     s.headers.update(HEADERS)
     r = s.get(BASE + 'Schulliste.aspx', params={'Suchbegriff': bsn}, timeout=30)
     time.sleep(DELAY_S)
-    portrait_id = None
-    if 'Schulportrait' not in r.url:
-        # A list page: the search also matches other schools that mention the BSN
-        # (e.g. "Carl-Legien-Schule (Schulbetrieb an 01B04) - 08B05"), so open
-        # each hit until the portrait heading ends with this BSN.
-        for candidate in dict.fromkeys(re.findall(r'IDSchulzweig=\s*(\d+)', r.text)):
-            p = s.get(BASE + 'Schulportrait.aspx', params={'IDSchulzweig': candidate}, timeout=30)
-            time.sleep(DELAY_S)
-            heading = re.findall(r'lblUebSchule[^>]*>([^<]*)', p.text)
-            if heading and html.unescape(heading[0]).strip().endswith(bsn):
-                portrait_id = candidate
-                break
-        if portrait_id is None:
-            return None
-    pages = []
-    for tab in ('schuelerschaft.aspx', 'schulpersonal.aspx'):
+
+    def open_school(portrait_id):
+        if portrait_id:
+            s.get(BASE + 'Schulportrait.aspx', params={'IDSchulzweig': portrait_id}, timeout=30)
+        else:
+            s.get(BASE + 'Schulliste.aspx', params={'Suchbegriff': bsn}, timeout=30)
+        time.sleep(DELAY_S)
+
+    def tab(name, portrait_id):
         for attempt in range(2):
-            page = s.get(BASE + tab, timeout=30).text
+            page = s.get(BASE + name, timeout=30).text
             time.sleep(DELAY_S)
             if _is_tab(page) or attempt:
-                break
-            # Session lost the school (seen once in testing): reopen the portrait and retry
-            if portrait_id:
-                s.get(BASE + 'Schulportrait.aspx', params={'IDSchulzweig': portrait_id}, timeout=30)
-            else:
-                s.get(BASE + 'Schulliste.aspx', params={'Suchbegriff': bsn}, timeout=30)
-            time.sleep(DELAY_S)
-        pages.append(page)
-    return tuple(pages)
+                return page
+            open_school(portrait_id)  # session lost the school (seen once in testing): reopen, retry
+
+    # A search that redirects straight to the portrait has one hit. A list page can
+    # also hold schools that merely mention the BSN (e.g. "Carl-Legien-Schule
+    # (Schulbetrieb an 01B04) - 08B05"), and the portrait page itself has no heading,
+    # so open each hit and keep the one whose tab heading ends with this BSN.
+    candidates = [None] if 'Schulportrait' in r.url else \
+        list(dict.fromkeys(re.findall(r'IDSchulzweig=\s*(\d+)', r.text)))
+    for i, portrait_id in enumerate(candidates):
+        if i or portrait_id:
+            open_school(portrait_id)
+        ss = tab('schuelerschaft.aspx', portrait_id)
+        if _heading(ss).endswith(bsn):
+            return ss, tab('schulpersonal.aspx', portrait_id)
+    return None
 
 
 def parse(bsn: str, ss: str, sp: str) -> dict:
-    heading = re.findall(r'lblUebSchule[^>]*>([^<]*)', ss) or re.findall(r'lblUebSchule[^>]*>([^<]*)', sp)
-    heading = html.unescape(heading[0]).strip() if heading else ''
+    heading = _heading(ss) or _heading(sp)
     rec = {'BSN': bsn, 'NAME': re.sub(rf'\s*-\s*{re.escape(bsn)}$', '', heading),
            'bsn_verified': heading.endswith(bsn)}
     year = re.findall(r'Jahrgangsstufen\s*(20\d\d/\d\d)', _plain(ss)) or re.findall(r'(20\d\d/\d\d)', _plain(ss))
