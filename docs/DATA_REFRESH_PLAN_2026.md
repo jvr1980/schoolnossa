@@ -25,7 +25,7 @@ So: run a **Wave A** refresh now on the live/rolling sources (cheap, high value)
 | City | Source | Cadence | In our asset | Available now | Verdict |
 |---|---|---|---|---|---|
 | **Berlin** (sec + prim) | `bildung.berlin.de/Schulverzeichnis` | Rolling; SJ flips ~Aug | SJ 2024/25 | **SJ 2026/27** (portal selector default) | 🔴 **Update now** — 2 years stale |
-| **Berlin** statistics | ~~`bildungsstatistik.berlin.de` SVZ_Fakt5~~ (404 since Sept 2026; `/next/` is login-only) → `bildung.berlin.de/Schulverzeichnis` school portraits | Annual; portraits show the current year only (students 06.10., staff 01.11.) | 2023/24 file + 2024/25 | Portraits: **2025/26** | 🟡 **Scraping 2026-09-26** (`scrape_schulportrait_statistics.py`); Supabase pending approval |
+| **Berlin** statistics | ~~`bildungsstatistik.berlin.de` SVZ_Fakt5~~ (404 since Sept 2026; `/next/` is login-only) → `bildung.berlin.de/Schulverzeichnis` school portraits | Annual; portraits show the current year only (students 06.10., staff 01.11.) | 2023/24 file + 2024/25 | Portraits: **2025/26** | ✅ **Done 2026-09-26** (`scrape_schulportrait_statistics.py`; 785 schools; finals + Supabase) |
 | **Hamburg** (sec + prim) | `geodienste.hamburg.de` `HH_WFS_Schulen` (live WFS) | Rolling; CKAN meta modified **2026-07-03** | Pulled Apr 2026 | Current | 🟢 **Update now** — cheap re-pull |
 | **Munich** | `jedeschule.codefor.de` CSV snapshots | Rolling, ~weekly | Pinned **`2025-01-04`** | **`2026-08-15`** | 🔴 **Update now** — 19 months stale, one-line change |
 | **NRW** (Düsseldorf, Köln) | `schulministerium.nrw` Sozialindex list (renamed: `schulsozialindex_schulliste_sj_26_27.csv`) + rolling `schuldaten.csv` | Annual, **late Sept** | SJ 26/27 | Published **2026-09-21** (new filename, cp1252) | ✅ **Done 2026-09-26** (Wave B2, deltas only; Supabase applied) |
@@ -95,9 +95,9 @@ Trigger: the September annual releases actually appearing.
 | # | Task | Trigger |
 |---|---|---|
 | B1 | Frankfurt → `verz-6_26.xlsx` ✅ done 2026-09-19 (finals); Supabase applied 2026-09-26 | Published 2026-08-26 |
-| B2 | NRW → `schulsozialindex_schulliste_sj_26_27.csv` + `schuldaten.csv` deltas ✅ done 2026-09-26 (finals + Supabase); open: new school 100255, Erkrath rows 165669/183246 | Published 2026-09-21 |
+| B2 | NRW → `schulsozialindex_schulliste_sj_26_27.csv` + `schuldaten.csv` deltas ✅ done 2026-09-26 (finals + Supabase); new school 100255 added, Erkrath rows 165669/183246 removed | Published 2026-09-21 |
 | B3 | Leipzig SJ 2025/26 | `opendata.leipzig.de` refresh |
-| B4 | Berlin → 2025/26 from the school portraits (SVZ_Fakt5 retired) — scraped 2026-09-26; finals + Supabase pending | Portraits show 2025/26 until 2026/27 goes live |
+| B4 | Berlin → 2025/26 from the school portraits (SVZ_Fakt5 retired) ✅ done 2026-09-26 (finals + Supabase) | Portraits show 2025/26 until 2026/27 goes live |
 | B5 | ISQ exam data verification + refresh | Verify vintage first |
 | B6 | Full cross-city QA, schema drift, Supabase upload | After B1–B5 |
 
