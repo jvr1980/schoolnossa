@@ -45,7 +45,7 @@ FINAL_FILES = [
     "data_berlin_primary/final/grundschule_master_table_final_with_embeddings.parquet",
 ]
 SOURCE_COLUMNS = {'Schüler (m/w/d)': 'schueler', 'Lehrkräfte (m,w,d)': 'lehrer'}
-STABLE = {'schueler_current', 'lehrer_current', 'data_school_year'}
+STABLE = {'schueler_current', 'lehrer_current', 'data_school_year', 'lehrer_data_year', 'migration_data_year'}
 TEACHER_JUMP = 0.4  # flag |Δ| > 40 % year on year: the portrait's "Lehrkräfte" may be defined differently
 
 

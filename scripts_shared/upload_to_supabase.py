@@ -99,7 +99,8 @@ FIELD_GROUPS = {
     'stable': ['schueler_current', 'lehrer_current', 'migration_current',
                'nachfrage_prozent_current', 'abitur_durchschnitt_current',
                'crime_total_crimes_current',
-               'data_school_year', 'abitur_year', 'crime_data_year'],
+               'data_school_year', 'lehrer_data_year', 'migration_data_year',
+               'abitur_year', 'crime_data_year'],
     # Nearest stop (Supabase uses unprefixed names for #1, _02/_03 for the rest)
     'transit_nearest': ['transit_bus_name', 'transit_bus_distance_m',
                         'transit_bus_lines',
