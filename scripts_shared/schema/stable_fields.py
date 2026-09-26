@@ -43,6 +43,10 @@ _CALENDAR_YEAR_FAMILIES = {
 # Vintage stamps: stable column -> which stable field's source year it records
 _VINTAGE_OF = {
     'data_school_year': 'schueler_current',
+    # Teachers and migration can lag the student count (e.g. Berlin 2025/26 portraits
+    # lack teacher figures for some schools), so each gets its own stamp
+    'lehrer_data_year': 'lehrer_current',
+    'migration_data_year': 'migration_current',
     'abitur_year': 'abitur_durchschnitt_current',
     'crime_data_year': 'crime_total_crimes_current',
 }

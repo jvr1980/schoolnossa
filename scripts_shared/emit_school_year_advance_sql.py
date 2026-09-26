@@ -28,11 +28,11 @@ from scripts_shared.upload_to_supabase import (  # noqa: E402
     CITY_FILES, _coerce, _infer_pg_types, _sql_literal, fetch_supabase_schools, load_local_df,
 )
 
-FIELDS = ['schueler_current', 'lehrer_current', 'data_school_year']
+FIELDS = ['schueler_current', 'lehrer_current', 'lehrer_data_year', 'data_school_year']
 
 
 def plan_table(table, city, local_df):
-    """[(supabase_id, schulnummer, name, old_value, old_year, new_value, new_year, new_lehrer)], pg_types."""
+    """[(supabase_id, schulnummer, name, old_value, old_year, new_value, new_year, new_lehrer, lehrer_year)], pg_types."""
     sb_rows, _, missing = fetch_supabase_schools(table, city, FIELDS)
     if missing:
         sys.exit(f"{table} lacks {missing} — run scripts_shared/schema/supabase_stable_fields.sql first")
@@ -50,7 +50,8 @@ def plan_table(table, city, local_df):
         # lehrer_current rides along; COALESCE in the SQL keeps the live value where we have none
         plan.append((sb['id'], str(row['schulnummer']), row.get('schulname'),
                      sb.get('schueler_current'), old_year, new_value, new_year,
-                     _coerce('lehrer_current', row.get('lehrer_current'))))
+                     _coerce('lehrer_current', row.get('lehrer_current')),
+                     _coerce('lehrer_data_year', row.get('lehrer_data_year'))))
     return plan, _infer_pg_types(sb_rows, FIELDS)
 
 
@@ -59,20 +60,22 @@ def write_sql(out_dir, table, city, plan, pg_types):
     # Separator comma before the trailing "-- schulnummer name" comment, never inside it
     values = [f"  ('{sb_id}'::uuid, {_sql_literal(value, pg_types['schueler_current'])}, "
               f"{_sql_literal(lehrer, pg_types['lehrer_current'])}, "
+              f"{_sql_literal(lehrer_year, 'text')}, "
               f"{_sql_literal(year, 'text')}){',' if i < len(plan) - 1 else ''}"
               f"  -- {snr} {' '.join(str(name).split())}"
-              for i, (sb_id, snr, name, _, _, value, year, lehrer) in enumerate(plan)]
+              for i, (sb_id, snr, name, _, _, value, year, lehrer, lehrer_year) in enumerate(plan)]
     lines = [
-        f"-- {table} / {city}: advance schueler_current + lehrer_current + data_school_year ({len(plan)} rows)",
+        f"-- {table} / {city}: advance schueler_current + lehrer_current (+ its vintage) + data_school_year ({len(plan)} rows)",
         "-- Overwrites only rows whose data_school_year is NULL or older than the new one;",
         "-- re-running is a no-op.",
         f"UPDATE {table} AS s SET",
         "  schueler_current = v.schueler_current,",
         "  lehrer_current = COALESCE(v.lehrer_current, s.lehrer_current),",
+        "  lehrer_data_year = CASE WHEN v.lehrer_current IS NULL THEN s.lehrer_data_year ELSE v.lehrer_data_year END,",
         "  data_school_year = v.data_school_year",
         "FROM (VALUES",
         *values,
-        ") AS v(id, schueler_current, lehrer_current, data_school_year)",
+        ") AS v(id, schueler_current, lehrer_current, lehrer_data_year, data_school_year)",
         "WHERE s.id = v.id",
         "  AND (s.data_school_year IS NULL OR s.data_school_year < v.data_school_year);",
         "",
@@ -99,7 +102,7 @@ def main():
         local_df = load_local_df(PROJECT_ROOT / rel)
         plan, pg_types = plan_table(table, city, local_df)
         print(f"\n{table} / {city}: {len(plan)} rows to advance (local {len(local_df)})")
-        for _, snr, name, old_value, old_year, new_value, new_year, _ in plan:
+        for _, snr, name, old_value, old_year, new_value, new_year, _, _ in plan:
             print(f"  {snr:>6} {str(name)[:40]:40} {old_value!s:>6} ({old_year}) -> {new_value:>6} ({new_year})")
         if plan and not args.dry_run:
             print(f"  SQL: {write_sql(PROJECT_ROOT / args.out, table, city, plan, pg_types)}")

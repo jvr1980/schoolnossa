@@ -56,7 +56,8 @@ def refresh_file(path: Path, editions, dry_run: bool):
 
     changed = [c for c in df.columns
                if c not in before.columns or not as_text(df[c]).equals(as_text(before[c]))]
-    unexpected = [c for c in changed if not c.startswith('schueler_') and c != 'data_school_year']
+    unexpected = [c for c in changed if not c.startswith('schueler_')
+                  and c not in ('data_school_year', 'lehrer_data_year', 'migration_data_year')]
     assert not unexpected, f"unexpected columns changed: {unexpected}"
 
     old_cur = pd.to_numeric(before.get('schueler_current'), errors='coerce')
