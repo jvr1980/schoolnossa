@@ -48,6 +48,11 @@ HEADERS = {
 
 
 def post_batch(url: str, rows: list[dict], attempt_limit: int = 5) -> None:
+    # PostgREST bulk inserts require every object to carry the same keys
+    # (PGRST102). The jsonl omits nulls to stay small, so pad each batch to the
+    # union of its keys with explicit nulls.
+    keys = sorted({k for r in rows for k in r})
+    rows = [{k: r.get(k) for k in keys} for r in rows]
     for attempt in range(1, attempt_limit + 1):
         resp = requests.post(url, headers=HEADERS, data=json.dumps(rows), timeout=180)
         if resp.status_code in (200, 201, 204):

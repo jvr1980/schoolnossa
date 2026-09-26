@@ -1,5 +1,23 @@
 # SchoolNossa Development Journal
 
+## 2026-09-26 — NL uploaded to Supabase (dark launch)
+
+**What:** 1,629 secondary and 6,060 primary Dutch schools are live in `schools` / `primary_schools`, with descriptions, 768-d embeddings and similar-school ids. Invisible on the website — its city picker is hardcoded to the 10 German ids — until the NL navigation ships.
+
+**Contract fixes found while mapping onto the live tables** (all at source, all verified before upload):
+- 3,662 primary schools were "private". Dutch bijzonder schools are state-funded (Art. 23, no tuition); every DUO school is now public, `traegerschaft` 'Öffentlich'.
+- Transit score was 0-10 and 93% saturated; now Berlin's own 0-100 formula (range 0-95, median 31/21 vs Berlin 60).
+- Crime rank ranked school rows (to 5,858); now gemeenten (1-338), identical across both tables for all 284 shared gemeenten. Ameland, Schiermonnikoog, Vlieland and Rozendaal stay blank — CBS suppresses their figures.
+- 2024/25 counts sat under `schueler_2023_24`; previous-year columns now shift with the vintage.
+
+**Shape of the NL rows:** `schulnummer` 'NL-' + BRIN6; `city` 'nl-<gemeente>' — PostgREST caps responses at 1,000 rows (measured), so one national bucket would have truncated silently; largest gemeente is 196. New `geo_country/geo_region/geo_municipality` on both tables, filled for **all** rows (German backfill included). Adapter: `scripts_international/nl/processing/nl_prepare_supabase_upload.py`, validated against a snapshot of the live `information_schema` (the PostgREST OpenAPI root is service-role only).
+
+**Write path:** no service-role key exists and anon is read-only, and ~115 MB cannot go through SQL tool calls. So: temporary staging tables with an insert-only anon policy restricted to `NL-` ids (no SELECT), `nl_upload_to_supabase.py` POSTs the rows, the policy is dropped (window ~3 min), counts verified exact (proving no stray inserts), one `INSERT...SELECT` per table, staging dropped. The promote call returned HTTP 499 but had committed — checked before retrying. SQL steps + rollback in `data_shared/supabase_sql/nl_upload_2026-09/`.
+
+**App fix (Lovable, 1.5 credits):** MCP `list_cities` fetched raw rows under the 1,000-row cap, so it already miscounted (1,000 of 1,186) and NL would have pushed German cities out of it. Now `school_city_counts(p_category)` groups in the database; optional `country` filter; output shape unchanged. Migration `20260926081205`.
+
+**Still open:** NL navigation (country -> region -> gemeente) and a multi-select track filter in the web app; the Lovable import whitelist lacks `geo_*`, so re-importing a German city through Admin -> Data Import would blank them; NL-only fields (inspectorate rating, TTO, denomination) have no live columns yet.
+
 ## 2026-09-25 — NL primary backfill complete; embeddings un-stringified
 
 **What:** The scheduled daily backfill finished on 2026-09-21: all 6,060 primary descriptions grounded, embedded and matched. Its runs also fixed two real bugs (`nl_to_core_schema` read the description cache from a hardcoded `data_nl`, so a primary rebuild matched nothing; and the description pipeline wrote CSV only, so the finalizer dropped descriptions on the next rebuild).
