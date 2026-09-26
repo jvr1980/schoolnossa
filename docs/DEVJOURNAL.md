@@ -1,5 +1,26 @@
 # SchoolNossa Development Journal
 
+## 2026-09-26 (evening) — Per-value vintage stamps + app year labels
+
+**Why:** after the Berlin/Frankfurt advance, an audit of both apps showed the web app labelled teacher counts and the migration share with `data_school_year`. So 67 Berlin schools whose portraits had no 2025/26 teacher figure, and every Berlin migration share (still 2024/25), were shown as '25. Neither app had a "data as of" line, compare views showed no years, the web crime section hardcoded '23/'24, and a school without a student count showed "0".
+
+**Data:** new nullable columns `lehrer_data_year` and `migration_data_year` in `schools` and `primary_schools` (added via the Lovable MCP SQL tool). Backfill:
+- first in SQL (newest year column equal to the current value; otherwise NULL = unknown)
+- then 606 Berlin 2025/26 teacher counts stamped `2025_26` from the finals, guarded on the live value matching.
+
+Result: every city fully stamped except a handful of Munich rows with unknown vintage; Frankfurt has no teacher counts at all. Pipeline: `stable_fields` emits both stamps, the stable upload group carries them, and `emit_school_year_advance_sql.py` moves `lehrer_data_year` together with `lehrer_current` (branch `feature/vintage-stamps`).
+
+**Web (Lovable agent, 16.9 credits, commit c3d9850):**
+- teachers/migration labelled by their own stamps; ratio year only when student and teacher years match (tooltip explains mixed years)
+- missing student counts stay undefined (hidden on cards, excluded from averages, filters and sorting)
+- "Datenstand / Data as of" line in the detail modal; crime section uses `crime_total_crimes_current` with its real year and a previous-year change only when that exact column exists
+- comparison tooltip and new values table show each school's year plus a "Werte aus unterschiedlichen Jahren" note
+- MCP tools, /data-coverage, semantic-search and both description generators moved off `schueler_2024_25`/`lehrer_2024_25`
+
+Tests (10), typecheck and preview build pass. `semantic-search` and the two description functions are deployed; the frontend and `mcp` go live on the next Lovable publish.
+
+**iOS:** see the schoolnossa-mobile journal (branch `feature/data-vintage-labels`).
+
 ## 2026-09-26 — Wave B: Frankfurt live, NRW SJ 2026/27 deltas applied, Berlin 2025/26 via school portraits
 
 **Approach:** new vintages are applied as deltas only — column-scoped refresh scripts on the finals plus targeted Supabase UPDATEs, with a pre-update snapshot kept as rollback SQL. No pipeline re-runs, no description/embedding regeneration.
