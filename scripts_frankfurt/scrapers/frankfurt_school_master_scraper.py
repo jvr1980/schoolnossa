@@ -44,8 +44,12 @@ RAW_DIR = DATA_DIR / "raw"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 CACHE_DIR = DATA_DIR / "cache"
 
+# Verzeichnis 6 is resolved at runtime (newest edition on the Hessen publications
+# page) and archived per edition — see frankfurt_verz6_enrichment.get_verz6.
+sys.path.insert(0, str(SCRIPT_DIR))
+from frankfurt_verz6_enrichment import get_verz6  # noqa: E402
+
 # Data source URLs
-HESSEN_VERZ6_URL = "https://statistik.hessen.de/sites/statistik.hessen.de/files/2025-09/verz-6_25_0.xlsx"
 JEDESCHULE_CSV_URL = "https://jedeschule.codefor.de/csv-data/jedeschule-data-2026-03-28.csv"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
@@ -74,30 +78,10 @@ def ensure_directories():
 
 
 def download_hessen_verzeichnis() -> pd.DataFrame:
-    """Download and parse Hessen Schulverzeichnis 6 (Excel)."""
-    cache_file = CACHE_DIR / "hessen_verz6.xlsx"
-
-    # Check cache (7-day validity)
-    if cache_file.exists():
-        age = datetime.now().timestamp() - cache_file.stat().st_mtime
-        if age < 7 * 86400:
-            logger.info("Loading Hessen Verzeichnis 6 from cache...")
-            return _parse_verzeichnis_excel(cache_file)
-
-    logger.info(f"Downloading Hessen Verzeichnis 6 from {HESSEN_VERZ6_URL}")
-    try:
-        response = requests.get(HESSEN_VERZ6_URL, headers=HEADERS, timeout=120)
-        response.raise_for_status()
-        logger.info(f"Downloaded {len(response.content) / 1024:.0f} KB")
-
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        with open(cache_file, 'wb') as f:
-            f.write(response.content)
-
-        return _parse_verzeichnis_excel(cache_file)
-    except requests.RequestException as e:
-        logger.error(f"Failed to download Hessen Verzeichnis 6: {e}")
-        raise
+    """Download (or load from the edition archive) and parse Hessen Verzeichnis 6."""
+    edition, path = get_verz6()
+    logger.info(f"Hessen Verzeichnis 6 edition {edition}: {path.name}")
+    return _parse_verzeichnis_excel(path)
 
 
 def _parse_verzeichnis_excel(filepath: Path) -> pd.DataFrame:

@@ -3,18 +3,29 @@
 Frankfurt Verzeichnis 6 Enrichment (Phase 2 — optional)
 
 Joins Hessen Verzeichnis 6 data into the Schulwegweiser-based raw CSVs to add:
-  - schulnummer   : official 4-digit HKM school ID (primary key for Berlin schema)
-  - ndh_count     : non-German native language student count (belastungsstufe proxy)
+  - schulnummer      : official 4-digit HKM school ID (primary key for Berlin schema)
+  - ndh_count        : non-German native language student count (belastungsstufe proxy)
+  - schueler_YYYY_YY : official student count, one column per edition (newest two)
 
 Matching: fuzzy name match (SequenceMatcher ≥ 0.75) + PLZ cross-check.
 Schools without a Verzeichnis 6 match get a generated ID: "SW-{slug}".
+
+Vintage: each edition names its survey date ("Erhebung ... vom 01. November
+2025" → school year 2025/26). The student-count column is labelled from that
+sentence, never from the file name, so a new edition cannot overwrite last
+year's column.
+
+Editions: the Hessen publications page links only the newest edition and old
+files are deleted (verz-6_25_0.xlsx went 404 once verz-6_26 appeared). Every
+edition is therefore archived as data_frankfurt/cache/verz6_{EE}.xlsx and kept
+in git; older editions come from that archive only.
 
 Input:
   data_frankfurt/raw/frankfurt_primary_schools.csv    (from Phase 1)
   data_frankfurt/raw/frankfurt_secondary_schools.csv
   data_frankfurt/raw/frankfurt_vocational_schools.csv (optional)
 
-Output: writes schulnummer + ndh_count back into the same raw CSVs.
+Output: writes schulnummer + ndh_count + schueler_* back into the same raw CSVs.
 
 Author: Frankfurt School Data Pipeline
 Created: 2026-04-06
@@ -25,6 +36,7 @@ import re
 from difflib import SequenceMatcher
 from pathlib import Path
 
+import openpyxl
 import pandas as pd
 import requests
 
@@ -37,20 +49,14 @@ DATA_DIR     = PROJECT_ROOT / "data_frankfurt"
 RAW_DIR      = DATA_DIR / "raw"
 CACHE_DIR    = DATA_DIR / "cache"
 
-HESSEN_VERZ6_URL = (
-    "https://statistik.hessen.de/sites/statistik.hessen.de/files/2025-09/verz-6_25_0.xlsx"
+# Publications page that links the current edition of every Hessen Verzeichnis
+VERZ6_INDEX_URL = "https://statistik.hessen.de/publikationen/verzeichnisse"
+VERZ6_LINK_RE = re.compile(
+    r"/sites/statistik\.hessen\.de/files/\d{4}-\d{2}/verz-6_(\d{2})(?:_\d+)?\.xlsx"
 )
-VERZ6_CACHE = CACHE_DIR / "verz6_excel.xlsx"
-
-# Prior year — Verz6 2024 = school year 2023/24
-HESSEN_VERZ6_PRIOR_URLS = [
-    "https://statistik.hessen.de/sites/statistik.hessen.de/files/2024-09/verz-6_24_0.xlsx",
-    "https://statistik.hessen.de/sites/statistik.hessen.de/files/2024-08/verz-6_24_0.xlsx",
-    "https://statistik.hessen.de/sites/statistik.hessen.de/files/2024-10/verz-6_24_0.xlsx",
-    "https://statistik.hessen.de/sites/statistik.hessen.de/files/2024-11/verz-6_24_0.xlsx",
-    "https://statistik.hessen.de/sites/statistik.hessen.de/files/2025-03/verz-6_24_0.xlsx",
-]
-VERZ6_PRIOR_CACHE = CACHE_DIR / "verz6_excel_2024.xlsx"
+VERZ6_ARCHIVE_RE = re.compile(r"verz6_(\d{2})\.xlsx")
+SURVEY_DATE_RE = re.compile(r"Erhebung an den allgemeinbildenden Schulen vom\s+\d{1,2}\.\s*\w+\s+(\d{4})")
+HTTP_HEADERS = {"User-Agent": "SchoolNossa/1.0 (Frankfurt school data pipeline, educational project)"}
 
 # Frankfurt Landkreis code in Verzeichnis 6
 FFM_LANDKREIS = 412
@@ -58,55 +64,97 @@ FFM_LANDKREIS = 412
 
 # ── Download + parse Verzeichnis 6 ───────────────────────────────────────────
 
-def download_verz6() -> Path:
-    """Download Verzeichnis 6 Excel to cache. Returns local path."""
-    if VERZ6_CACHE.exists():
-        logger.info(f"  Using cached Verzeichnis 6: {VERZ6_CACHE}")
-        return VERZ6_CACHE
+def verz6_archive_path(edition: int) -> Path:
+    return CACHE_DIR / f"verz6_{edition:02d}.xlsx"
+
+
+def archived_editions() -> list:
+    return sorted(int(m.group(1)) for p in CACHE_DIR.glob("verz6_*.xlsx")
+                  if (m := VERZ6_ARCHIVE_RE.fullmatch(p.name)))
+
+
+def resolve_latest_verz6_url():
+    """(edition, url) of the newest Verz6 linked on the publications page, or (None, None)."""
+    try:
+        r = requests.get(VERZ6_INDEX_URL, headers=HTTP_HEADERS, timeout=45)
+        r.raise_for_status()
+    except requests.RequestException as e:
+        logger.warning(f"  Could not read {VERZ6_INDEX_URL}: {e}")
+        return None, None
+    links = {int(m.group(1)): "https://statistik.hessen.de" + m.group(0)
+             for m in VERZ6_LINK_RE.finditer(r.text)}
+    if not links:
+        logger.warning(f"  No verz-6 link on {VERZ6_INDEX_URL}")
+        return None, None
+    edition = max(links)
+    return edition, links[edition]
+
+
+def get_verz6(edition=None):
+    """(edition, path) of a Verz6 edition — the newest when edition is None.
+
+    Archived editions are used as-is (published editions never change). The
+    newest online edition is downloaded into the archive on first use; an
+    older edition that is not archived cannot be recovered and raises.
+    """
+    if edition is not None and verz6_archive_path(edition).exists():
+        return edition, verz6_archive_path(edition)
+
+    online_edition, url = resolve_latest_verz6_url()
+    if edition is None:
+        edition = online_edition if online_edition is not None else max(archived_editions(), default=None)
+        if edition is None:
+            raise FileNotFoundError("No Verzeichnis 6 edition online or archived")
+        if online_edition is None:
+            logger.warning(f"  Publications page unavailable — using archived edition {edition}")
+
+    path = verz6_archive_path(edition)
+    if path.exists():
+        logger.info(f"  Using archived Verzeichnis 6 edition {edition}: {path.name}")
+        return edition, path
+    if edition != online_edition:
+        raise FileNotFoundError(
+            f"Verzeichnis 6 edition {edition} is not archived and no longer online "
+            f"(online: {online_edition})")
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    logger.info(f"  Downloading Verzeichnis 6 from {HESSEN_VERZ6_URL}...")
-    r = requests.get(HESSEN_VERZ6_URL, timeout=60, stream=True)
+    logger.info(f"  Downloading Verzeichnis 6 edition {edition} from {url}...")
+    r = requests.get(url, headers=HTTP_HEADERS, timeout=120)
     r.raise_for_status()
-    with open(VERZ6_CACHE, "wb") as f:
-        for chunk in r.iter_content(chunk_size=65536):
-            f.write(chunk)
-    logger.info(f"  Saved: {VERZ6_CACHE} ({VERZ6_CACHE.stat().st_size:,} bytes)")
-    return VERZ6_CACHE
+    path.write_bytes(r.content)
+    logger.info(f"  Archived: {path} ({path.stat().st_size:,} bytes)")
+    return edition, path
 
 
-def download_verz6_prior():
-    """Try to download previous year's Verz6 (2023/24) from known candidate URLs."""
-    if VERZ6_PRIOR_CACHE.exists():
-        logger.info(f"  Using cached prior-year Verzeichnis 6: {VERZ6_PRIOR_CACHE}")
-        return VERZ6_PRIOR_CACHE
+def verz6_school_year(path: Path) -> str:
+    """School year of an edition's student counts, from its survey-date sentence.
 
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    for url in HESSEN_VERZ6_PRIOR_URLS:
-        try:
-            logger.info(f"  Trying prior-year Verz6: {url}")
-            r = requests.get(url, timeout=30, stream=True)
-            if r.status_code == 200:
-                with open(VERZ6_PRIOR_CACHE, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=65536):
-                        f.write(chunk)
-                logger.info(f"  Saved prior-year Verz6: {VERZ6_PRIOR_CACHE}")
-                return VERZ6_PRIOR_CACHE
-        except Exception as e:
-            logger.debug(f"  Failed {url}: {e}")
-
-    logger.warning("  Prior-year Verz6 not found at any known URL — schueler_2023_24 will remain empty")
-    return None
+    "Erhebung ... vom 01. November 2025" → "2025_26". Refuses to guess when the
+    sentence is missing, since a wrong label would overwrite another year.
+    """
+    wb = openpyxl.load_workbook(path, read_only=True)
+    try:
+        for ws in wb.worksheets:
+            if ws.title == "Schulverzeichnis":
+                continue
+            for row in ws.iter_rows(values_only=True):
+                for v in row:
+                    m = SURVEY_DATE_RE.search(v) if isinstance(v, str) else None
+                    if m:
+                        year = int(m.group(1))
+                        return f"{year}_{(year + 1) % 100:02d}"
+    finally:
+        wb.close()
+    raise ValueError(f"No survey date ('Erhebung ... vom <Tag>. November <Jahr>') in {path.name}")
 
 
-def load_verz6(path_override=None) -> pd.DataFrame:
-    """Load and parse Verzeichnis 6 Excel for Frankfurt schools.
+def load_verz6(path: Path) -> pd.DataFrame:
+    """Load and parse one Verzeichnis 6 edition for Frankfurt schools.
 
     The Excel file has multiple sheets; school data is in 'Schulverzeichnis'.
-    Row 0 is the header row with German column names.
-    Pass path_override to load a different year's file (e.g. prior year).
+    Row 0 is the header row with German column names. The edition's school
+    year is attached as df.attrs["school_year"].
     """
-    path = path_override or download_verz6()
 
     # Data is in the 'Schulverzeichnis' sheet, header in row 0
     df = pd.read_excel(path, sheet_name="Schulverzeichnis", header=0, engine="openpyxl")
@@ -135,7 +183,6 @@ def load_verz6(path_override=None) -> pd.DataFrame:
         df = df.rename(columns={ndh_cols[0]: "ndh_count"})
 
     # Student total — "Schülerinnen und Schüler insgesamt ohne Vorklassen"
-    # Verz6 Ausgabe 2025 = school year 2024/25
     schueler_col = next(
         (c for c in df.columns if "schüler" in c.lower() and "insgesamt" in c.lower()
          and "ohne" in c.lower()),
@@ -157,9 +204,59 @@ def load_verz6(path_override=None) -> pd.DataFrame:
         lambda x: str(int(float(x))).strip() if pd.notna(x) else None
     )
     df["schulname"] = df["schulname"].astype(str).str.strip()
+    df.attrs["school_year"] = verz6_school_year(path)
 
-    logger.info(f"  Loaded {len(df)} Frankfurt schools from Verzeichnis 6")
+    logger.info(f"  Loaded {len(df)} Frankfurt schools from {path.name} "
+                f"(school year {df.attrs['school_year']})")
     return df
+
+
+def _same_school(name, plz, verz6_row) -> bool:
+    """Identity check for a schulnummer join: same postcode, or near-identical name.
+
+    Catches historic fuzzy-match errors (Klingerschule carried Kirchnerschule's
+    number) without rejecting renamed-but-same schools at the same address.
+    """
+    plz, v_plz = str(plz)[:5], str(verz6_row["plz_verz6"])[:5]
+    if plz.isdigit() and v_plz.isdigit() and plz == v_plz:
+        return True
+    return SequenceMatcher(None, normalize(name), normalize(verz6_row["schulname"])).ratio() >= 0.85
+
+
+def apply_verz6_counts(df: pd.DataFrame, verz6_df: pd.DataFrame):
+    """Write an edition's student counts into schueler_{school_year} on schulnummer.
+
+    Verz6 is the official statistic, so it overwrites web-researched values.
+    Rows keep what they have when there is no Verz6 match (SW-* ids, schools
+    missing from the edition), when the match fails the identity check, or
+    when the school is vocational — Verz6 covers general-education schools
+    only, so a Berufliche Schule's count is just its general-education branch.
+    Returns (df, rows_written).
+    """
+    col = f"schueler_{verz6_df.attrs['school_year']}"
+    if "schueler_verz6" not in verz6_df.columns:
+        return df, 0
+    verz6 = (verz6_df.dropna(subset=["schueler_verz6"])
+             .drop_duplicates(subset=["schulnummer"])
+             .set_index("schulnummer"))
+    keys = df["schulnummer"].astype(str).str.strip()
+    hit = keys.isin(verz6.index)
+    if "school_type" in df.columns:
+        vocational = df["school_type"].astype(str).str.contains("beruf", case=False)
+        for i in df.index[hit & vocational]:
+            logger.info(f"    skip {keys[i]} {df.at[i, 'schulname']!r}: vocational, Verz6 count is partial")
+        hit &= ~vocational
+    for i in df.index[hit]:
+        if not _same_school(df.at[i, "schulname"], df.at[i, "plz"] if "plz" in df.columns else "",
+                            verz6.loc[keys[i]]):
+            logger.warning(f"    skip {keys[i]} {df.at[i, 'schulname']!r}: Verz6 has "
+                           f"{verz6.at[keys[i], 'schulname']!r} under this number (wrong ID match)")
+            hit[i] = False
+    if col not in df.columns:
+        df[col] = float("nan")
+    df[col] = pd.to_numeric(df[col], errors="coerce")
+    df.loc[hit, col] = keys[hit].map(verz6["schueler_verz6"]).astype(float)
+    return df, int(hit.sum())
 
 
 # ── Fuzzy matching ────────────────────────────────────────────────────────────
@@ -204,8 +301,6 @@ def enrich_file(csv_path: Path, verz6_df: pd.DataFrame) -> pd.DataFrame:
         if col not in df.columns:
             df[col] = None
 
-    has_schueler = "schueler_verz6" in verz6_df.columns
-    schueler_filled = 0
     matched = 0
     generated = 0
 
@@ -235,15 +330,6 @@ def enrich_file(csv_path: Path, verz6_df: pd.DataFrame) -> pd.DataFrame:
                     current_ndh = df.at[idx, "ndh_count"] if "ndh_count" in df.columns else None
                     if pd.isna(current_ndh) or current_ndh in {None, ""}:
                         df.at[idx, "ndh_count"] = match_row.iloc[0]["ndh_count"]
-                # Fill schueler_2024_25 from Verz6 student count (official, preferred over web)
-                if has_schueler:
-                    verz_val = match_row.iloc[0]["schueler_verz6"]
-                    if pd.notna(verz_val):
-                        if "schueler_2024_25" not in df.columns:
-                            df["schueler_2024_25"] = None
-                        # Verz6 is authoritative — overwrite even if web value exists
-                        df.at[idx, "schueler_2024_25"] = int(verz_val)
-                        schueler_filled += 1
             elif needs_nr:
                 slug = str(row.get("sw_portal_slug", "")) or re.sub(r"[^a-z0-9-]", "-", sw_name.lower())
                 df.at[idx, "schulnummer"] = f"SW-{slug}"
@@ -254,39 +340,23 @@ def enrich_file(csv_path: Path, verz6_df: pd.DataFrame) -> pd.DataFrame:
             generated += 1
             logger.debug(f"    No match for {sw_name!r} (best={score:.2f}) → generated ID")
 
+    df, written = apply_verz6_counts(df, verz6_df)
     df.to_csv(csv_path, index=False, encoding="utf-8-sig")
     logger.info(f"  schulnummer: {matched} from Verz6 + {generated} generated")
-    if has_schueler:
-        logger.info(f"  schueler_2024_25: {schueler_filled} filled from Verz6 (official)")
+    logger.info(f"  schueler_{verz6_df.attrs['school_year']}: {written} from Verz6 (official)")
     return df
 
 
-def backfill_prior_year(csv_path: Path, prior_df: pd.DataFrame):
-    """Backfill schueler_2023_24 from prior-year Verz6 where missing."""
+def apply_prior_edition(csv_path: Path, prior_df: pd.DataFrame):
+    """Write the previous edition's counts (one school year earlier) on schulnummer."""
     if not csv_path.exists():
         return
     df = pd.read_csv(csv_path)
     if "schulnummer" not in df.columns:
         return
-
-    filled = 0
-    if "schueler_2023_24" not in df.columns:
-        df["schueler_2023_24"] = None
-
-    for idx, row in df.iterrows():
-        nr = str(row.get("schulnummer", "") or "")
-        if not nr or nr.startswith("SW-") or nr in {"nan", "None", ""}:
-            continue
-        current = df.at[idx, "schueler_2023_24"]
-        if pd.notna(current):
-            continue
-        match = prior_df[prior_df["schulnummer"] == nr]
-        if not match.empty and pd.notna(match.iloc[0].get("schueler_verz6")):
-            df.at[idx, "schueler_2023_24"] = int(match.iloc[0]["schueler_verz6"])
-            filled += 1
-
+    df, written = apply_verz6_counts(df, prior_df)
     df.to_csv(csv_path, index=False, encoding="utf-8-sig")
-    logger.info(f"  schueler_2023_24: {filled} filled from prior-year Verz6 → {csv_path.name}")
+    logger.info(f"  schueler_{prior_df.attrs['school_year']}: {written} from prior edition → {csv_path.name}")
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
@@ -296,7 +366,8 @@ def main():
     logger.info("Verzeichnis 6 Enrichment (schulnummer + ndH + schueler)")
     logger.info("=" * 60)
 
-    verz6 = load_verz6()
+    edition, path = get_verz6()
+    verz6 = load_verz6(path)
 
     fnames = ["frankfurt_primary_schools.csv",
               "frankfurt_secondary_schools.csv",
@@ -306,13 +377,16 @@ def main():
         logger.info(f"\n── {fname} ──")
         enrich_file(RAW_DIR / fname, verz6)
 
-    # Prior-year Verz6 for schueler_2023_24
-    logger.info("\n── Prior-year Verz6 (2023/24) ──")
-    prior_path = download_verz6_prior()
-    if prior_path:
-        prior_df = load_verz6(path_override=prior_path)
+    # Previous edition = previous school year (archive only; Hessen deletes old files)
+    logger.info(f"\n── Prior edition ({edition - 1}) ──")
+    try:
+        _, prior_path = get_verz6(edition - 1)
+    except FileNotFoundError as e:
+        logger.warning(f"  {e} — prior-year student counts left as they are")
+    else:
+        prior_df = load_verz6(prior_path)
         for fname in fnames:
-            backfill_prior_year(RAW_DIR / fname, prior_df)
+            apply_prior_edition(RAW_DIR / fname, prior_df)
 
     logger.info("\nVerzeichnis 6 enrichment complete.")
 

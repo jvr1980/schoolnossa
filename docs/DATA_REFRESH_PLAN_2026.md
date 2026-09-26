@@ -25,11 +25,11 @@ So: run a **Wave A** refresh now on the live/rolling sources (cheap, high value)
 | City | Source | Cadence | In our asset | Available now | Verdict |
 |---|---|---|---|---|---|
 | **Berlin** (sec + prim) | `bildung.berlin.de/Schulverzeichnis` | Rolling; SJ flips ~Aug | SJ 2024/25 | **SJ 2026/27** (portal selector default) | 🔴 **Update now** — 2 years stale |
-| **Berlin** statistics | `bildungsstatistik.berlin.de` SVZ_Fakt5 / *Blickpunkt Schule* | Annual, ~Nov–Dec | 2023/24 file + 2024/25 | *Blickpunkt Schule* **2025/26** published | 🟡 Update to 25/26 now, or fold into Wave B |
+| **Berlin** statistics | ~~`bildungsstatistik.berlin.de` SVZ_Fakt5~~ (404 since Sept 2026; `/next/` is login-only) → `bildung.berlin.de/Schulverzeichnis` school portraits | Annual; portraits show the current year only (students 06.10., staff 01.11.) | 2023/24 file + 2024/25 | Portraits: **2025/26** | ✅ **Done 2026-09-26** (`scrape_schulportrait_statistics.py`; 785 schools; finals + Supabase) |
 | **Hamburg** (sec + prim) | `geodienste.hamburg.de` `HH_WFS_Schulen` (live WFS) | Rolling; CKAN meta modified **2026-07-03** | Pulled Apr 2026 | Current | 🟢 **Update now** — cheap re-pull |
 | **Munich** | `jedeschule.codefor.de` CSV snapshots | Rolling, ~weekly | Pinned **`2025-01-04`** | **`2026-08-15`** | 🔴 **Update now** — 19 months stale, one-line change |
-| **NRW** (Düsseldorf, Köln) | `schulministerium.nrw` `schulliste_sj_25_26_open_data.csv` | Annual, **late Sept** | SJ 25/26 | SJ 25/26 (last-mod **2025-09-23**); no 26/27 file yet (404) | ⏸️ **Wait** — 26/27 due ~late Sept 2026 |
-| **Frankfurt** | `statistik.hessen.de` `verz-6_25_0.xlsx` | Annual, **early Sept** | verz-6_25 | verz-6_25 (last-mod **2025-09-09**); no verz-6_26 yet (404) | ⏸️ **Wait** — verz-6_26 due ~early Sept 2026 |
+| **NRW** (Düsseldorf, Köln) | `schulministerium.nrw` Sozialindex list (renamed: `schulsozialindex_schulliste_sj_26_27.csv`) + rolling `schuldaten.csv` | Annual, **late Sept** | SJ 26/27 | Published **2026-09-21** (new filename, cp1252) | ✅ **Done 2026-09-26** (Wave B2, deltas only; Supabase applied) |
+| **Frankfurt** | `statistik.hessen.de` `verz-6_25_0.xlsx` | Annual, **early Sept** | verz-6_25 → **verz-6_26** | verz-6_26 published **2026-08-26** at `/files/2026-08/verz-6_26.xlsx` (survey 1 Nov 2025 = SJ 2025/26); verz-6_25_0 now 404 | ✅ **Done 2026-09-19** (Wave B1) |
 | **Stuttgart** | `stuttgart.de/organigramm/adressen` (live RSS+HTML scrape) | Rolling | Scraped Apr 2026 | Current | 🟢 Update now — cheap re-scrape |
 | **Leipzig** | `opendata.leipzig.de` | Annual | SJ 2024/25 | Still SJ 2024/25 | ⏸️ **Wait** |
 | **Dresden** | `schuldatenbank.sachsen.de/api/v1/schools` (live API) | Rolling | Pulled Apr 2026 | Current, API verified live | 🟢 Update now — cheap re-pull |
@@ -94,10 +94,10 @@ Trigger: the September annual releases actually appearing.
 
 | # | Task | Trigger |
 |---|---|---|
-| B1 | Frankfurt → `verz-6_26_0.xlsx` | Hessen publishes, ~early Sept |
-| B2 | NRW → `schulliste_sj_26_27_open_data.csv` | Schulministerium publishes, ~late Sept |
+| B1 | Frankfurt → `verz-6_26.xlsx` ✅ done 2026-09-19 (finals); Supabase applied 2026-09-26 | Published 2026-08-26 |
+| B2 | NRW → `schulsozialindex_schulliste_sj_26_27.csv` + `schuldaten.csv` deltas ✅ done 2026-09-26 (finals + Supabase); new school 100255 added, Erkrath rows 165669/183246 removed | Published 2026-09-21 |
 | B3 | Leipzig SJ 2025/26 | `opendata.leipzig.de` refresh |
-| B4 | Berlin Bildungsstatistik → 2025/26 (or 2026/27 if out) | *Blickpunkt Schule* |
+| B4 | Berlin → 2025/26 from the school portraits (SVZ_Fakt5 retired) ✅ done 2026-09-26 (finals + Supabase) | Portraits show 2025/26 until 2026/27 goes live |
 | B5 | ISQ exam data verification + refresh | Verify vintage first |
 | B6 | Full cross-city QA, schema drift, Supabase upload | After B1–B5 |
 
@@ -114,7 +114,7 @@ Trigger: the September annual releases actually appearing.
 Two of this audit's findings are avoidable-by-automation:
 
 1. **Pinned snapshot URLs rot silently.** Munich sat 19 months behind because a URL was hardcoded. Any rolling source should resolve "latest" at runtime.
-2. **Annual releases are predictable.** Hessen ≈ Sept 9, NRW ≈ Sept 23, Unfallatlas ≈ July, PKS ≈ April, Kriminalitätsatlas ≈ April.
+2. **Annual releases are predictable.** Hessen ≈ late Aug–Sept 9 (2026: Aug 26, new file name), NRW ≈ Sept 23, Unfallatlas ≈ July, PKS ≈ April, Kriminalitätsatlas ≈ April.
 
 Proposal: a `scripts_shared/check_source_freshness.py` that HEAD-probes every versioned source URL, compares `Last-Modified` / probes next-year filename patterns, and writes a status table. Run it monthly (or as a scheduled task) so Wave B triggers itself instead of relying on someone remembering.
 

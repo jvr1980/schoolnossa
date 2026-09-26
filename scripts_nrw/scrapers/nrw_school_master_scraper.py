@@ -43,7 +43,15 @@ logger = logging.getLogger(__name__)
 
 # Data source URLs
 SCHULDATEN_CSV_URL = "https://www.schulministerium.nrw.de/BiPo/OpenData/Schuldaten/schuldaten.csv"
-SCHULSOZIALINDEX_CSV_URL = "https://www.schulministerium.nrw/system/files/media/document/file/schulliste_sj_25_26_open_data.csv"
+# The Schulsozialindex list is republished each September under a per-school-year
+# filename, and the naming scheme changed in 2026 (sj_25_26: schulliste_sj_25_26_open_data.csv,
+# sj_26_27: schulsozialindex_schulliste_sj_26_27.csv). resolve_schulsozialindex_url()
+# probes both schemes, newest school year first.
+SCHULSOZIALINDEX_BASE_URL = "https://www.schulministerium.nrw/system/files/media/document/file/"
+SCHULSOZIALINDEX_FILENAMES = [
+    "schulsozialindex_schulliste_sj_{a:02d}_{b:02d}.csv",
+    "schulliste_sj_{a:02d}_{b:02d}_open_data.csv",
+]
 KEY_SCHULFORM_URL = "https://www.schulministerium.nrw.de/BiPo/OpenData/Schuldaten/key_schulformschluessel.csv"
 
 HEADERS = {
@@ -125,6 +133,23 @@ def download_file(url: str, description: str) -> bytes:
         raise
 
 
+def resolve_schulsozialindex_url(today: Optional[datetime] = None):
+    """Return (url, school_year) of the newest published Schulsozialindex list, e.g. ('…sj_26_27.csv', '2026_27')."""
+    today = today or datetime.now()
+    start = today.year if today.month >= 8 else today.year - 1  # school year starts 1 August
+    for year in range(start + 1, start - 3, -1):
+        a, b = year % 100, (year + 1) % 100
+        for pattern in SCHULSOZIALINDEX_FILENAMES:
+            url = SCHULSOZIALINDEX_BASE_URL + pattern.format(a=a, b=b)
+            try:
+                r = requests.head(url, headers=HEADERS, timeout=30, allow_redirects=True)
+            except requests.RequestException:
+                continue
+            if r.status_code == 200:
+                return url, f"{year}_{b:02d}"
+    raise FileNotFoundError("No Schulsozialindex list found on schulministerium.nrw")
+
+
 def parse_schuldaten_csv(content: bytes) -> pd.DataFrame:
     """Parse the NRW school data CSV."""
     logger.info("Parsing NRW school data CSV...")
@@ -155,10 +180,13 @@ def parse_schulsozialindex_csv(content: bytes) -> pd.DataFrame:
     """Parse the Schulsozialindex CSV (cp850 encoding)."""
     logger.info("Parsing Schulsozialindex CSV...")
 
-    # Try cp850 first, then fallback
-    for encoding in ['cp850', 'latin-1', 'utf-8', 'utf-8-sig']:
+    # The encoding varies by edition (sj_25_26 cp850, sj_26_27 cp1252). Every
+    # single-byte codec decodes without error, so pick the one that yields real umlauts.
+    for encoding in ['utf-8-sig', 'cp850', 'cp1252']:
         try:
             text = content.decode(encoding)
+            if encoding != 'utf-8-sig' and 'Köln' not in text and 'Düsseldorf' not in text:
+                continue
             df = pd.read_csv(
                 io.StringIO(text),
                 sep=';',
@@ -481,7 +509,8 @@ def main():
         # Download and parse Schulsozialindex
         ssi_df = pd.DataFrame()
         try:
-            ssi_content = download_file(SCHULSOZIALINDEX_CSV_URL, "Schulsozialindex")
+            ssi_url, _ = resolve_schulsozialindex_url()
+            ssi_content = download_file(ssi_url, "Schulsozialindex")
             raw_ssi = RAW_DIR / "nrw_schulsozialindex_raw.csv"
             with open(raw_ssi, 'wb') as f:
                 f.write(ssi_content)
