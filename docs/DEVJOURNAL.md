@@ -12,7 +12,7 @@
 - Overpass returned 504/429 for parts of the combined Düsseldorf–Köln bounding box. Every skipped tile was ≥1.7 km from both schools, and all reported stops are closer, so no nearer stop was missed. Run one city at a time next time.
 - Fixed while doing this: all-NULL columns get a guessed `text` type, and `NULL::text` cannot be written into integer columns, so the emitter now writes bare `NULL`.
 - Friedrich-Wilhelm-Gymnasium (moved ~200 m) was not recomputed.
-- Luisen-Gymnasium's DE/EN descriptions still mention the old site (Bastionstr./Carlstadt).
+- Luisen-Gymnasium's description was then regenerated (research + DE/EN + 768-dim embedding, with the register address passed as known data). The text now says the school moved to Völklinger Straße in 2026. The Düsseldorf `school_similarities` were rebuilt (same-city; 570 pairs). Rollback: `data_shared/supabase_sql/luisen_description_2026-09/rollback_snapshot.sql`.
 
 ## 2026-09-26 (late) — school_similarities rebuilt: same city (DE), country-wide (NL)
 
