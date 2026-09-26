@@ -946,4 +946,6 @@ Examples:
 
 
 if __name__ == "__main__":
-    main()
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts_shared"))
+    from failure_reporter import run_with_failure_reporting
+    run_with_failure_reporting(main, pipeline="berlin_secondary")
