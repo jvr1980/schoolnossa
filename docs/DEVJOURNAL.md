@@ -10,7 +10,7 @@
 
 **Result:** 28,140 pairs. DE: 1,185 schools × 10, 0 cross-city pairs. NL: 1,629 × 10, none outside NL. 100255's top matches are all Düsseldorf schools (Elisabeth-Selbert-Gymnasium, Élise Freinet Gesamtschule, …).
 
-**Watch out:** the admin "compute similarities" button in the web app still runs the global version, which mixes cities and countries. Don't use it until the edge function applies this rule.
+**Edge function updated (Lovable commits 09a7577 + 5a95870, 2.2 credits, deployed, not invoked):** `compute-school-similarities` now applies the same rule (`COUNTRYWIDE_PREFIXES = ["nl"]`, otherwise same city; unknown prefixes default to same city) and returns a per-scope summary. It also had a latent bug: its single unranged select hit PostgREST's 1,000-row cap (`Content-Range: 0-999/2814`), so the admin button would have wiped the table and rebuilt only ~1,000 schools. The fetch now paginates, and a failed page throws before the delete.
 
 ## 2026-09-26 (evening) — Per-value vintage stamps + app year labels
 
