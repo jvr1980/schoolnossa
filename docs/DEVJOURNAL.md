@@ -1,14 +1,16 @@
 # SchoolNossa Development Journal
 
-## 2026-09-26 (late) — school_similarities rebuilt, per country
+## 2026-09-26 (late) — school_similarities rebuilt: same city (DE), country-wide (NL)
 
-**What:** full rebuild of `school_similarities` in one SQL transaction via the Lovable MCP. Same method as the `compute-school-similarities` edge function: cosine over the 768-dim embeddings, top 10 per school, ranks 1–10. Unlike the edge function, candidates are restricted to the same country (prefix of `city`: `nl-*` → NL, otherwise DE).
+**Rule (user decision):** similar schools are matched **within the same city** for German schools, and **across the whole Netherlands** for Dutch schools. Dutch `city` values are municipalities, and 87 of them have a single school, so a same-city rule would leave those schools with no matches.
 
-**Why:** add the new Düsseldorf school 100255 to other schools' lists and restore the 10th entry lost when the Erkrath rows were deleted. The edge function compares every school with every other one; since the NL rows (1,629 with embeddings) arrived, running it would have mixed Dutch schools into German lists.
+**What:** rebuilt in SQL transactions via the Lovable MCP, using the same method as the `compute-school-similarities` edge function: cosine over the 768-dim embeddings, top 10 per school, ranks 1–10. Only the candidate filter differs (`o.city = s.city` for DE, `o.city LIKE 'nl-%'` for NL).
 
-**Result:** DE 1,185 schools / 11,850 pairs, NL 1,629 / 16,290 (new), 10 per school everywhere, 0 cross-country pairs, 100255 appears in 2 other lists.
+**Why:** add the new Düsseldorf school 100255 to other schools' lists and restore the 10th entry lost when the Erkrath rows were deleted.
 
-**Watch out:** the admin "compute similarities" button in the web app still runs the all-countries version. Before using it, add a same-country filter to the edge function.
+**Result:** 28,140 pairs. DE: 1,185 schools × 10, 0 cross-city pairs. NL: 1,629 × 10, none outside NL. 100255's top matches are all Düsseldorf schools (Elisabeth-Selbert-Gymnasium, Élise Freinet Gesamtschule, …).
+
+**Watch out:** the admin "compute similarities" button in the web app still runs the global version, which mixes cities and countries. Don't use it until the edge function applies this rule.
 
 ## 2026-09-26 (evening) — Per-value vintage stamps + app year labels
 
