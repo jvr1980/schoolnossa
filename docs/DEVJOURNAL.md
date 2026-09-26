@@ -13,6 +13,12 @@
 - Fixed while doing this: all-NULL columns get a guessed `text` type, and `NULL::text` cannot be written into integer columns, so the emitter now writes bare `NULL`.
 - Friedrich-Wilhelm-Gymnasium (moved ~200 m) was not recomputed.
 - Luisen-Gymnasium's description was then regenerated (research + DE/EN + 768-dim embedding, with the register address passed as known data). The text now says the school moved to Völklinger Straße in 2026. The Düsseldorf `school_similarities` were rebuilt (same-city; 570 pairs). Rollback: `data_shared/supabase_sql/luisen_description_2026-09/rollback_snapshot.sql`.
+- Follow-up (user request): trimmed to verified facts only. Each claim was checked against luisen-gymnasium.de (homepage + /schulprofil) and our register data; the texts were hand-written without generation and re-embedded. Removed:
+  - history and numbers: 1837 founding / "girls' school", student and teacher counts, €106.5M cost
+  - building details: "Clusterschule", 700-seat sports hall, cafeteria/auditorium, green roofs, laptop classes
+  - unconfirmed partners and programmes: Symphoniker, Görres cooperation, "two-week internship in France"
+  - "Unterbilk" (the new address may be in Hafen)
+  Düsseldorf similarities rebuilt again. Lesson: generated descriptions carry plausible but unsourced specifics, so don't feed the research prompt hints (e.g. a Stadtteil) that we haven't verified ourselves.
 
 ## 2026-09-26 (late) — school_similarities rebuilt: same city (DE), country-wide (NL)
 
