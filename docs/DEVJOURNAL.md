@@ -1,5 +1,30 @@
 # SchoolNossa Development Journal
 
+## 2026-09-27 — Descriptions: audited errors fixed, people counts removed, stricter research prompt
+
+**What:**
+- **Research prompt tightened** (Lovable `generate-school-descriptions` 8ce0230, replica f1d34d8): sourced facts only, no student/teacher counts, grounding required (`[RESEARCH_FAILED:NO_SOURCES]` otherwise), and the polish step gets the city name.
+- **The 10 material errors from the audit are corrected** (`CORRECTIONS` in `scripts_shared/enrichment/scrub_description_claims.py`).
+- **Student and teacher counts removed** from the German descriptions. Each edit was made by Gemini 3 Flash (thinking low) and accepted only if the validator passed: `only_deletions()` requires every new sentence to be a case-sensitive subset of the old one, and no count may remain.
+- **Upload path:** `upload_description_scrub.py` puts edits in a staging table behind a token-guarded anon INSERT policy. Promotion runs with an md5 guard on the current text.
+- **Second pass:** in the count regex, a number has to end in a digit. That way ordinals like "die 8. Klassen" no longer count as student numbers. Four awkward leftovers ("zählt aktuell die Schülerinnen und Schüler") were fixed by hand.
+
+**Results:**
+- **Edits:**
+  - pass 1: 2,950 field edits for 1,684 schools;
+  - pass 2: 35 edits.
+- **Remaining counts:** 33 of 2,824 German schools still mention a count in `description_de`/`_en`. These are rows the validator rejected, mostly "Mit nur etwa 110 Schülern in vier Klassen"-type sentences where the count is the subject.
+- **Backup:** the pre-edit text for all 1,698 schools touched is in `_desc_backup_20260927` (RLS, no policies). The staging table has been dropped.
+- **Legacy `description` column:** unchanged, and 1,723 German schools still have counts there. It is only the raw research input to the polish step, and neither app displays it.
+- **NL** (7,689 schools, not in scope): 5,298 descriptions mention approximate student counts.
+- **Pilot regeneration** with the new prompt (10 schools, not applied):
+  - 8/10 came back grounded, with 7–17 sources each; 2 returned no sources;
+  - no counts;
+  - about $0.13 per school plus grounding searches (~$450–500 for all German schools);
+  - 2 of the 7 known outdated facts came back even with sources.
+
+  Regeneration alone does not fix stale facts.
+
 ## 2026-09-27 — Description audit: 1 in 3 schools has a materially wrong claim
 
 **What:** a stratified 30-school sample (3 per German city) and 485 specific claims, each checked against school websites, register data and official portals. Contradictions were re-confirmed on raw page text; 40 random "verified" verdicts were spot-checked.

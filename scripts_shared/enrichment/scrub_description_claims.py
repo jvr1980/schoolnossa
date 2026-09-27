@@ -41,9 +41,10 @@ MODEL = 'gemini-3-flash-preview'
 GERMAN_CITIES = ('berlin', 'hamburg', 'muenchen', 'frankfurt', 'koeln', 'duesseldorf',
                  'stuttgart', 'dresden', 'leipzig', 'bremen')
 
-COUNT_DE = re.compile(r'\d[\d.]*\s*(?:Schülerinnen|Schüler|Kinder|Lernende|Jugendliche|Lehrkräfte|Lehrerinnen|Lehrer|'
+# The number must end in a digit: "1.000 Schüler" is a count, the ordinal "die 8. Klassen" is not
+COUNT_DE = re.compile(r'\d(?:[\d.]*\d)?\s*(?:Schülerinnen|Schüler|Kinder|Lernende|Jugendliche|Lehrkräfte|Lehrerinnen|Lehrer|'
                       r'Pädagog|Klassen|Mitarbeitende)', re.I)
-COUNT_EN = re.compile(r'\d[\d,]*\s*(?:students|pupils|children|learners|teachers|educators|staff members|classes)', re.I)
+COUNT_EN = re.compile(r'\d(?:[\d,]*\d)?\s*(?:students|pupils|children|learners|teachers|educators|staff members|classes)', re.I)
 
 # Audited claims that the school's own site or an official source contradicts (2026-09-27)
 CORRECTIONS = {
