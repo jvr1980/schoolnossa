@@ -1,5 +1,13 @@
 # SchoolNossa Development Journal
 
+## 2026-09-27 — Description audit: 1 in 3 schools has a materially wrong claim
+
+**What:** a stratified 30-school sample (3 per German city) and 485 specific claims, each checked against school websites, register data and official portals. Contradictions were re-confirmed on raw page text; 40 random "verified" verdicts were spot-checked.
+
+**Results:** 82% verified, 14% unsourced, 4% contradicted (2% minor, 2% material). 10 of 30 schools carry at least one materially wrong claim, mostly **outdated** facts (ended programmes, stale counts). Numbers are the weakest category (47% unsourced or wrong).
+
+**Details:** `docs/audits/DESCRIPTION_AUDIT_2026-09.md` (+ claim-level JSON). The 10 material errors are not yet corrected. The side findings on city-scope pollution (Leipzig/Bremerhaven/Munich suburbs) and `plz = '0None'` await a decision.
+
 ## 2026-09-27 — Description provenance: grounding sources are now stored
 
 **Why:** a 30-school audit of the AI-researched descriptions found many specific claims with no traceable source. Gemini's Google-Search grounding returns the sources behind each answer, but the research job discarded them.
