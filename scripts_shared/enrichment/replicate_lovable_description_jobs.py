@@ -86,16 +86,15 @@ Known data about this school:
 - Founded: {s.get('gruendungsjahr') or 'Unknown'}
 - Special features: {s.get('besonderheiten') or 'None listed'}
 - Languages offered: {s.get('sprachen') or 'Not specified'}
-- Student count (2024/25): {s.get('schueler_2024_25') or 'Unknown'}
-- Teacher count (2024/25): {s.get('lehrer_2024_25') or 'Unknown'}
 
 INSTRUCTIONS:
-1. Search the web for information about this school, especially from {f"their website ({s['website']})" if s.get('website') else 'any official sources'}.
-2. Write a comprehensive, detailed, and up-to-date description of this school in ENGLISH following the template structure below.
-3. Only include sections and details you can verify or reasonably infer. Omit sections where you have no information rather than guessing.
-4. If the school has limited online presence, use the known data above to write as complete a description as possible.
-5. Write in a professional, factual, parent-friendly tone.
-6. The description should be rich and informative — aim for 400-800 words.
+1. Search the web for this school. Use the school's own website ({s.get('website') or 'if known'}) first, then official sources (city or state school portals, the school authority). Prefer them over news or third-party sites.
+2. Write a factual description of this school in ENGLISH, following the template structure below.
+3. Only include facts that the search results support. Do not infer, estimate or embellish. If a template section has no sourced information, omit it entirely.
+4. Do NOT state numbers of students, teachers, staff or classes.
+5. Time-sensitive facts (programmes, exchanges, partnerships, awards, building projects, moves, events) may only appear if a source shows they are current. Give the year where the source gives one (e.g. "since 2019"). Leave out anything that has ended. Anything planned must be labelled as planned.
+6. Name a district or neighbourhood only if it matches the known data above or the school's official address. Do not guess.
+7. Write in a professional, factual, parent-friendly tone, 300–600 words.
 
 TEMPLATE (use this structure, adapt sections based on available information):
 
@@ -110,8 +109,11 @@ Write the description now. Output ONLY the description text, no headers like "De
             try:
                 data = gemini(model, body)
                 text = gen_text(data)
+                g = grounding_of(data, model)
+                if len(text) > 200 and g and g['sources']:
+                    return text, g
                 if len(text) > 200:
-                    return text, grounding_of(data, model)
+                    print(f'  research {s["schulname"][:30]}: no sources from {model}, retrying', flush=True)
             except urllib.error.HTTPError as e:
                 msg = e.read().decode()[:200]
                 if e.code == 429:
@@ -142,6 +144,9 @@ The raw data may contain:
 - Incomplete sentences or fragments - COMPLETE them naturally
 
 Guidelines:
+- Do not mention the number of students, teachers, staff or classes, even if the raw description contains them.
+- Do not add any fact that is not in the raw description.
+- Keep years attached to time-sensitive facts.
 - Each description should be 5-10 sentences (150-300 words)
 - Extract and highlight key strengths, programs, and unique features
 - Cover educational philosophy, curriculum highlights, extracurricular offerings, and campus environment
@@ -169,6 +174,9 @@ Additional context:
 Your task: Generate TWO descriptions (German and English) for each school.
 
 Guidelines:
+- Do not mention the number of students, teachers, staff or classes, even if the raw description contains them.
+- Do not add any fact that is not in the raw description.
+- Keep years attached to time-sensitive facts.
 - Each description should be 5-10 sentences (150-300 words)
 - Highlight key strengths, unique features, and educational approach
 - Include relevant location/accessibility info and neighborhood context
