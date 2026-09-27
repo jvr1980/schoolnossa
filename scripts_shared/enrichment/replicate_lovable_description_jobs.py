@@ -38,6 +38,39 @@ def gen_text(data):
     parts = data.get('candidates', [{}])[0].get('content', {}).get('parts', [])
     return ''.join(p.get('text', '') for p in parts).strip()
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+def _resolve(uri, timeout=5):
+    """Final URL behind a temporary vertexaisearch grounding-api-redirect link (None on failure)."""
+    try:
+        urllib.request.build_opener(_NoRedirect).open(urllib.request.Request(uri, method='GET'), timeout=timeout)
+    except urllib.error.HTTPError as e:
+        return e.headers.get('Location')
+    except Exception:
+        return None
+    return None
+
+def grounding_of(data, model):
+    """Same shape the research-school-descriptions edge function stores in description_grounding."""
+    gm = data.get('candidates', [{}])[0].get('groundingMetadata')
+    if not gm:
+        return None
+    chunks = gm.get('groundingChunks') or []
+    with cf.ThreadPoolExecutor(max_workers=8) as ex:
+        resolved = list(ex.map(lambda c: _resolve(c['web']['uri']) if c.get('web', {}).get('uri') else None, chunks))
+    return {
+        'model': model,
+        'generated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        'queries': gm.get('webSearchQueries') or [],
+        'sources': [{'title': c.get('web', {}).get('title'), 'uri': r, 'redirect_uri': c.get('web', {}).get('uri')}
+                    for c, r in zip(chunks, resolved)],
+        'supports': [{'text': x.get('segment', {}).get('text'), 'start': x.get('segment', {}).get('startIndex', 0),
+                      'end': x.get('segment', {}).get('endIndex'), 'sources': x.get('groundingChunkIndices') or [],
+                      'confidence': x.get('confidenceScores') or []} for x in gm.get('groundingSupports') or []],
+    }
+
 def research(s):
     city = CITY_NAME.get(s.get('city') or '', s.get('city') or 'Berlin')
     ttype = 'private' if any(k in (s.get('traegerschaft') or '').lower() for k in ('privat', 'frei')) else 'public'
@@ -75,9 +108,10 @@ Write the description now. Output ONLY the description text, no headers like "De
     for model in ('gemini-3.1-pro-preview', 'gemini-3-flash-preview'):
         for attempt in range(3):
             try:
-                text = gen_text(gemini(model, body))
+                data = gemini(model, body)
+                text = gen_text(data)
                 if len(text) > 200:
-                    return text
+                    return text, grounding_of(data, model)
             except urllib.error.HTTPError as e:
                 msg = e.read().decode()[:200]
                 if e.code == 429:
@@ -89,7 +123,7 @@ Write the description now. Output ONLY the description text, no headers like "De
             except Exception as e:
                 print(f'  research {s["schulname"][:30]}: {e}', flush=True)
             time.sleep(2 * (attempt + 1))
-    return None
+    return None, None
 
 def generate_de_en(s, is_secondary):
     city = CITY_NAME.get(s.get('city') or '', 'Berlin')
@@ -197,8 +231,9 @@ def process(job):
     cpath = CACHE / f"{s['id']}.json"
     res = json.loads(cpath.read_text()) if cpath.exists() else {}
     if s.get('description') is None and 'description' not in res:
-        d = research(s)
+        d, g = research(s)
         if d: res['description'] = d
+        if g: res['description_grounding'] = g
     raw = s.get('description') or res.get('description')
     if raw and (s.get('description_de') is None or s.get('description_en') is None) and 'description_de' not in res:
         de_en = generate_de_en(dict(s, description=raw), table == 'schools')
@@ -238,6 +273,9 @@ def main():
         if 'description' in res and s.get('description') is None:
             sets.append(f"description = COALESCE(description, {dollar(res['description'])})")
             sets.append("description_researched_at = COALESCE(description_researched_at, now())")
+            if res.get('description_grounding'):
+                sets.append(f"description_grounding = COALESCE(description_grounding, "
+                            f"{dollar(json.dumps(res['description_grounding'], ensure_ascii=False))}::jsonb)")
         if 'description_de' in res:
             sets.append(f"description_de = COALESCE(description_de, {dollar(res['description_de'])})")
             sets.append(f"description_en = COALESCE(description_en, {dollar(res['description_en'])})")

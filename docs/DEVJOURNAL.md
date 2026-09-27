@@ -1,5 +1,22 @@
 # SchoolNossa Development Journal
 
+## 2026-09-27 — Description provenance: grounding sources are now stored
+
+**Why:** a 30-school audit of the AI-researched descriptions found many specific claims with no traceable source. Gemini's Google-Search grounding returns the sources behind each answer, but the research job discarded them.
+
+**What:**
+- New nullable `description_grounding jsonb` on `schools` and `primary_schools`: `{model, generated_at, queries[], sources[{title, uri, redirect_uri}], supports[{text, start, end, sources[], confidence[]}]}`. Hand-written texts use `{method: "manual", sources[...]}`.
+- `research-school-descriptions` edge function (Lovable commit 82cb91d, 1.8 credits, deployed, not invoked) now stores it on success and clears it on failure/reset. The temporary `vertexaisearch…grounding-api-redirect` links are resolved to their final URLs (best effort, 5 s each), and all response parts are concatenated.
+- `scripts_shared/enrichment/replicate_lovable_description_jobs.py`: `research()` returns `(text, grounding)` in the same shape, and the emitted SQL fills `description_grounding`.
+- Luisen-Gymnasium (164501) got a manual record (its website pages + the NRW register).
+
+**Observed while testing:**
+- `gemini-3.1-pro-preview` returns sources and supported text segments.
+- `gemini-3-flash-preview` (the fallback) often returns only `webSearchQueries` and no sources.
+- A long description prompt can come back with no grounding at all. That happened for 100255 Gymnasium Heinzelmännchenweg: its description was written without any cited search result and should be treated as unverified.
+
+A NULL grounding, or one without sources, therefore means the text is unsourced.
+
 ## 2026-09-26 (late) — Location data recomputed for two relocated NRW schools
 
 **What:** new `scripts_nrw/processing/refresh_school_locations.py`. It runs the real NRW phases for the moved schools in a sandbox, reusing `add_new_schools.run_phases` with the website phase skipped, and overwrites only location columns: traffic, transit, POIs, crime and `bezirk`. Each POI/transit group is replaced as a whole, so slots from the old site cannot survive. The crime rank/category comes from the schools of the new Bezirk (ranks are uniform per Bezirk). All other columns and rows are asserted unchanged. `--reuse` applies a dry run's sandbox output without new API calls, and `--emit-sql` writes the Supabase UPDATEs plus a rollback snapshot.
