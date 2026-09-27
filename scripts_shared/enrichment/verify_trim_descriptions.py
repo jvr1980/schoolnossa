@@ -16,7 +16,9 @@ back up:
 2. trim — Gemini Flash deletes the flagged fragments, under the same
    deletion-only validator as scrub_description_claims.py (every output
    sentence must be made of the words of an input sentence; no new numbers).
-   Two policies are produced side by side:
+   A grammar check (Gemini Flash) then lists sentences the deletion left
+   broken, and the trim is redone with that feedback (up to 4 attempts).
+   Policies:
      A  delete contradicted + outdated claims
      B  A + unsourced concrete claims (names, dates, partners, awards,
         facilities, programmes, places); unsourced general characterisations
@@ -217,7 +219,8 @@ Answer with ONLY a JSON object in a ```json block:
 
 TRIM_RULES = """You edit existing school descriptions. Delete the statements listed below, and change nothing else.
 - Delete each statement from BOTH texts (German and English) and every time it is mentioned, even where no quote is given for that text; the quotes only show one place where it appears.
-- For each mention, delete the words that state it. If what remains of the sentence would be ungrammatical or empty, delete the whole sentence.
+- For each mention, delete the words that state it. If the statement is one item of a list (e.g. one language among several), delete only that item and keep the rest of the list.
+- If what remains of the sentence would be ungrammatical or empty, delete the whole sentence. Every remaining sentence must be complete, with its subject and main verb.
 - Never leave an empty phrase behind (e.g. "with its partners", "und zeichnet sich durch aus").
 - Keep every other word, spelling, sentence order, formatting and line break exactly as it is. Do not reword, correct or add anything.
 Return JSON with exactly the keys you were given, each holding the edited text.
@@ -313,6 +316,41 @@ def validate_trim(old, new):
     return only_deletions(old, new)
 
 
+GRAMMAR_PROMPT = """Each item is a sentence from a school description after words were deleted from it. Decide for each
+edited sentence whether it is still a complete, grammatical sentence on its own: it needs a subject and a main (finite)
+verb; a list must still be joined correctly ("and"/"und"); no dangling "with"/"including"/"mit"/"wie", no leftover empty
+phrase. A relative clause alone ("X, die ... fördert.") is NOT a complete sentence. Answer JSON: {"broken": [numbers of
+the broken items]}."""
+
+
+def _sentences(t):
+    return [x for x in re.split(r'(?<=[.!?])\s+|\n+', t or '') if x.strip()]
+
+
+def broken_sentences(texts, originals):
+    """{field: [edited sentences that are no longer grammatical]} per Gemini Flash; {} if the check itself fails."""
+    items = []
+    for f, t in texts.items():
+        old = set(_sentences(originals[f]))
+        items += [(f, x) for x in _sentences(t) if x not in old]  # only sentences the trim touched
+    if not items:
+        return {}
+    listing = '\n'.join(f"{i}. {x}" for i, (_, x) in enumerate(items, 1))
+    body = {'contents': [{'parts': [{'text': listing}]}],
+            'systemInstruction': {'parts': [{'text': GRAMMAR_PROMPT}]},
+            'generationConfig': {'temperature': 0, 'responseMimeType': 'application/json', 'maxOutputTokens': 8192,
+                                 'thinkingConfig': {'thinkingLevel': 'low'}}}
+    try:
+        out = json.loads(job.gen_text(job.gemini(TRIM_MODEL, body, timeout=120)), strict=False)
+    except Exception:  # noqa: BLE001
+        return {}
+    broken = {}
+    for n in out.get('broken') or []:
+        if isinstance(n, int) and 1 <= n <= len(items):
+            broken.setdefault(items[n - 1][0], []).append(items[n - 1][1])
+    return broken
+
+
 def trim(texts, claims):
     if not claims:
         return {'new': dict(texts), 'problems': {}, 'usage': None}
@@ -321,12 +359,17 @@ def trim(texts, claims):
             'systemInstruction': {'parts': [{'text': TRIM_RULES.format(items=items)}]},
             'generationConfig': {'temperature': 0, 'responseMimeType': 'application/json', 'maxOutputTokens': 32768,
                                  'thinkingConfig': {'thinkingLevel': 'low'}}}
-    new, problems, usage = {}, {}, None
+    new, problems, usage, feedback = {}, {}, None, {}
     pending = dict(texts)
-    for attempt in range(3):
+    for attempt in range(4):
         if attempt:
             body['generationConfig']['temperature'] = 0.3
             body['contents'][0]['parts'][0]['text'] = json.dumps(pending, ensure_ascii=False)
+            if feedback:  # the deletion-only validator still applies: repairs may only reuse words of the original sentence
+                body['systemInstruction']['parts'][0]['text'] = TRIM_RULES.format(items=items) + (
+                    "\n\nA previous attempt left these sentences broken; delete the same statements again, but keep every "
+                    "sentence grammatical, e.g. keep its subject and verb, using only words of the original sentence:\n"
+                    + '\n'.join(f"- {x}" for xs in feedback.values() for x in xs))
         try:
             data = job.gemini(TRIM_MODEL, body, timeout=180)
             usage = usage_of(data)
@@ -336,13 +379,22 @@ def trim(texts, claims):
             time.sleep(3 * (attempt + 1))
             continue
         problems.pop('_call', None)
+        valid = {}
         for f in list(pending):
             p = validate_trim(texts[f], out.get(f))
             if p:
                 problems[f] = p
             else:
+                valid[f] = out[f]
+        changed = {f: t for f, t in valid.items() if t != texts[f]}
+        broken = broken_sentences(changed, texts) if changed else {}
+        feedback = {f: xs for f, xs in broken.items() if xs}
+        for f, t in valid.items():
+            if f in feedback:
+                problems[f] = f"ungrammatical: {feedback[f][0][:100]}"
+            else:
                 problems.pop(f, None)
-                new[f] = out[f]
+                new[f] = t
                 pending.pop(f)
         if not pending:
             break

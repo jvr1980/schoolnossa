@@ -15,7 +15,10 @@ upload_description_scrub.py for the pattern):
 
 Held back (not uploaded as text edits, listed for review):
   - a field whose trim failed validation,
-  - a school whose trim removes more than --max-shrink of its text.
+  - a school whose trim removes more than --max-shrink of either text. In the full
+    run such cases were thin placeholder texts ("details are not provided") or the
+    trim over-deleting in one language (English -82%, German -5%); they need a
+    rewrite, not a trim.
 
 Usage:
     venv/bin/python scripts_shared/enrichment/upload_verify_trim.py --results <dir> \
@@ -53,14 +56,17 @@ def description_rows(runs, token, max_shrink):
         changed = {f: t for f, t in trim['new'].items() if f in old and t != old[f]}
         if not changed:
             continue
-        shrink = 1 - sum(len(changed.get(f, old[f])) for f in old) / max(1, sum(len(t) for t in old.values()))
-        if shrink > max_shrink:
-            held.append((r['schulname'], f'{shrink:.0%} of the text'))
+        problems = {f: p for f, p in trim['problems'].items() if f != '_call'}
+        if problems:  # keep both languages in step: no half-trimmed schools
+            held += [(r['id'], r['schulname'], f'{f}: {p}') for f, p in problems.items()]
+            continue
+        shrink = {f: 1 - len(changed.get(f, old[f])) / max(1, len(old[f])) for f in old}
+        if max(shrink.values()) > max_shrink:
+            held.append((r['id'], r['schulname'], ', '.join(f"{f[12:]} -{s:.0%}" for f, s in shrink.items())))
             continue
         for f, t in changed.items():
             rows.append({'id': r['id'], 'tbl': r['tbl'], 'field': f,
                          'old_md5': hashlib.md5(old[f].encode('utf-8')).hexdigest(), 'new_text': t, 'batch': token})
-        held += [(r['schulname'], f'{f}: {p}') for f, p in trim['problems'].items() if f != '_call']
     return rows, held
 
 
@@ -101,6 +107,10 @@ def main():
     token = args.token_file.read_text().strip()
     runs = load(args.results, args.model)
     model = next(iter(runs.values()))['model']
+    # A run can be uploaded in parts (e.g. across a quota reset): skip schools already sent
+    sent_file = args.results / f'uploaded_{args.what}.txt'
+    sent = set(sent_file.read_text().split()) if sent_file.exists() else set()
+    runs = {k: v for k, v in runs.items() if k not in sent}
     if args.what == 'descriptions':
         rows, held = description_rows(runs, token, args.max_shrink)
         print(f"{len(runs)} schools checked; {len(rows)} field edits for {len({r['id'] for r in rows})} schools; "
@@ -113,6 +123,8 @@ def main():
         table = 'description_verifications'
     if not args.dry_run:
         post(table, rows, args.batch_size)
+        with open(sent_file, 'a') as fh:
+            fh.write(''.join(f'{k}\n' for k in runs))
 
 
 if __name__ == '__main__':
