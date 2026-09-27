@@ -29,7 +29,7 @@
   - best: staff 0%, languages 4%, partners 9%, care 11%
 - **Error pattern:** mostly **outdated** facts rather than inventions — ended programmes (TAFF pilot, England trips since 2019, a lost British partner school), stale student counts (735 vs 854, ~1,000 vs 1,261) and a wrong move date. Then **wrong locations** (Zuffenhausen instead of Stammheim) and a few embellishments: "school-owned goats and sheep" (only planned), an art studio described as "traditional craftsmanship", "DGNB Platinum awarded" (only "angestrebt"). One description repeated our own implausible `schueler_current` (1,882 for a second-year Leipzig school).
 
-### Material errors found (not yet corrected)
+### Material errors found (all corrected in Supabase 2026-09-27; see DEVJOURNAL)
 | School | Claim | Source says |
 |---|---|---|
 | KGS Heßhofstraße, Köln | school-owned goats and sheep | sheep left with a staff member in 2024; goats/sheep only planned |
