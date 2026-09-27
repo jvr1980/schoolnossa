@@ -21,6 +21,9 @@ back up:
      B  A + unsourced concrete claims (names, dates, partners, awards,
         facilities, programmes, places); unsourced general characterisations
         ("small classes") stay.
+     C  B + "confirmed" concrete claims whose quote is attributed to the
+        school's own site but does not occur in the crawled pages (an invented
+        or misattributed quote counts as no source).
 
 Nothing is written to Supabase. Output: one JSON line per school in
 <out>/results_<model>.jsonl, with token usage for costing.
@@ -160,6 +163,7 @@ def evidence_found(evidence, corpus):
 MODELS = {'pro': 'gemini-3.1-pro-preview', 'flash': 'gemini-3-flash-preview'}
 TRIM_MODEL = 'gemini-3-flash-preview'
 FIELDS = ('description_de', 'description_en')
+POLICIES = ('A', 'B', 'C')
 
 VERIFY_PROMPT = """You are fact-checking a school description that parents see in a school-finder app.
 
@@ -205,7 +209,8 @@ Answer with ONLY a JSON object in a ```json block:
               "source_says": "what the source says instead (contradicted/outdated only) or null"}}]}}"""
 
 TRIM_RULES = """You edit existing school descriptions. Delete the statements listed below, and change nothing else.
-- For each statement, delete the words that state it. If what remains of the sentence would be ungrammatical or empty, delete the whole sentence.
+- Delete each statement from BOTH texts (German and English) and every time it is mentioned, even where no quote is given for that text; the quotes only show one place where it appears.
+- For each mention, delete the words that state it. If what remains of the sentence would be ungrammatical or empty, delete the whole sentence.
 - Never leave an empty phrase behind (e.g. "with its partners", "und zeichnet sich durch aus").
 - Keep every other word, spelling, sentence order, formatting and line break exactly as it is. Do not reword, correct or add anything.
 Return JSON with exactly the keys you were given, each holding the edited text.
@@ -264,10 +269,30 @@ def verify(row, model):
     return {'error': err}
 
 
-def to_delete(claims, policy):
-    bad = {'contradicted', 'outdated'} | ({'unsourced'} if policy == 'B' else set())
-    return [c for c in claims if c.get('verdict') in bad
-            and (policy == 'A' or c.get('verdict') != 'unsourced' or c.get('kind') == 'concrete')]
+def _host(url):
+    return urlparse(url if '//' in (url or '') else f'http://{url}').netloc.lower().removeprefix('www.')
+
+
+def to_delete(claims, policy, site_hosts=()):
+    out = []
+    for c in claims:
+        v, concrete = c.get('verdict'), c.get('kind') == 'concrete'
+        if v in ('contradicted', 'outdated'):
+            out.append(c)
+        elif policy in 'BC' and v == 'unsourced' and concrete:
+            out.append(c)
+        elif policy == 'C' and v == 'confirmed' and concrete and not c.get('evidence_found') \
+                and (not c.get('evidence_url') or _host(c['evidence_url']) in site_hosts):
+            out.append(c)
+    return out
+
+
+def site_hosts_of(row):
+    cache = PAGE_CACHE / f"{row['id']}.json"
+    pages = json.loads(cache.read_text(encoding='utf-8')) if cache.exists() else []
+    if sum(len(p.get('text', '')) for p in pages) < 2000:
+        return set()  # site not crawled: an unmatched quote says nothing
+    return {_host(p['url']) for p in pages} | {_host(row.get('website') or '')}
 
 
 def validate_trim(old, new):
@@ -326,8 +351,9 @@ def process(row, model):
     if 'error' in v:
         res['status'] = 'failed'
         return res
-    for policy in ('A', 'B'):
-        dels = to_delete(v['claims'], policy)
+    hosts = site_hosts_of(row)
+    for policy in POLICIES:
+        dels = to_delete(v['claims'], policy, hosts)
         res[f'trim_{policy}'] = {'deleted': [c.get('claim') for c in dels], **trim(texts, dels)}
     res['status'] = 'ok'
     return res
@@ -340,8 +366,12 @@ def main():
     ap.add_argument('--model', choices=MODELS, default='pro')
     ap.add_argument('--limit', type=int)
     ap.add_argument('--workers', type=int, default=6)
+    ap.add_argument('--retrim', action='store_true',
+                    help='Keep the verify results in results_<model>.jsonl; redo only the trims (→ results_<model>_retrim.jsonl)')
     args = ap.parse_args()
     model = MODELS[args.model]
+    if args.retrim:
+        return retrim(args)
     rows = json.loads(args.input.read_text(encoding='utf-8'))[:args.limit]
     args.out.mkdir(parents=True, exist_ok=True)
     out_path = args.out / f"results_{args.model}.jsonl"
@@ -355,6 +385,28 @@ def main():
             if i % 10 == 0:
                 print(f"  {i}/{len(todo)}", flush=True)
     print(f"done → {out_path}", flush=True)
+
+
+def retrim(args):
+    rows = {r['id']: r for r in json.loads(args.input.read_text(encoding='utf-8'))}
+    results = {}
+    for line in (args.out / f"results_{args.model}.jsonl").read_text().splitlines():
+        r = json.loads(line)
+        if r.get('status') == 'ok':
+            results[r['id']] = r
+
+    def redo(r):
+        hosts = site_hosts_of(rows[r['id']])
+        for policy in POLICIES:
+            dels = to_delete(r['verify']['claims'], policy, hosts)
+            r[f'trim_{policy}'] = {'deleted': [c.get('claim') for c in dels], **trim(r['old'], dels)}
+        return r
+
+    with open(args.out / f"results_{args.model}_retrim.jsonl", 'w', encoding='utf-8') as fh, \
+            cf.ThreadPoolExecutor(max_workers=args.workers) as ex:
+        for r in ex.map(redo, results.values()):
+            fh.write(json.dumps(r, ensure_ascii=False) + '\n')
+    print(f"re-trimmed {len(results)} schools → results_{args.model}_retrim.jsonl", flush=True)
 
 
 if __name__ == '__main__':

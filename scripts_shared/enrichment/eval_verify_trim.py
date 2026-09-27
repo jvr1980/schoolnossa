@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import replicate_lovable_description_jobs as job  # noqa: E402
 
 JUDGE_MODEL = 'gemini-3-flash-preview'
+POLICIES = 'ABC'
 # $ per 1M tokens (ai.google.dev pricing, ≤200k-token prompts); thinking is billed as output
 PRICE = {'gemini-3.1-pro-preview': (2.0, 12.0), 'gemini-3-flash-preview': (0.5, 3.0)}
 SEARCH_PRICE = 14 / 1000  # per grounded search query beyond the 5,000 free per month
@@ -76,11 +77,12 @@ def main():
     ap.add_argument('--dir', type=Path, required=True)
     ap.add_argument('--truth', type=Path, required=True, help='{school id: [claims with status/severity]}')
     ap.add_argument('--models', default='pro,flash')
+    ap.add_argument('--suffix', default='', help="e.g. '_retrim' to score re-trimmed results")
     args = ap.parse_args()
     truth = json.loads(args.truth.read_text(encoding='utf-8'))
     runs = {}
     for m in args.models.split(','):
-        for line in (args.dir / f'results_{m}.jsonl').read_text().splitlines():
+        for line in (args.dir / f'results_{m}{args.suffix}.jsonl').read_text().splitlines():
             r = json.loads(line)
             if r.get('status') == 'ok':
                 runs.setdefault(r['id'], {})[m] = r  # the last ok line per school wins
@@ -92,14 +94,16 @@ def main():
         any_r = next(iter(rs.values()))
         versions = {'original': any_r['old']}
         for m, r in rs.items():
-            for p in 'AB':
+            for p in POLICIES:
+                if f'trim_{p}' not in r:
+                    continue
                 t = dict(any_r['old'])
                 t.update(r[f'trim_{p}']['new'])  # a field whose trim failed validation stays original
                 versions[f'{m}_{p}'] = t
         return sid, judge(truth[sid], versions)
 
     judged = {}
-    cache = args.dir / 'judged.json'
+    cache = args.dir / f'judged{args.suffix}.json'
     if cache.exists():
         judged = json.loads(cache.read_text())
     todo = [i for i in ids if i not in judged]
@@ -150,7 +154,7 @@ def main():
         vc = sum(cost(r['verify']['usage'], model) for r in rs) / len(rs)
         tc = sum(cost(r[f'trim_{p}'].get('usage'), 'gemini-3-flash-preview') for r in rs for p in 'B') / len(rs)
         q = sum(len(r['verify'].get('queries') or []) for r in rs) / len(rs)
-        for p in 'AB':
+        for p in [p for p in POLICIES if f'trim_{p}' in rs[0]]:
             old = sum(len(r['old'].get(f, '')) for r in rs for f in r['old'])
             new = sum(len({**r['old'], **r[f'trim_{p}']['new']}.get(f, '')) for r in rs for f in r['old'])
             fails = sum(any(f not in r[f'trim_{p}']['new'] for f in r['old']) for r in rs)
