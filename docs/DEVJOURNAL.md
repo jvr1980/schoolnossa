@@ -1,5 +1,30 @@
 # SchoolNossa Development Journal
 
+## 2026-09-27 — Verify-and-trim tested on 100 schools
+
+**What:** tested a cheaper alternative to regenerating descriptions. It keeps each text and deletes only the claims that a source contradicts, shows as outdated, or can't support.
+- **Checker:** `verify_trim_descriptions.py`. It crawls the school's own site, then Gemini checks each claim and Flash deletes the flagged ones (deletion only).
+- **Reference:** a second independent audit of 70 new schools (1,000 claims), plus the first audit's 30 schools on their original text.
+- **Scoring:** `eval_verify_trim.py`.
+
+**Results:** `docs/audits/DESCRIPTION_VERIFY_TRIM_TEST_2026-09.md`.
+- **Current quality:** 30% of the 70 new schools carry at least one materially wrong claim (84% of claims verified, 5% wrong). Across all 100 it is 28%.
+- **Best option, Pro + policy B:** removes 59% of material errors and 52% of all wrong claims, but also 4% of correct claims (5% of the text). Schools with a material error fall from 27% to 11%.
+  - Cost: $0.20 per school, about $560 for all German schools.
+  - Flash + B gets 27% → 14% for about $125.
+- **Not applied to Supabase;** this was a test only.
+
+**Lessons:**
+- Given only a URL, Gemini answered from memory, so the site is now crawled first (frames, meta refresh, two menu levels, TLS/HTTP fallbacks).
+- Deleting "every mention, in both languages" matters.
+- Treating unmatched evidence quotes as unsourced (policy C) costs too many correct claims.
+
+**Side findings (data, not descriptions):**
+- **Placeholder websites:** 2 Munich rows have `https://test-canary.example/` as their website (Erasmus-Grasser-Gymnasium, GS Bäckerstraße 58).
+- **Wrong websites:** St. Agnes Stuttgart and Freie Aktive Schule Stuttgart have unrelated sites stored.
+- **Wrong operator:** `traegerschaft` is wrong for St. Agnes, Technikerschule Bremen and Freie Aktive Schule, all stored as public but not public.
+- **Borrowed content:** 2 descriptions borrow content from a same-named school in another city.
+
 ## 2026-09-27 — Descriptions: audited errors fixed, people counts removed, stricter research prompt
 
 **What:**
