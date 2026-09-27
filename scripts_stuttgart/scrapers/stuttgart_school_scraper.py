@@ -217,10 +217,14 @@ def scrape_detail_page(url: str) -> Optional[Dict]:
         if bezirk_match:
             school['stadtbezirk'] = re.sub(r'<[^>]+>', '', bezirk_match.group(1)).strip()
 
-        # 4. Extract external website URL (first non-stuttgart.de, non-google, non-vvs link)
+        # 4. Extract external website URL (first non-stuttgart.de, non-google, non-vvs link).
+        #    The page template links the city's accessibility guide and tourism/social sites on
+        #    every page; for a school without its own link those were taken as its website.
         external_links = re.findall(r'href="(https?://[^"]+)"', html)
         skip_domains = ['stuttgart.de', 'google.com', 'vvs.de', 'maps.stuttgart.de',
-                        'radroutenplaner', 'matomo']
+                        'radroutenplaner', 'matomo', 'stuttgart-inklusiv.de', 'stuttgart-meine-stadt.de',
+                        'stuttgart-tourist.de', 'facebook.com', 'instagram.com', 'twitter.com', 'x.com/',
+                        'youtube.com', 'linkedin.com', 'xing.com']
         for link in external_links:
             link_clean = link.replace('&amp;', '&')
             if not any(d in link_clean.lower() for d in skip_domains):
@@ -374,6 +378,13 @@ def classify_school(schulart: str) -> Optional[str]:
     return None
 
 
+def infer_traegerschaft(name: str) -> str:
+    name = (name or '').lower()
+    return 'Privat' if any(kw in name for kw in ['freie', 'waldorf', 'montessori', 'privat', 'kolping', 'merz',
+                                                 'freien', 'evangelisch', 'katholisch']) \
+        else 'Öffentlich'
+
+
 def build_dataframes(schools: List[Dict]) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Build primary and secondary DataFrames from scraped data."""
     primary_records = []
@@ -414,11 +425,9 @@ def build_dataframes(schools: List[Dict]) -> Tuple[pd.DataFrame, pd.DataFrame]:
             'email': school.get('email', ''),
             'website': website,
             'schulleitung': '',  # Not in directory; can add later
-            'traegerschaft': 'Privat' if any(kw in school.get('name', '').lower()
-                                              for kw in ['freie', 'waldorf', 'montessori',
-                                                         'privat', 'kolping', 'merz',
-                                                         'freien', 'evangelisch', 'katholisch'])
-                             else 'Öffentlich',
+            # Name heuristic only; scripts_shared/processing/repair_register_fields.py
+            # overrides it from the official LOBW Schulträger type
+            'traegerschaft': infer_traegerschaft(school.get('name', '')),
             'data_source': 'stuttgart.de Adressverzeichnis',
             'data_retrieved': datetime.now().strftime('%Y-%m-%d'),
         }
@@ -457,7 +466,8 @@ def build_dataframes(schools: List[Dict]) -> Tuple[pd.DataFrame, pd.DataFrame]:
                 'email': school.get('email', ''),
                 'website': website,
                 'schulleitung': '',
-                'traegerschaft': 'Öffentlich',
+                # same operator as the school it belongs to (was hard-coded 'Öffentlich')
+                'traegerschaft': infer_traegerschaft(school.get('name', '')),
                 'data_source': 'stuttgart.de Adressverzeichnis',
                 'data_retrieved': datetime.now().strftime('%Y-%m-%d'),
             }
