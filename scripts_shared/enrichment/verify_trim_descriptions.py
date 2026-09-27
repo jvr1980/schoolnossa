@@ -31,6 +31,9 @@ Nothing is written to Supabase. Output: one JSON line per school in
 Usage (test on a fixed sample):
     venv/bin/python scripts_shared/enrichment/verify_trim_descriptions.py \
         --input sample.json --out data_shared/description_verify_test --model pro
+All German schools, production policy only:
+    venv/bin/python scripts_shared/enrichment/verify_trim_descriptions.py \
+        --german --out data_shared/description_verify_<date> --model pro --policies B
 """
 import argparse
 import concurrent.futures as cf
@@ -163,7 +166,11 @@ def evidence_found(evidence, corpus):
 MODELS = {'pro': 'gemini-3.1-pro-preview', 'flash': 'gemini-3-flash-preview'}
 TRIM_MODEL = 'gemini-3-flash-preview'
 FIELDS = ('description_de', 'description_en')
-POLICIES = ('A', 'B', 'C')
+POLICIES = ['A', 'B', 'C']
+GERMAN_CITIES = ('berlin', 'hamburg', 'muenchen', 'frankfurt', 'koeln', 'duesseldorf',
+                 'stuttgart', 'dresden', 'leipzig', 'bremen')
+ROW_COLS = ('id,city,schulnummer,schulname,website,school_type,traegerschaft,sprachen,besonderheiten,'
+            'strasse,plz,description_de,description_en')
 
 VERIFY_PROMPT = """You are fact-checking a school description that parents see in a school-finder app.
 
@@ -262,7 +269,7 @@ def verify(row, model):
                     'queries': g.get('queries', []), 'sources': g.get('sources', []), 'usage': usage_of(data)}
         except urllib.error.HTTPError as e:
             err = f"HTTP {e.code} {e.read().decode()[:150]}"
-            time.sleep(20 if e.code == 429 else 5 * (attempt + 1))
+            time.sleep(60 * (attempt + 1) if e.code in (429, 503) else 5 * (attempt + 1))
         except Exception as e:  # noqa: BLE001  (malformed JSON, timeouts)
             err = str(e)[:150]
             time.sleep(5 * (attempt + 1))
@@ -343,7 +350,7 @@ def trim(texts, claims):
 
 
 def process(row, model):
-    texts = {f: row[f] for f in FIELDS if row.get(f)}
+    texts = {f: row[f] for f in FIELDS if row.get(f) and not str(row[f]).startswith('[RESEARCH_FAILED')}
     res = {'id': row['id'], 'tbl': row['tbl'], 'city': row['city'], 'schulname': row['schulname'],
            'model': model, 'old': texts}
     v = verify(row, model)
@@ -361,7 +368,9 @@ def process(row, model):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--input', type=Path, required=True, help='JSON list of school rows')
+    ap.add_argument('--input', type=Path, help='JSON list of school rows')
+    ap.add_argument('--german', action='store_true', help='All German schools from Supabase (both tables)')
+    ap.add_argument('--policies', default='ABC', help="Which trims to produce, e.g. 'B'")
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--model', choices=MODELS, default='pro')
     ap.add_argument('--limit', type=int)
@@ -370,9 +379,18 @@ def main():
                     help='Keep the verify results in results_<model>.jsonl; redo only the trims (→ results_<model>_retrim.jsonl)')
     args = ap.parse_args()
     model = MODELS[args.model]
+    POLICIES[:] = list(args.policies)
     if args.retrim:
         return retrim(args)
-    rows = json.loads(args.input.read_text(encoding='utf-8'))[:args.limit]
+    if args.german:
+        rows = [dict(r, tbl=tbl) for tbl in ('schools', 'primary_schools') for city in GERMAN_CITIES
+                for r in job.fetch(tbl, f'city=eq.{city}', ROW_COLS)]
+        rows = [r for r in rows if any(r.get(f) and not str(r[f]).startswith('[RESEARCH_FAILED') for f in FIELDS)]
+        args.out.mkdir(parents=True, exist_ok=True)
+        (args.out / 'input_rows.json').write_text(json.dumps(rows, ensure_ascii=False), encoding='utf-8')
+    else:
+        rows = json.loads(args.input.read_text(encoding='utf-8'))
+    rows = rows[:args.limit]
     args.out.mkdir(parents=True, exist_ok=True)
     out_path = args.out / f"results_{args.model}.jsonl"
     done = {json.loads(l)['id'] for l in out_path.read_text().splitlines()
@@ -380,7 +398,15 @@ def main():
     todo = [r for r in rows if r['id'] not in done]
     print(f"{len(todo)} schools to check with {model}", flush=True)
     with open(out_path, 'a', encoding='utf-8') as fh, cf.ThreadPoolExecutor(max_workers=args.workers) as ex:
-        for i, res in enumerate(ex.map(lambda r: process(r, model), todo), 1):
+        def safe(r):
+            try:
+                return process(r, model)
+            except Exception as e:  # noqa: BLE001  (one school must not stop a multi-hour run)
+                return {'id': r['id'], 'tbl': r['tbl'], 'status': 'failed', 'error': f"{type(e).__name__}: {e}"[:200]}
+
+        futures = [ex.submit(safe, r) for r in todo]
+        for i, fut in enumerate(cf.as_completed(futures), 1):  # write each school as soon as it is done
+            res = fut.result()
             fh.write(json.dumps(res, ensure_ascii=False) + '\n'); fh.flush()
             if i % 10 == 0:
                 print(f"  {i}/{len(todo)}", flush=True)
@@ -388,7 +414,7 @@ def main():
 
 
 def retrim(args):
-    rows = {r['id']: r for r in json.loads(args.input.read_text(encoding='utf-8'))}
+    rows = {r['id']: r for r in json.loads((args.input or args.out / 'input_rows.json').read_text(encoding='utf-8'))}
     results = {}
     for line in (args.out / f"results_{args.model}.jsonl").read_text().splitlines():
         r = json.loads(line)
