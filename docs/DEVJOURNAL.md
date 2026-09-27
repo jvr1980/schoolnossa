@@ -1,5 +1,30 @@
 # SchoolNossa Development Journal
 
+## 2026-09-27 — Register repair: websites and operators (86 fixes, live)
+
+**What:** fixed the register errors that the description audits traced back to our own data, and the scraper bugs behind them. The script is `scripts_shared/processing/repair_register_fields.py`; it only writes deltas, with guarded UPDATEs.
+
+**Changes:**
+- **Stuttgart websites (48):**
+  - **Cause:** the scraper took the first external link on each stuttgart.de page. For schools without their own link, that was the city's accessibility guide `stuttgart-inklusiv.de`.
+  - **Fix:** new values come from the LOBW Schulverzeichnis, or a Google-searched URL whose page must name the school or its street. Branch sites share their main school's site.
+  - 4 schools have no website of their own and are now empty.
+- **Stuttgart operator (15):**
+  - **Cause:** it was guessed from name keywords, and primary rows split off combined schools were hard-coded 'Öffentlich'.
+  - **Fix:** the value now comes from LOBW. The named operator decides (gGmbH, e.V., foundation, church → Privat), then the operator type. The type alone is not enough: 'Baden-Württemberg' also covers element-i and Kolping.
+  - Newly private: St. Agnes, Albertus-Magnus, Waldschule Degerloch, Betty-Hirsch, Lessing-Schulen, Johannes-Brenz, Galileo, Raiffeisen and the Freie Aktive / Freie Evangelische primaries.
+- **Bremen operator (21):**
+  - **Cause:** it was guessed from name keywords. 'frei' matched "Freiligrathstraße" and "Freie Hansestadt".
+  - **Fix:** the value now comes from the official Schulform ("Private Grundschule", "Private berufsbildende Schule", …).
+  - 20 were changed to Privat (Technikerschule, St.-Johannis, Ökumenisches Gymnasium, …) and 1 to Öffentlich (Verwaltungsschule).
+- **München websites (2):** `https://test-canary.example/` existed in Supabase only, not in our files. Something wrote test values into production; the finals' values were restored.
+
+**Safety:**
+- **Backup:** `_register_backup_20260927` (82 rows).
+- **Rollback:** `data_shared/register_repair_2026-09-27/rollback.sql`.
+- **Local files:** the final files were patched too (backup in `finals_backup/`), and a cell-level diff confirmed that only `website` and `traegerschaft` changed.
+- **Scrapers:** both scrapers were fixed, so a re-scrape doesn't bring the errors back.
+
 ## 2026-09-27 — Verify-and-trim tested on 100 schools
 
 **What:** tested a cheaper alternative to regenerating descriptions. It keeps each text and deletes only the claims that a source contradicts, shows as outdated, or can't support.
