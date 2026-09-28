@@ -119,8 +119,12 @@ def crawl_site(row):
         def site_links(page_url, html, found, depth):
             soup = BeautifulSoup(html, 'html.parser')
             for a in soup.find_all('a', href=True) + soup.find_all(['frame', 'iframe'], src=True):  # frames often hold the menu
-                link = urldefrag(urljoin(page_url, a.get('href') or a.get('src')))[0]
-                u = urlparse(link)
+                try:
+                    link = urldefrag(urljoin(page_url, a.get('href') or a.get('src')))[0]
+                    u = urlparse(link)
+                    u.port  # raises on malformed hosts such as ']josua-kindergarten.de'
+                except ValueError:
+                    continue
                 if u.netloc != base.netloc or not u.path.startswith(prefix) or LINK_SKIP.search(link):
                     continue
                 label = f"{a.get_text(' ', strip=True)} {u.path}"
