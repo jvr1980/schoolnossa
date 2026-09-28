@@ -560,16 +560,21 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         df['schulform'] = 'Sonstige'
         df['school_group'] = 'other'
 
-    # Classify Traegerschaft
+    # Classify Traegerschaft. The official school form says it ("Private Grundschule",
+    # "Private berufsbildende Schule", ...); name keywords are only a fallback, and 'frei'
+    # alone misfired on "Freiligrathstraße" and "Freie Hansestadt Bremen".
     if 'traegerschaft' not in df.columns and 'schulname' in df.columns:
-        def infer_traeger(name):
-            if pd.isna(name):
+        def infer_traeger(row):
+            form = str(row.get('schulform_raw') or '').lower()
+            name = str(row.get('schulname') or '').lower()
+            if 'privat' in form or 'privat' in name:
+                return 'Privat'
+            if form:
                 return 'Öffentlich'
-            name_lower = str(name).lower()
-            if any(w in name_lower for w in ['privat', 'frei', 'waldorf', 'montessori']):
+            if any(w in name for w in ['freie schule', 'waldorf', 'montessori']):
                 return 'Privat'
             return 'Öffentlich'
-        df['traegerschaft'] = df['schulname'].apply(infer_traeger)
+        df['traegerschaft'] = df.apply(infer_traeger, axis=1)
 
     # Clean URLs
     if 'website' in df.columns:

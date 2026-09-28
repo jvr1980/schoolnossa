@@ -1,5 +1,80 @@
 # SchoolNossa Development Journal
 
+## 2026-09-28 — Verify-and-trim applied to all German descriptions
+
+**What:** every German school description (2,824 schools, both tables) was checked with Gemini 3.1 Pro against the school's own crawled website plus Google Search. Policy B then deleted contradicted, outdated and unsourced concrete claims (`verify_trim_descriptions.py --german --policies B`). The texts were not regenerated.
+
+**Results:**
+- **Claims:** 42,424 checked:
+  - confirmed 87.5%;
+  - unsourced 7.9%;
+  - contradicted 3.9%;
+  - outdated 0.7%.
+- **Schools:**
+  - **1,523 edited:** 2,664 field edits, typically one or two sentences.
+  - **942 unchanged:** no change needed.
+  - **359 held back unchanged:** listed with reasons in `data_shared/description_verify_full_2026-09-27/held_back_schools.csv`, 145 of them in Berlin. A school is held back when a trim would remove more than 25% of either text, fails the deletion-only check, or still leaves a broken sentence after 4 attempts. Many are thin placeholder texts ("details … are not provided") that need a rewrite.
+- **Traceability:** new table `description_verifications` (RLS, no policies). It holds one record per school with each claim's verdict, evidence URL, quote and whether its deletion was `applied`.
+- **Backup:** `_desc_backup_verify_20260927` (1,523 schools). Edits were promoted only where md5(live text) still matched the checked text; 2,664 of 2,664 applied.
+- **Cost:** about $520 for the Pro checks, plus Flash trims and grammar checks. There were 1,779 search queries, within the free tier.
+
+**Fixes made during the run:**
+- **Quota stop:** the Google Search grounding quota ran out after about 1,600 grounded calls in one day. Plain calls kept working, and the quota reset at 00:00 PT; the run was resumed the next morning, and results are written per school, so a crash or quota stop loses nothing.
+- **Broken sentences:** spot checks found trims leaving fragments, which led to a per-sentence grammar check with re-trim feedback. On a 60-school sample, 56 passed cleanly and 4 were held back.
+- **Lists:** the trim now deletes only the unsourced item of a list.
+- **Hold-back rule:** it now works per language, so DE and EN stay in step.
+- **Crawler:** it now skips malformed links.
+
+## 2026-09-27 — Register repair: websites and operators (86 fixes, live)
+
+**What:** fixed the register errors that the description audits traced back to our own data, and the scraper bugs behind them. The script is `scripts_shared/processing/repair_register_fields.py`; it only writes deltas, with guarded UPDATEs.
+
+**Changes:**
+- **Stuttgart websites (48):**
+  - **Cause:** the scraper took the first external link on each stuttgart.de page. For schools without their own link, that was the city's accessibility guide `stuttgart-inklusiv.de`.
+  - **Fix:** new values come from the LOBW Schulverzeichnis, or a Google-searched URL whose page must name the school or its street. Branch sites share their main school's site.
+  - 4 schools have no website of their own and are now empty.
+- **Stuttgart operator (15):**
+  - **Cause:** it was guessed from name keywords, and primary rows split off combined schools were hard-coded 'Öffentlich'.
+  - **Fix:** the value now comes from LOBW. The named operator decides (gGmbH, e.V., foundation, church → Privat), then the operator type. The type alone is not enough: 'Baden-Württemberg' also covers element-i and Kolping.
+  - Newly private: St. Agnes, Albertus-Magnus, Waldschule Degerloch, Betty-Hirsch, Lessing-Schulen, Johannes-Brenz, Galileo, Raiffeisen and the Freie Aktive / Freie Evangelische primaries.
+- **Bremen operator (21):**
+  - **Cause:** it was guessed from name keywords. 'frei' matched "Freiligrathstraße" and "Freie Hansestadt".
+  - **Fix:** the value now comes from the official Schulform ("Private Grundschule", "Private berufsbildende Schule", …).
+  - 20 were changed to Privat (Technikerschule, St.-Johannis, Ökumenisches Gymnasium, …) and 1 to Öffentlich (Verwaltungsschule).
+- **München websites (2):** `https://test-canary.example/` existed in Supabase only, not in our files. Something wrote test values into production; the finals' values were restored.
+
+**Safety:**
+- **Backup:** `_register_backup_20260927` (82 rows).
+- **Rollback:** `data_shared/register_repair_2026-09-27/rollback.sql`.
+- **Local files:** the final files were patched too (backup in `finals_backup/`), and a cell-level diff confirmed that only `website` and `traegerschaft` changed.
+- **Scrapers:** both scrapers were fixed, so a re-scrape doesn't bring the errors back.
+
+## 2026-09-27 — Verify-and-trim tested on 100 schools
+
+**What:** tested a cheaper alternative to regenerating descriptions. It keeps each text and deletes only the claims that a source contradicts, shows as outdated, or can't support.
+- **Checker:** `verify_trim_descriptions.py`. It crawls the school's own site, then Gemini checks each claim and Flash deletes the flagged ones (deletion only).
+- **Reference:** a second independent audit of 70 new schools (1,000 claims), plus the first audit's 30 schools on their original text.
+- **Scoring:** `eval_verify_trim.py`.
+
+**Results:** `docs/audits/DESCRIPTION_VERIFY_TRIM_TEST_2026-09.md`.
+- **Current quality:** 30% of the 70 new schools carry at least one materially wrong claim (84% of claims verified, 5% wrong). Across all 100 it is 28%.
+- **Best option, Pro + policy B:** removes 59% of material errors and 52% of all wrong claims, but also 4% of correct claims (5% of the text). Schools with a material error fall from 27% to 11%.
+  - Cost: $0.20 per school, about $560 for all German schools.
+  - Flash + B gets 27% → 14% for about $125.
+- **Not applied to Supabase;** this was a test only.
+
+**Lessons:**
+- Given only a URL, Gemini answered from memory, so the site is now crawled first (frames, meta refresh, two menu levels, TLS/HTTP fallbacks).
+- Deleting "every mention, in both languages" matters.
+- Treating unmatched evidence quotes as unsourced (policy C) costs too many correct claims.
+
+**Side findings (data, not descriptions):**
+- **Placeholder websites:** 2 Munich rows have `https://test-canary.example/` as their website (Erasmus-Grasser-Gymnasium, GS Bäckerstraße 58).
+- **Wrong websites:** St. Agnes Stuttgart and Freie Aktive Schule Stuttgart have unrelated sites stored.
+- **Wrong operator:** `traegerschaft` is wrong for St. Agnes, Technikerschule Bremen and Freie Aktive Schule, all stored as public but not public.
+- **Borrowed content:** 2 descriptions borrow content from a same-named school in another city.
+
 ## 2026-09-27 — Descriptions: audited errors fixed, people counts removed, stricter research prompt
 
 **What:**
