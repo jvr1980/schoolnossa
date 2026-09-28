@@ -1,5 +1,30 @@
 # SchoolNossa Development Journal
 
+## 2026-09-28 — Verify-and-trim applied to all German descriptions
+
+**What:** every German school description (2,824 schools, both tables) was checked with Gemini 3.1 Pro against the school's own crawled website plus Google Search. Policy B then deleted contradicted, outdated and unsourced concrete claims (`verify_trim_descriptions.py --german --policies B`). The texts were not regenerated.
+
+**Results:**
+- **Claims:** 42,424 checked:
+  - confirmed 87.5%;
+  - unsourced 7.9%;
+  - contradicted 3.9%;
+  - outdated 0.7%.
+- **Schools:**
+  - **1,523 edited:** 2,664 field edits, typically one or two sentences.
+  - **942 unchanged:** no change needed.
+  - **359 held back unchanged:** listed with reasons in `data_shared/description_verify_full_2026-09-27/held_back_schools.csv`, 145 of them in Berlin. A school is held back when a trim would remove more than 25% of either text, fails the deletion-only check, or still leaves a broken sentence after 4 attempts. Many are thin placeholder texts ("details … are not provided") that need a rewrite.
+- **Traceability:** new table `description_verifications` (RLS, no policies). It holds one record per school with each claim's verdict, evidence URL, quote and whether its deletion was `applied`.
+- **Backup:** `_desc_backup_verify_20260927` (1,523 schools). Edits were promoted only where md5(live text) still matched the checked text; 2,664 of 2,664 applied.
+- **Cost:** about $520 for the Pro checks, plus Flash trims and grammar checks. There were 1,779 search queries, within the free tier.
+
+**Fixes made during the run:**
+- **Quota stop:** the Google Search grounding quota ran out after about 1,600 grounded calls in one day. Plain calls kept working, and the quota reset at 00:00 PT; the run was resumed the next morning, and results are written per school, so a crash or quota stop loses nothing.
+- **Broken sentences:** spot checks found trims leaving fragments, which led to a per-sentence grammar check with re-trim feedback. On a 60-school sample, 56 passed cleanly and 4 were held back.
+- **Lists:** the trim now deletes only the unsourced item of a list.
+- **Hold-back rule:** it now works per language, so DE and EN stay in step.
+- **Crawler:** it now skips malformed links.
+
 ## 2026-09-27 — Register repair: websites and operators (86 fixes, live)
 
 **What:** fixed the register errors that the description audits traced back to our own data, and the scraper bugs behind them. The script is `scripts_shared/processing/repair_register_fields.py`; it only writes deltas, with guarded UPDATEs.
