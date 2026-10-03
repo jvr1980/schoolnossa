@@ -1,5 +1,35 @@
 # SchoolNossa Development Journal
 
+## 2026-10-03 — Held-back descriptions rewritten (247 live)
+
+**What:** the 296 schools that were held back from the 09-28 verify-and-trim got a full rewrite. These were weak placeholder texts plus trims that would have cut more than 25%. The script is `scripts_shared/enrichment/rewrite_held_descriptions.py`. For each school it:
+1. researches the school with grounding;
+2. generates DE and EN text from the updated template (no student, teacher or class counts);
+3. verifies every claim with Gemini 3.1 Pro against the crawled school site;
+4. applies the policy-B trim;
+5. runs the guards: hold back on any validation problem, if the trim removes >25%, or if the text states a count (regex);
+6. re-embeds the text.
+
+The 150 schools that failed in the 09-28 run were retried with Pro first; 63 more were applied, so 1,586 verify-trim edits are live in total.
+
+**Results:**
+- **247 / 296 rewritten and promoted:** 84 secondary, 163 primary.
+- **49 kept their current text:**
+  - 34 new texts failed the trim checks;
+  - 9 would lose >25% after the trim;
+  - 4 had no research sources (thin Grundschule entries);
+  - 2 stated counts.
+- **Length:** median DE length went from 1,035 to 1,284 characters. Every remaining claim was confirmed by a source (typically 11–19 sources per school).
+- **One manual edit:** igis Köln said "two sites:" and then listed one, because the second site was trimmed as unsourced. The lead-in was removed, and the edit is recorded in the results row.
+
+**Safety:**
+- **Backup:** `_desc_backup_rewrite_20261003` (247 rows: description, de, en, grounding, researched_at, embedding).
+- **md5 guard:** promotion ran only where md5 of the live DE and EN text still matched the replaced text; 247/247 matched.
+- **Provenance:** per-claim records are in `description_verifications` (batch `rewrite-2026-10-03`, `applied = true`).
+- **Similar schools:** `school_similarities` was rebuilt for all 10 German cities, since every one had re-embedded schools. The result is 11,850 rows (1,185 × 10), 0 cross-city pairs, NL untouched; the backup is `_sim_backup_20261003`.
+
+**Cost:** about $57 for the Pro checks and about $1 for the Flash trims, both logged. Research and generation were not logged; the estimate is $40–60 more.
+
 ## 2026-10-03 — Crime shown as a rate vs a typical district, plus year-on-year change (live)
 
 **What:** parents no longer see raw offence counts. Each school now carries offences per 1,000 residents for its area, the % difference from the city's median district, and the % change from the previous year. Everything comes from official PKS / statistics-office tables. The script is `scripts_shared/processing/compute_crime_rates.py`; its outputs are in `data_shared/crime_rates_2026-10-03/`.
