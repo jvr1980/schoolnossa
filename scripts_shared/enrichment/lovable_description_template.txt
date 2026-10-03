@@ -1,4 +1,4 @@
-[School Name] is a [public/private/international/independent] school located in [City, Country], serving students from [age range or grade levels]. Founded in [year], the school has built a strong reputation for [core strengths, e.g. academic excellence, holistic education, international outlook], and currently educates approximately [number] students across [number] year groups.
+[School Name] is a [public/private/international/independent] school located in [City, Country], serving students from [age range or grade levels]. Founded in [year], the school has built a strong reputation for [core strengths, e.g. academic excellence, holistic education, international outlook].
 
 The school's educational approach is guided by its mission to [mission statement in plain language], placing a strong emphasis on [values such as curiosity, responsibility, respect, creativity, or global citizenship].
 
@@ -31,7 +31,7 @@ Teaching Staff and Learning Environment
 
 The teaching staff at [School Name] consists of [qualified, experienced, internationally trained] educators who are committed to continuous professional development. Teachers work closely with students to provide [individualized support, mentoring, and constructive feedback], ensuring that each learner can reach their full potential.
 
-Class sizes are typically [small / moderate / capped at X students], allowing for a supportive and engaging learning environment.
+[Only if a source states it: the school's approach to class sizes or group learning, without numbers.]
 
 Facilities and Resources
 

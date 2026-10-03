@@ -1,5 +1,126 @@
 # SchoolNossa Development Journal
 
+## 2026-10-03 — Admission data refreshed for all German schools, primary schools included (live)
+
+**What:** a new run of admission criteria, application windows and open days for all 2,824 German schools (1,185 secondary, 1,639 primary). The April data was stale: its open days had all passed. Primary schools had no admission data at all.
+- **Extraction:** `scripts_shared/enrichment/refresh_admission_open_days.py` crawls the school's own site (registration and date pages first, max 30 pages, cached), then Gemini 3 Flash extracts in one call per school.
+- **No search grounding:** the run isn't limited by the daily grounding quota.
+- **Upload:** `upload_admission_refresh.py` stages rows to `_admission_staging` with a token, then SQL promotes them.
+
+**Checks:**
+- **Evidence:** every criterion, window and open day must carry a quote that is found verbatim on a crawled page.
+- **Dates:** past open days are dropped (the latest becomes `last_open_day_seen`), and so are windows that ended more than 400 days ago.
+- **New after a spot check (`implausible()`):**
+  - Drop open days whose date contradicts the quote's year or weekday. Flash sometimes moves a past date into next year: "18. August 2026" became 2027-08-18, and "Donnerstag, 8. Januar" became a Friday in 2027.
+  - Drop first-day ceremonies (Einschulung) and evenings for already-admitted classes. Info evenings about Einschulung are kept.
+  - Together this removed 35 of 2,211 events.
+- **Windows:** one window whose "opens" date fell after "closes" lost its invented opening date.
+
+**Results:**
+- **Read:** 2,473 schools with something found, 53 with nothing on their site, 228 unreadable sites (JS-only or blocked, still unreadable on retry), 70 without a website. The second pass picked up the 115 websites filled earlier the same day.
+- **Promoted:** 2,526 schools (1,058 secondary, 1,468 primary):
+  - open days replaced by the new upcoming ones;
+  - criteria, window and notes replaced where found, otherwise kept;
+  - `admission_fetched_at` set to now.
+- **Live now:**
+  - secondary: 1,105 with criteria, 659 with a window, 531 with upcoming open days;
+  - primary: 1,321 / 692 / 563.
+- **Backup:** `_admission_backup_20261003` (2,526 rows); the staging insert policy is dropped.
+- **Cost:** about $33 (Gemini 3 Flash, 48M input tokens).
+
+**App (Lovable):**
+- **Admission section:** primary schools now show it.
+- **Official dates & rules:** a block for the city from `city_admission_rules` is shown under the school's own data, or alone when the school has none.
+- **Past dates:** hidden or marked "previous round" (Lovable 5468472, earlier the same day).
+- **Crime fixes found in review:** the safety-dot colour now comes from the % value (it used the district rank as a quintile), and the crime filter now applies at 0% and negative limits.
+
+**Next:** run again around January 2027, when secondary schools announce their 2027/28 open days. Update the `city_admission_rules` rows marked "pattern from 2026/27" when the cities publish their dates.
+
+## 2026-10-03 — Held-back descriptions rewritten (247 live)
+
+**What:** the 296 schools that were held back from the 09-28 verify-and-trim got a full rewrite. These were weak placeholder texts plus trims that would have cut more than 25%. The script is `scripts_shared/enrichment/rewrite_held_descriptions.py`. For each school it:
+1. researches the school with grounding;
+2. generates DE and EN text from the updated template (no student, teacher or class counts);
+3. verifies every claim with Gemini 3.1 Pro against the crawled school site;
+4. applies the policy-B trim;
+5. runs the guards: hold back on any validation problem, if the trim removes >25%, or if the text states a count (regex);
+6. re-embeds the text.
+
+The 150 schools that failed in the 09-28 run were retried with Pro first; 63 more were applied, so 1,586 verify-trim edits are live in total.
+
+**Results:**
+- **247 / 296 rewritten and promoted:** 84 secondary, 163 primary.
+- **49 kept their current text:**
+  - 34 new texts failed the trim checks;
+  - 9 would lose >25% after the trim;
+  - 4 had no research sources (thin Grundschule entries);
+  - 2 stated counts.
+- **Length:** median DE length went from 1,035 to 1,284 characters. Every remaining claim was confirmed by a source (typically 11–19 sources per school).
+- **One manual edit:** igis Köln said "two sites:" and then listed one, because the second site was trimmed as unsourced. The lead-in was removed, and the edit is recorded in the results row.
+
+**Safety:**
+- **Backup:** `_desc_backup_rewrite_20261003` (247 rows: description, de, en, grounding, researched_at, embedding).
+- **md5 guard:** promotion ran only where md5 of the live DE and EN text still matched the replaced text; 247/247 matched.
+- **Provenance:** per-claim records are in `description_verifications` (batch `rewrite-2026-10-03`, `applied = true`).
+- **Similar schools:** `school_similarities` was rebuilt for all 10 German cities, since every one had re-embedded schools. The result is 11,850 rows (1,185 × 10), 0 cross-city pairs, NL untouched; the backup is `_sim_backup_20261003`.
+
+**Cost:** about $57 for the Pro checks and about $1 for the Flash trims, both logged. Research and generation were not logged; the estimate is $40–60 more.
+
+## 2026-10-03 — Crime shown as a rate vs a typical district, plus year-on-year change (live)
+
+**What:** parents no longer see raw offence counts. Each school now carries offences per 1,000 residents for its area, the % difference from the city's median district, and the % change from the previous year. Everything comes from official PKS / statistics-office tables. The script is `scripts_shared/processing/compute_crime_rates.py`; its outputs are in `data_shared/crime_rates_2026-10-03/`.
+
+**Why:** a raw count ("4,312 offences") means nothing without population and a reference. Checking the old data also showed that much of it wasn't real:
+- **Köln, Düsseldorf, Stuttgart:** district numbers were modelled (city total × a hand-set index).
+- **Bremen:** values were hand-typed approximations.
+- **Leipzig:** had fallen back to the city average.
+- **München and Frankfurt:** repeated the city total for every school.
+
+**New columns** (both tables): `crime_area`, `crime_area_level` (district/city), `crime_rate_per_1000`, `crime_rate_year`, `crime_vs_city_pct`, `crime_change_pct`, `crime_change_years`, `crime_source`.
+- `crime_safety_category` is recomputed: safe ≤ −15% vs the median district, elevated ≥ +15%.
+- The comparison uses the **median district**, not the city-wide rate. City centres (München Altstadt-Lehel +759%, Bremen Mitte +365%) pull the city rate up so far that almost every other district would look "safe".
+
+**Coverage (2,824 German schools):**
+
+| City | Level | Schools | Areas | Change | Source |
+|---|---|---|---|---|---|
+| Berlin | district | 752 | 12 Bezirke | 2024→2025 | Kriminalitätsatlas |
+| München | district | 275 (+8 suburbs null) | 25 Stadtbezirke | 2024→2025 | Statistisches Amt |
+| Stuttgart | district | 176 | 23 Stadtbezirke | 2024→2025 | PP Stuttgart |
+| Leipzig | district | 178 (+8 outside Leipzig null) | 58 Ortsteile | 2024→2025 | Stadt Leipzig open data |
+| Bremen | district | 208 (+47 Bremerhaven null) | 15 Beiratsbereiche | 2023→2024 | PKS Bremen PDFs |
+| Köln / Düsseldorf / Frankfurt | city only | 258 / 145 / 173 | — | 2024→2025 | no district data published |
+| Hamburg, Dresden | none | 431 / 165 | — | — | no usable small-area data |
+
+**Safety:**
+- **Backup:** `_crime_backup_20261003` (2,228 rows, 8 cities) holds the old values.
+- **Old count columns:** Berlin keeps them (they are real official figures); the other cities' old modelled count columns were set to NULL.
+- **Data fix:** Eberhard-Ludwigs-Gymnasium (Stuttgart) moved from bezirk West to Nord.
+
+**App:** sent to Lovable. Counts are removed. The details card shows "x% below/above a typical district" plus the year-on-year line, and for city-only data a city-wide line without a label. No label is shown when there is no data (before, `mapSafetyLevel(null)` returned "moderate"). AI Search and the comparison rank on `crime_vs_city_pct`.
+
+## 2026-10-03 — Missing school websites filled (115), official city admission rules
+
+**Websites:**
+- **Tool:** `scripts_shared/processing/fill_missing_websites.py` (Gemini Flash + Google Search).
+- **Acceptance rule:** a URL is kept only if the fetched page names the school or its street (`_site_ok`).
+- **Validation fix:** `_site_ok` now ignores city names and generic school words. Before, any Munich page passed for a Munich school, and re-validation cut the accepted sites from 120 to 115.
+- **Results:** 115 applied (München 85 is the bulk), 39 have no site of their own, 31 candidates rejected.
+- **Files:** `data_shared/website_fill_2026-10-03/` (deltas, `apply.sql`, `rollback.sql`).
+
+**City admission rules:**
+- **Table:** `city_admission_rules` (20 rows, public SELECT), with each city's official registration window and process for primary and secondary schools.
+- **Content:** for primary, catchment and cut-off birthdate; for secondary, the steps. Each row has a `source_url`.
+- **Status:** `published` where 2027/28 dates are out, otherwise `pattern from 2026/27`.
+- **Use:** shown in every school's admission section, and the only content where the school's own site has nothing.
+
+**Primary schools:** they now have the same admission columns as secondary schools (`admission_*`, `open_days*`).
+
+**Test-canary finding:**
+- **What:** the 2 München rows with `test-canary.example` (fixed 09-27) trace back to a Claude write test against production on 2026-04-19.
+- **Scope:** only those 2 schools were affected.
+- **Closed:** the anon write access used then is no longer open.
+
 ## 2026-09-28 — Verify-and-trim applied to all German descriptions
 
 **What:** every German school description (2,824 schools, both tables) was checked with Gemini 3.1 Pro against the school's own crawled website plus Google Search. Policy B then deleted contradicted, outdated and unsourced concrete claims (`verify_trim_descriptions.py --german --policies B`). The texts were not regenerated.
