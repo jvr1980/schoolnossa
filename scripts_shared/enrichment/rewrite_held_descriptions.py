@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import replicate_lovable_description_jobs as job  # noqa: E402
 import verify_trim_descriptions as vt  # noqa: E402
+from scrub_description_claims import COUNT_DE, COUNT_EN  # noqa: E402
 from scripts_shared.upload_to_supabase import SUPABASE_URL, _headers  # noqa: E402
 
 PRO = vt.MODELS['pro']
@@ -75,6 +76,8 @@ def rewrite(s):
     shrink = max(1 - len(t['new'][f]) / max(1, len(texts[f])) for f in texts)
     if shrink > MAX_SHRINK:
         return {**out, 'status': f'new text would also lose {shrink:.0%}'}
+    if COUNT_DE.search(t['new']['description_de']) or COUNT_EN.search(t['new']['description_en']):
+        return {**out, 'status': 'new text states student/teacher/class counts'}
     vec = job.embed(raw)
     if not vec:
         return {**out, 'status': 'embedding failed'}
