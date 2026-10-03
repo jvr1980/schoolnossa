@@ -1,5 +1,41 @@
 # SchoolNossa Development Journal
 
+## 2026-10-03 — Admission data refreshed for all German schools, primary schools included (live)
+
+**What:** a new run of admission criteria, application windows and open days for all 2,824 German schools (1,185 secondary, 1,639 primary). The April data was stale: its open days had all passed. Primary schools had no admission data at all.
+- **Extraction:** `scripts_shared/enrichment/refresh_admission_open_days.py` crawls the school's own site (registration and date pages first, max 30 pages, cached), then Gemini 3 Flash extracts in one call per school.
+- **No search grounding:** the run isn't limited by the daily grounding quota.
+- **Upload:** `upload_admission_refresh.py` stages rows to `_admission_staging` with a token, then SQL promotes them.
+
+**Checks:**
+- **Evidence:** every criterion, window and open day must carry a quote that is found verbatim on a crawled page.
+- **Dates:** past open days are dropped (the latest becomes `last_open_day_seen`), and so are windows that ended more than 400 days ago.
+- **New after a spot check (`implausible()`):**
+  - Drop open days whose date contradicts the quote's year or weekday. Flash sometimes moves a past date into next year: "18. August 2026" became 2027-08-18, and "Donnerstag, 8. Januar" became a Friday in 2027.
+  - Drop first-day ceremonies (Einschulung) and evenings for already-admitted classes. Info evenings about Einschulung are kept.
+  - Together this removed 35 of 2,211 events.
+- **Windows:** one window whose "opens" date fell after "closes" lost its invented opening date.
+
+**Results:**
+- **Read:** 2,473 schools with something found, 53 with nothing on their site, 228 unreadable sites (JS-only or blocked, still unreadable on retry), 70 without a website. The second pass picked up the 115 websites filled earlier the same day.
+- **Promoted:** 2,526 schools (1,058 secondary, 1,468 primary):
+  - open days replaced by the new upcoming ones;
+  - criteria, window and notes replaced where found, otherwise kept;
+  - `admission_fetched_at` set to now.
+- **Live now:**
+  - secondary: 1,105 with criteria, 659 with a window, 531 with upcoming open days;
+  - primary: 1,321 / 692 / 563.
+- **Backup:** `_admission_backup_20261003` (2,526 rows); the staging insert policy is dropped.
+- **Cost:** about $33 (Gemini 3 Flash, 48M input tokens).
+
+**App (Lovable):**
+- **Admission section:** primary schools now show it.
+- **Official dates & rules:** a block for the city from `city_admission_rules` is shown under the school's own data, or alone when the school has none.
+- **Past dates:** hidden or marked "previous round" (Lovable 5468472, earlier the same day).
+- **Crime fixes found in review:** the safety-dot colour now comes from the % value (it used the district rank as a quintile), and the crime filter now applies at 0% and negative limits.
+
+**Next:** run again around January 2027, when secondary schools announce their 2027/28 open days. Update the `city_admission_rules` rows marked "pattern from 2026/27" when the cities publish their dates.
+
 ## 2026-10-03 — Held-back descriptions rewritten (247 live)
 
 **What:** the 296 schools that were held back from the 09-28 verify-and-trim got a full rewrite. These were weak placeholder texts plus trims that would have cut more than 25%. The script is `scripts_shared/enrichment/rewrite_held_descriptions.py`. For each school it:

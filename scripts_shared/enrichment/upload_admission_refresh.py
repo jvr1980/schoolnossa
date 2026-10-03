@@ -43,7 +43,9 @@ def events(evs, lang):
 
 
 def staged(r, token):
-    w = r.get('window')
+    w = dict(r['window']) if r.get('window') else None
+    if w and w.get('opens') and w.get('closes') and w['closes'] < w['opens']:
+        w['opens'] = None
     crit = r.get('criteria') or []
     return {'id': r['id'], 'tbl': r['tbl'], 'batch': token,
             'criteria_de': [c['de'] for c in crit] or None,

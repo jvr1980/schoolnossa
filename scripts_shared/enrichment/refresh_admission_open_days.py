@@ -157,6 +157,8 @@ def check(out, corpus):
     if window:
         for k in ('opens', 'closes'):
             window[k] = _iso(window.get(k)).isoformat() if _iso(window.get(k)) else None
+        if window['opens'] and window['closes'] and window['closes'] < window['opens']:
+            window['opens'] = None  # seen once: "bis zum 15. September" plus an invented opening date
         end = _iso(window.get('closes') or window.get('opens'))
         if end and (today - end).days > 400:  # an old page's window (e.g. Oct 2024) says nothing about the next round
             window, dropped = None, dropped + 1
