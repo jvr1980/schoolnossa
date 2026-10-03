@@ -71,7 +71,11 @@ def lobw_traeger(match):
 
 GENERIC = {'schule', 'grundschule', 'gymnasium', 'realschule', 'werkrealschule', 'gemeinschaftsschule', 'stuttgart',
            'aussenstelle', 'außenstelle', 'und', 'der', 'die', 'das', 'mit', 'grund', 'standort', 'evang', 'evangelische',
-           'freie', 'private', 'priv', 'st', 'schulen', 'gwrs'}
+           'freie', 'private', 'priv', 'st', 'schulen', 'gwrs',
+           # city names: Munich schools are named "Grundschule München, <street>", so any Munich page matched
+           'berlin', 'hamburg', 'münchen', 'muenchen', 'köln', 'koeln', 'düsseldorf', 'duesseldorf', 'frankfurt', 'main',
+           'dresden', 'leipzig', 'bremen', 'städt', 'städtische', 'staatliche', 'gemeinschaftsgrundschule', 'ggs', 'kgs',
+           'mittelschule', 'oberschule', 'gesamtschule', 'hauptschule', 'förderzentrum', 'sonderpädagogisches'}
 
 FINALS = {
     'stuttgart': {pt: [f'data_stuttgart/final/stuttgart_{pt}_school_master_table{s}'
