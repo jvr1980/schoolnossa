@@ -89,9 +89,14 @@ def _get_home(session, url):
     raise err
 
 
-def crawl_site(row):
-    """Text of the school's homepage and its most relevant same-site pages (cached per school)."""
-    cache = PAGE_CACHE / f"{row['id']}.json"
+def crawl_site(row, priority=None, cache_dir=None, max_pages=None):
+    """Text of the school's homepage and its most relevant same-site pages (cached per school).
+    priority: regex for menu links to fetch first (default: profile pages); cache_dir/max_pages override
+    the defaults, e.g. for the admission crawl, which favours registration and dates pages."""
+    priority = priority or LINK_PRIORITY
+    cache_dir = cache_dir or PAGE_CACHE
+    max_pages = max_pages or MAX_PAGES
+    cache = cache_dir / f"{row['id']}.json"
     if cache.exists():
         return json.loads(cache.read_text(encoding='utf-8'))
     url = (row.get('website') or '').strip()
@@ -128,7 +133,7 @@ def crawl_site(row):
                 if u.netloc != base.netloc or not u.path.startswith(prefix) or LINK_SKIP.search(link):
                     continue
                 label = f"{a.get_text(' ', strip=True)} {u.path}"
-                found.setdefault(link, (depth, 0 if LINK_PRIORITY.search(label) else 1, len(found)))
+                found.setdefault(link, (depth, 0 if priority.search(label) else 1, len(found)))
 
         # Breadth-first over two levels (many school sites keep the full menu on subpages, not on the
         # start page); at most 4 pages per subfolder so one deep section (e.g. vocabulary lists) can't fill the budget
@@ -136,7 +141,7 @@ def crawl_site(row):
         home_dir = base.path.rstrip('/').rsplit('/', 1)[0] if '.' in base.path.rsplit('/', 1)[-1] else base.path.rstrip('/')
         pages.append({'url': home, 'text': _page_text(r.text)[:PAGE_CHARS]})
         site_links(home, r.text, queue, 1)
-        while queue and len(pages) < MAX_PAGES:
+        while queue and len(pages) < max_pages:
             link = min(queue, key=queue.get)
             depth = queue.pop(link)[0]
             folder = urlparse(link).path.rstrip('/').rsplit('/', 1)[0]
@@ -154,7 +159,7 @@ def crawl_site(row):
                     site_links(p.url, p.text, queue, depth + 1)
     except requests.RequestException as e:
         pages.append({'url': url, 'error': str(e)[:120]})
-    PAGE_CACHE.mkdir(parents=True, exist_ok=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(pages, ensure_ascii=False), encoding='utf-8')
     return pages
 
