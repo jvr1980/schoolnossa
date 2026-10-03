@@ -71,6 +71,8 @@ def rewrite(s):
     out.update({'raw': raw, 'grounding': grounding, 'generated': texts, 'verify': v,
                 'deleted': [c.get('claim') for c in dels], 'trim': t})
     problems = {k: p for k, p in t['problems'].items() if k != '_call'}
+    if not problems and any(f not in t['new'] for f in texts):  # every trim call failed
+        problems = {'_call': t['problems'].get('_call', 'trim call failed')}
     if problems:
         return {**out, 'status': f"new text failed the trim checks: {next(iter(problems.values()))[:80]}"}
     shrink = max(1 - len(t['new'][f]) / max(1, len(texts[f])) for f in texts)
