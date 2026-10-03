@@ -427,6 +427,9 @@ def main():
     ap.add_argument('--input', type=Path, help='JSON list of school rows')
     ap.add_argument('--german', action='store_true', help='All German schools from Supabase (both tables)')
     ap.add_argument('--policies', default='ABC', help="Which trims to produce, e.g. 'B'")
+    ap.add_argument('--ids', type=Path, help='--retrim only these school ids (one per line)')
+    ap.add_argument('--trim-model', choices=MODELS, help='Model for trims and grammar checks (default: flash)')
+    ap.add_argument('--tag', default='', help="--retrim output suffix, e.g. '_pro150'")
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--model', choices=MODELS, default='pro')
     ap.add_argument('--limit', type=int)
@@ -436,6 +439,9 @@ def main():
     args = ap.parse_args()
     model = MODELS[args.model]
     POLICIES[:] = list(args.policies)
+    if args.trim_model:
+        global TRIM_MODEL
+        TRIM_MODEL = MODELS[args.trim_model]
     if args.retrim:
         return retrim(args)
     if args.german:
@@ -476,6 +482,9 @@ def retrim(args):
         r = json.loads(line)
         if r.get('status') == 'ok':
             results[r['id']] = r
+    if args.ids:
+        wanted = set(args.ids.read_text().split())
+        results = {k: v for k, v in results.items() if k in wanted}
 
     def redo(r):
         hosts = site_hosts_of(rows[r['id']])
@@ -484,11 +493,11 @@ def retrim(args):
             r[f'trim_{policy}'] = {'deleted': [c.get('claim') for c in dels], **trim(r['old'], dels)}
         return r
 
-    with open(args.out / f"results_{args.model}_retrim.jsonl", 'w', encoding='utf-8') as fh, \
+    with open(args.out / f"results_{args.model}_retrim{args.tag}.jsonl", 'w', encoding='utf-8') as fh, \
             cf.ThreadPoolExecutor(max_workers=args.workers) as ex:
         for r in ex.map(redo, results.values()):
             fh.write(json.dumps(r, ensure_ascii=False) + '\n')
-    print(f"re-trimmed {len(results)} schools → results_{args.model}_retrim.jsonl", flush=True)
+    print(f"re-trimmed {len(results)} schools with {TRIM_MODEL} → results_{args.model}_retrim{args.tag}.jsonl", flush=True)
 
 
 if __name__ == '__main__':
