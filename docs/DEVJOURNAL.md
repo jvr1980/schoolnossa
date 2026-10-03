@@ -1,5 +1,60 @@
 # SchoolNossa Development Journal
 
+## 2026-10-03 — Crime shown as a rate vs a typical district, plus year-on-year change (live)
+
+**What:** parents no longer see raw offence counts. Each school now carries offences per 1,000 residents for its area, the % difference from the city's median district, and the % change from the previous year. Everything comes from official PKS / statistics-office tables. The script is `scripts_shared/processing/compute_crime_rates.py`; its outputs are in `data_shared/crime_rates_2026-10-03/`.
+
+**Why:** a raw count ("4,312 offences") means nothing without population and a reference. Checking the old data also showed that much of it wasn't real:
+- **Köln, Düsseldorf, Stuttgart:** district numbers were modelled (city total × a hand-set index).
+- **Bremen:** values were hand-typed approximations.
+- **Leipzig:** had fallen back to the city average.
+- **München and Frankfurt:** repeated the city total for every school.
+
+**New columns** (both tables): `crime_area`, `crime_area_level` (district/city), `crime_rate_per_1000`, `crime_rate_year`, `crime_vs_city_pct`, `crime_change_pct`, `crime_change_years`, `crime_source`.
+- `crime_safety_category` is recomputed: safe ≤ −15% vs the median district, elevated ≥ +15%.
+- The comparison uses the **median district**, not the city-wide rate. City centres (München Altstadt-Lehel +759%, Bremen Mitte +365%) pull the city rate up so far that almost every other district would look "safe".
+
+**Coverage (2,824 German schools):**
+
+| City | Level | Schools | Areas | Change | Source |
+|---|---|---|---|---|---|
+| Berlin | district | 752 | 12 Bezirke | 2024→2025 | Kriminalitätsatlas |
+| München | district | 275 (+8 suburbs null) | 25 Stadtbezirke | 2024→2025 | Statistisches Amt |
+| Stuttgart | district | 176 | 23 Stadtbezirke | 2024→2025 | PP Stuttgart |
+| Leipzig | district | 178 (+8 outside Leipzig null) | 58 Ortsteile | 2024→2025 | Stadt Leipzig open data |
+| Bremen | district | 208 (+47 Bremerhaven null) | 15 Beiratsbereiche | 2023→2024 | PKS Bremen PDFs |
+| Köln / Düsseldorf / Frankfurt | city only | 258 / 145 / 173 | — | 2024→2025 | no district data published |
+| Hamburg, Dresden | none | 431 / 165 | — | — | no usable small-area data |
+
+**Safety:**
+- **Backup:** `_crime_backup_20261003` (2,228 rows, 8 cities) holds the old values.
+- **Old count columns:** Berlin keeps them (they are real official figures); the other cities' old modelled count columns were set to NULL.
+- **Data fix:** Eberhard-Ludwigs-Gymnasium (Stuttgart) moved from bezirk West to Nord.
+
+**App:** sent to Lovable. Counts are removed. The details card shows "x% below/above a typical district" plus the year-on-year line, and for city-only data a city-wide line without a label. No label is shown when there is no data (before, `mapSafetyLevel(null)` returned "moderate"). AI Search and the comparison rank on `crime_vs_city_pct`.
+
+## 2026-10-03 — Missing school websites filled (115), official city admission rules
+
+**Websites:**
+- **Tool:** `scripts_shared/processing/fill_missing_websites.py` (Gemini Flash + Google Search).
+- **Acceptance rule:** a URL is kept only if the fetched page names the school or its street (`_site_ok`).
+- **Validation fix:** `_site_ok` now ignores city names and generic school words. Before, any Munich page passed for a Munich school, and re-validation cut the accepted sites from 120 to 115.
+- **Results:** 115 applied (München 85 is the bulk), 39 have no site of their own, 31 candidates rejected.
+- **Files:** `data_shared/website_fill_2026-10-03/` (deltas, `apply.sql`, `rollback.sql`).
+
+**City admission rules:**
+- **Table:** `city_admission_rules` (20 rows, public SELECT), with each city's official registration window and process for primary and secondary schools.
+- **Content:** for primary, catchment and cut-off birthdate; for secondary, the steps. Each row has a `source_url`.
+- **Status:** `published` where 2027/28 dates are out, otherwise `pattern from 2026/27`.
+- **Use:** shown in every school's admission section, and the only content where the school's own site has nothing.
+
+**Primary schools:** they now have the same admission columns as secondary schools (`admission_*`, `open_days*`).
+
+**Test-canary finding:**
+- **What:** the 2 München rows with `test-canary.example` (fixed 09-27) trace back to a Claude write test against production on 2026-04-19.
+- **Scope:** only those 2 schools were affected.
+- **Closed:** the anon write access used then is no longer open.
+
 ## 2026-09-28 — Verify-and-trim applied to all German descriptions
 
 **What:** every German school description (2,824 schools, both tables) was checked with Gemini 3.1 Pro against the school's own crawled website plus Google Search. Policy B then deleted contradicted, outdated and unsourced concrete claims (`verify_trim_descriptions.py --german --policies B`). The texts were not regenerated.
