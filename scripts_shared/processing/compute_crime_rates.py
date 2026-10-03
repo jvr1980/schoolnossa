@@ -70,6 +70,12 @@ SOURCES = {
 }
 
 
+def strip_no(name):
+    """'1. Altstadt-Lehel' -> 'Altstadt-Lehel' (München population and school mapping are numbered)."""
+    head, _, rest = name.partition('. ')
+    return rest if head.isdigit() else name
+
+
 def pct(a, b):
     return round((a / b - 1) * 100, 1) if a is not None and b else None
 
@@ -154,6 +160,18 @@ def main():
         'duesseldorf': {'level': 'city', 'label': 'Düsseldorf', 'crime': lambda r: r['crime_years']['Düsseldorf'], 'pop': lambda r: r['populations']['Düsseldorf']},
         'frankfurt': {'level': 'city', 'label': 'Frankfurt am Main', 'crime': lambda r: r['crime_years']['Frankfurt'],
                       'pop': lambda r: {'city_total': r['extra']['Frankfurt']['city_total']}},
+        # Berlin: official case counts per Bezirk (Kriminalitätsatlas); the legacy columns are real
+        # Häufigkeitszahlen there, so they are kept
+        'berlin': {'level': 'district', 'field': 'bezirk', 'keep_legacy': True,
+                   'crime': lambda r: {'units': {u: {y[-4:]: v for y, v in d.items() if y.startswith('cases_') and y[-4:] in ('2023', '2024', '2025')}
+                                                 for u, d in r['extra']['Berlin']['units'].items()},
+                                       'city_total': {y: v for y, v in r['extra']['Berlin']['city_total']['cases'].items()}},
+                   'pop': lambda r: r['populations']['Berlin']},
+        # München: schools were mapped to their Stadtbezirk by coordinates (extra.json school_districts)
+        'muenchen': {'level': 'district', 'by_id': lambda r: {i: strip_no(d) for i, d in r['extra']['München']['school_districts'].items() if d},
+                     'crime': lambda r: r['crime_years']['München'],
+                     'pop': lambda r: {'units': {strip_no(u): {f'pop_{y}': v for y, v in d.items()} for u, d in r['extra']['München']['population'].items()},
+                                       'city_total': r['extra']['München']['city_total']}},
     }
     crime_cols = [c for c in ('crime_aggravated_assault_2023', 'crime_aggravated_assault_2024', 'crime_aggravated_assault_avg',
                               'crime_aggravated_assault_yoy_pct', 'crime_assault_2023', 'crime_assault_2024', 'crime_assault_avg',
@@ -172,14 +190,22 @@ def main():
     cities = args.cities.split(',')
     for city in cities:
         rows = compute_city(city, configs[city], research)
+        cfg = configs[city]
+        by_id = cfg['by_id'](research) if 'by_id' in cfg else None
         for tbl in ('schools', 'primary_schools'):
-            legacy_null = ', '.join(f'{c} = NULL' for c in (crime_cols if tbl == 'schools' else PRIMARY_LEGACY))
+            legacy = [] if cfg.get('keep_legacy') else (crime_cols if tbl == 'schools' else PRIMARY_LEGACY)
             # reset everything first, so schools in unmatched areas (e.g. non-Leipzig rows) are left without figures
-            stmts.append(f"UPDATE public.{tbl} SET {legacy_null}, " + ', '.join(f'{c} = NULL' for c in NEW_COLS) +
+            stmts.append(f"UPDATE public.{tbl} SET " + ', '.join(f'{c} = NULL' for c in legacy + NEW_COLS) +
                          f" WHERE city = '{city}';")
             for ours, vals in rows.items():
                 sets = ', '.join(f'{k} = {lit(v)}' for k, v in vals.items())
-                where = f"city = '{city}'" + (f" AND {configs[city]['field']} = {lit(ours)}" if ours is not None else '')
+                if by_id is not None:
+                    ids = sorted(i for i, u in by_id.items() if u == ours)
+                    if not ids:
+                        continue
+                    where = f"city = '{city}' AND id IN ({', '.join(lit(i) for i in ids)})"
+                else:
+                    where = f"city = '{city}'" + (f" AND {cfg['field']} = {lit(ours)}" if ours is not None else '')
                 stmts.append(f"UPDATE public.{tbl} SET {sets} WHERE {where};")
         for ours, vals in rows.items():
             summary.append({'city': city, 'area': ours or vals['crime_area'], **vals})
