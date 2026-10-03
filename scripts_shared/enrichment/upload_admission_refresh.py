@@ -19,6 +19,7 @@ Usage:
 import argparse
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 import requests
@@ -26,11 +27,14 @@ import requests
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 from scripts_shared.upload_to_supabase import SUPABASE_URL, _headers  # noqa: E402
+sys.path.insert(0, str(PROJECT_ROOT / 'scripts_shared' / 'enrichment'))
+from refresh_admission_open_days import implausible  # noqa: E402
 
 
 def events(evs, lang):
     out = []
-    for e in evs:
+    # results written before implausible() existed are filtered here too
+    for e in (e for e in evs if not implausible(e, date.fromisoformat(e['date']))):
         out.append({'date': e['date'], 'start_time': e.get('start_time'), 'end_time': e.get('end_time'),
                     'event_type': e.get(f'event_type_{lang}') or e.get('event_type_de'),
                     'audience': e.get(f'audience_{lang}') or e.get('audience_de'),

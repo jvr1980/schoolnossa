@@ -13,7 +13,9 @@ and gives Gemini the page text without tools:
   2. extract — Gemini 3 Flash returns German and English fields in one call; every
                criterion, window and open day carries a verbatim quote from the pages
   3. check   — items whose quote is not on a crawled page are dropped; open days
-               before today are dropped (the latest past one becomes last_open_day_seen)
+               before today are dropped (the latest past one becomes last_open_day_seen),
+               and so are open days whose date contradicts the quote's year or weekday
+               and first-day events for already admitted pupils (implausible())
 
 Output: <out>/admission_results.jsonl (one line per school). Nothing is written to
 Supabase here; upload with upload_admission_refresh.py.
@@ -108,6 +110,37 @@ def extract(row, pages):
     return {'error': err}, None
 
 
+WEEKDAYS = ('montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag')
+MONTHS = {'januar': 1, 'februar': 2, 'märz': 3, 'april': 4, 'mai': 5, 'juni': 6, 'juli': 7, 'august': 8,
+          'september': 9, 'oktober': 10, 'november': 11, 'dezember': 12}
+# a 2-digit year must follow the date directly ("17.11.25"), so "03.03. 14:00" is not read as 2014
+NUM_DATE = re.compile(r'(?<!\d)(\d{1,2})\.\s?(\d{1,2})\.(?:\s?(\d{4})(?![\d:])|(\d{2})(?!\d))?')
+WORD_DATE = re.compile(r'(?<!\d)(\d{1,2})\.?\s+(' + '|'.join(MONTHS) + r')(?:\s+(\d{4}))?', re.I)
+NEW_CLASS = re.compile(r'einschul|erstklässler|neuen?\s+(1\.|ersten?)\s*klasse|klasse\s+eins', re.I)
+FOR_APPLICANTS = re.compile(r'info|anmeld|offene|schnupper|beratung|interessiert|kennenlernen|aufnahme|test|prüfung', re.I)
+
+
+def implausible(ev, d):
+    """Why an open day should be dropped although its quote is on the site, or None.
+
+    The quote is verbatim, but the model fills in a missing year itself and sometimes
+    moves a past date into next year; and first-day ceremonies are not open days."""
+    text = ev.get('evidence') or ''
+    quoted = [(int(a), int(b), y4 or y2) for a, b, y4, y2 in NUM_DATE.findall(text)]
+    quoted += [(int(a), MONTHS[b.lower()], c) for a, b, c in WORD_DATE.findall(text)]
+    same_day = [(dd, mm, yy) for dd, mm, yy in quoted if (dd, mm) == (d.day, d.month)]
+    years = {int(yy) + (2000 if len(yy) == 2 else 0) for _, _, yy in same_day if yy}
+    if years and d.year not in years:
+        return 'year differs from the quote'
+    named = {w for w in WEEKDAYS if re.search(rf'\b{w}\b', text, re.I)}
+    if len(same_day) == 1 and len(quoted) == 1 and len(named) == 1 and WEEKDAYS[d.weekday()] not in named:
+        return 'weekday differs from the quote'
+    kind = ' '.join(str(ev.get(k) or '') for k in ('event_type_de', 'notes_de')) + ' ' + text
+    if NEW_CLASS.search(kind) and not FOR_APPLICANTS.search(kind):
+        return 'first-day event for admitted pupils'
+    return None
+
+
 def check(out, corpus):
     """Keep only items whose quote is on a crawled page; split open days into upcoming / past."""
     today = date.today()
@@ -131,7 +164,7 @@ def check(out, corpus):
     upcoming, past = [], []
     for ev in out.get('open_days') or []:
         d = _iso(ev.get('date')) if isinstance(ev, dict) else None
-        if not d or not found(ev.get('evidence'), corpus):
+        if not d or not found(ev.get('evidence'), corpus) or implausible(ev, d):
             dropped += 1
             continue
         ev['date'] = d.isoformat()
