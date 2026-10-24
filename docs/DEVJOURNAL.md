@@ -1,5 +1,15 @@
 # SchoolNossa Development Journal
 
+## 2026-10-24 — iOS 1.0.1 submitted, App Store badge live, NL branch merged, NL navigation started
+
+**What.**
+- **iOS:** 1.0 (build 20) had been on sale since 2026-09-15 without anyone noticing. 1.0.1 (25) was submitted to App Store review on 10-24, auto-release on approval. It adds error reporting and the crime redesign: no raw counts; % vs typical district, change vs last year, rate per 1,000. The live build showed Berlin counts like "12.555" and nothing elsewhere. 1.1.0 (26) = the Netherlands (province → municipality picker from `school_city_counts`, OR-matched track filter); it is on TestFlight only, because Apple reviews one version at a time. Details: mobile repo `docs/DEVJOURNAL.md`.
+- **Website:** `/app` page and landing strip now show Apple's official badge (toolbox.marketingtools.apple.com; the old tools.applemarketingtools.com host is NXDOMAIN) linking to the App Store; TestFlight wording gone. Lovable d13d05c + 435a8d6 (2.7 credits), published and verified in the live bundle.
+- **Data repo:** `feature/nl-pipeline-improvements` (35 commits) merged to main; only this journal conflicted (entries interleaved by date).
+- **Website NL navigation:** spec sent to the Lovable agent (RPC-driven country → province → municipality, track multi-select, hide German-only sections for NL, geo_* added to import whitelists). The agent's plan awaits the user's approval; nothing published.
+
+**Found, not fixed (trial/paywall audit).** On the web the "trial ended" block is only on `/menu`: `/dashboard` has no check; expired paid users are never blocked; `FreeTrialBlocker` is not mounted anywhere; Google sign-ups never get a `user_access` row (13 users, Feb–May) and are never blocked. Live settings: test phase on, 200 seats, 30 days; free tier 10 min (unused); €9.99 / 3 months. 46 accounts: 30 expired trials, 2 paid, 14 without a row. iOS enforces all of it on every screen but lacks the web's "trial already used" check.
+
 ## 2026-10-03 — Admission data refreshed for all German schools, primary schools included (live)
 
 **What:** a new run of admission criteria, application windows and open days for all 2,824 German schools (1,185 secondary, 1,639 primary). The April data was stale: its open days had all passed. Primary schools had no admission data at all.
