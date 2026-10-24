@@ -101,6 +101,18 @@ def run_phase_7():
     main()
 
 
+def run_phase_7b():
+    """Phase 7b: Inspectorate quality ratings + CBS achterstandsscore (SES)."""
+    from scripts_international.nl.enrichment.nl_quality_ses_enrichment import main
+    main()
+
+
+def run_phase_7c():
+    """Phase 7c: Verified profile labels (Nuffic TTO) + Amsterdam contacts."""
+    from scripts_international.nl.enrichment.nl_profiles_enrichment import main
+    main()
+
+
 def run_phase_8():
     """Phase 8: School descriptions + structured data extraction (gpt-5.3-mini with thinking)."""
     from scripts_international.description_pipeline_international import run_description_pipeline
@@ -111,6 +123,16 @@ def run_phase_9():
     """Phase 9: Data combination + schema transform + Berlin output."""
     from scripts_international.nl.processing.nl_combine_and_finalize import main
     main()
+
+
+def run_phase_10():
+    """Phase 10: Merge free-layer refreshes into the final table in place.
+
+    Use instead of a full re-run when only free enrichments changed — phase 6
+    (POI) costs ~$250 in Google Places calls and phase 8 re-runs the LLM.
+    """
+    from scripts_international.nl.processing.nl_merge_enrichment_update import merge_update
+    merge_update("nl_schools_with_profiles.csv")
 
 
 # =============================================================================
@@ -125,8 +147,12 @@ AVAILABLE_PHASES = {
     5: ("Crime Enrichment", run_phase_5),
     6: ("POI Enrichment", run_phase_6),
     7: ("Demographics Enrichment", run_phase_7),
+    # 7b/7c chain off phase 3's output, so they can run without the paid phases.
+    7.2: ("Inspectorate Quality + CBS SES", run_phase_7b),
+    7.3: ("Verified Profiles + Amsterdam Contacts", run_phase_7c),
     8: ("Descriptions + Data Extraction (gpt-5.3-mini)", run_phase_8),
     9: ("Schema Transform + Berlin Output", run_phase_9),
+    10: ("Merge Free-Layer Refresh Into Final", run_phase_10),
 }
 
 
@@ -199,6 +225,9 @@ if __name__ == "__main__":
 
     phases = None
     if args.phases:
-        phases = [int(p.strip()) for p in args.phases.split(",")]
+        # float, not int: sub-phases like 7.2 / 7.3 chain off phase 3 and can be
+        # run without the paid POI and LLM phases.
+        phases = [float(p.strip()) if "." in p else int(p.strip())
+                  for p in args.phases.split(",")]
 
     run_orchestrator(phases=phases, dry_run=args.dry_run)

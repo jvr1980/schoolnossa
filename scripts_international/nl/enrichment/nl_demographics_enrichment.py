@@ -23,9 +23,15 @@ import pandas as pd
 import requests
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data_nl"
+# Data dir is overridable so the primary (basisonderwijs) pipeline can reuse
+# these enrichers unchanged: NL_DATA_DIR=data_nl_po. Caches keyed by location
+# rather than by school (accidents, GTFS, CBS tables) still live under data_nl,
+# so both levels share one download.
+import os
+DATA_DIR = PROJECT_ROOT / os.environ.get("NL_DATA_DIR", "data_nl")
+SHARED_CACHE_DIR = PROJECT_ROOT / "data_nl" / "cache"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
-CACHE_DIR = DATA_DIR / "cache"
+CACHE_DIR = SHARED_CACHE_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -86,8 +92,18 @@ def fetch_cbs_demographics(cache_path: Path) -> pd.DataFrame:
                     col_map["area_population_density"] = col
                 elif "gemiddeldinkomen" in cl and "inwoner" in cl:
                     col_map["area_median_income"] = col
-                elif "niet-westers" in cl or "nietwesters" in cl:
-                    col_map["migration_background_pct"] = col
+                # CBS retired the westers/niet-westers split in favour of
+                # herkomstland: Nederland_17 / EuropaExclusiefNederland_18 /
+                # BuitenEuropa_19 are counts by the person's own birth region and
+                # sum to AantalInwoners_5. The old keyword match found nothing,
+                # which is why this column was empty. Derived below rather than
+                # mapped, and deliberately NOT into migration_background_pct —
+                # that column carries Berlin's pupil-level figure, a different
+                # measurement.
+                elif cl.startswith("nederland_") and "aantal" not in cl:
+                    col_map.setdefault("_born_nl", col)
+                elif cl.startswith("aantalinwoners"):
+                    col_map["_population"] = col
                 elif "woz" in cl and "gemiddeld" in cl:
                     col_map["woz_value"] = col
                 elif ("uitkering" in cl or "bijstand" in cl) and "totaal" in cl:
@@ -146,7 +162,18 @@ def fetch_cbs_demographics(cache_path: Path) -> pd.DataFrame:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    df = df.drop(columns=["WijkenEnBuurten"], errors="ignore")
+    # Share of residents born outside the Netherlands (first generation).
+    # Kept as an explicit area_ metric — it is not the pupil-level migration
+    # figure the German tables carry.
+    if "_born_nl" in df.columns and "_population" in df.columns:
+        population = df["_population"].where(df["_population"] > 0)
+        df["area_foreign_born_pct"] = (
+            (1 - df["_born_nl"] / population) * 100).round(1)
+        logger.info(f"  area_foreign_born_pct: "
+                    f"{df['area_foreign_born_pct'].notna().sum()}/{len(df)} gemeenten, "
+                    f"median {df['area_foreign_born_pct'].median():.1f}%")
+
+    df = df.drop(columns=["WijkenEnBuurten", "_born_nl", "_population"], errors="ignore")
     df.to_csv(cache_path, index=False)
     logger.info(f"  Cached: {len(df)} gemeenten with demographics")
     return df
@@ -179,8 +206,11 @@ def main():
     logger.info("NL Phase 7: Demographics Enrichment (CBS Kerncijfers)")
     logger.info("=" * 60)
 
+    # Follow the free chain (…→crime), never the POI output. POI is paid and
+    # therefore only refreshed for new schools, so it is routinely older than
+    # the rest — preferring it here silently reverted the whole pipeline to the
+    # previous run's row count and stale enrichment values.
     candidates = [
-        INTERMEDIATE_DIR / "nl_schools_with_pois.csv",
         INTERMEDIATE_DIR / "nl_schools_with_crime.csv",
         INTERMEDIATE_DIR / "nl_schools_with_transit.csv",
         INTERMEDIATE_DIR / "nl_schools_with_traffic.csv",

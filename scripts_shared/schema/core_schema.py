@@ -59,19 +59,33 @@ IDENTITY_COLUMNS = [
 GEO_COLUMNS = [
     "latitude",
     "longitude",
+    # Explicit administrative hierarchy for the country -> region -> municipality
+    # UI chain. These exist because the Berlin-derived names are ambiguous across
+    # countries: `bezirk` is a *sub-municipal* district in Berlin (Mitte) but a
+    # province in NL (Drenthe), and `ortsteil` is a neighbourhood vs a gemeente.
+    # Binding the UI to those would mean per-country logic; these three always
+    # mean the same thing.
+    "geo_country",        # ISO code — NL, DE, ...
+    "geo_region",         # Province (NL) / Bundesland (DE)
+    "geo_municipality",   # Gemeente (NL) / Stadt (DE), display-cased
 ]
 
 # =============================================================================
 # STUDENT / TEACHER STATISTICS — maps to Berlin cols 14-19
 # =============================================================================
 STUDENT_TEACHER_COLUMNS = [
-    "students_current",      # Maps to schueler_2024_25 (most recent year)
+    "students_current",      # Most recent year available for this country
     "students_previous",     # Maps to schueler_2023_24
     "students_2yr_ago",      # Maps to schueler_2022_23
-    "teachers_current",      # Maps to lehrer_2024_25
+    "teachers_current",      # Most recent year available for this country
     "teachers_previous",     # Maps to lehrer_2023_24
     "teachers_2yr_ago",      # Maps to lehrer_2022_23
     "student_teacher_ratio", # Computed: students_current / teachers_current
+    # Vintage of students_current/teachers_current, e.g. "2024_25". Countries
+    # refresh on their own calendars, so the year travels with the data rather
+    # than being implied by the Berlin column name it maps onto. Consumed by
+    # international_to_berlin_schema to stamp data_school_year correctly.
+    "students_data_year",
 ]
 
 # =============================================================================
@@ -86,6 +100,10 @@ NORMALIZED_ACADEMIC_COLUMNS = [
     "academic_data_year",               # Year of the academic data
     "school_quality_rating",            # Normalized: excellent/good/adequate/inadequate
     "school_quality_rating_national",   # Original rating (Ofsted Outstanding, Inspectorate voldoende, etc.)
+    # Inspection ratings go stale — Dutch oordelen can be up to 10 years old —
+    # so the assessment date travels with the verdict for staleness display.
+    "school_quality_assessed_date",
+    "school_quality_source",
 ]
 
 # =============================================================================
@@ -94,7 +112,16 @@ NORMALIZED_ACADEMIC_COLUMNS = [
 SOCIOECONOMIC_COLUMNS = [
     "deprivation_index",         # Maps to belastungsstufe — normalized 1-10 scale
     "deprivation_index_national", # Original national index (IMD decile, CBS social index, etc.)
+    "deprivation_data_year",     # Vintage of the national index (annual, lagged)
+    "deprivation_data_source",   # Which national index the value came from
+    # PUPIL-level share with a migration background, as Berlin's migration_2024_25
+    # reports it. Only fill this from a school statistic — an area figure is a
+    # different measurement and must go in area_foreign_born_pct instead.
+    # NL has no per-school equivalent, so it stays empty there; the CBS
+    # achterstandsscore in deprivation_index_national is the school-level signal.
     "migration_background_pct",  # Maps to migration_2024_25
+    # AREA-level share of residents born abroad (first generation).
+    "area_foreign_born_pct",
     "area_median_income",        # Mapped from census/statistics (EUR or local currency)
     "area_population_density",   # People per km²
     "area_unemployment_rate",    # Percent
@@ -107,6 +134,10 @@ TRAFFIC_COLUMNS = [
     "traffic_accidents_500m",        # Accident count within 500m radius
     "traffic_accidents_1000m",       # Accident count within 1000m radius
     "traffic_accidents_fatal_1000m", # Fatal accidents within 1000m
+    # Injury (incl. fatal) accidents. Most registers are dominated by
+    # material-damage-only collisions, which say little about danger to
+    # children on foot; the injury subset is the meaningful signal.
+    "traffic_accidents_injury_1000m",
     "traffic_accidents_year",        # Year of accident data
     "traffic_volume_index",          # Normalized 0-10 traffic intensity (from sensors or modeled)
     "traffic_speed_zone_kmh",        # Speed limit or measured speed near school

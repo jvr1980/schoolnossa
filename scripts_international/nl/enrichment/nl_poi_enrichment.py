@@ -26,9 +26,15 @@ import pandas as pd
 from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data_nl"
+# Data dir is overridable so the primary (basisonderwijs) pipeline can reuse
+# these enrichers unchanged: NL_DATA_DIR=data_nl_po. Caches keyed by location
+# rather than by school (accidents, GTFS, CBS tables) still live under data_nl,
+# so both levels share one download.
+import os
+DATA_DIR = PROJECT_ROOT / os.environ.get("NL_DATA_DIR", "data_nl")
+SHARED_CACHE_DIR = PROJECT_ROOT / "data_nl" / "cache"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
-CACHE_DIR = DATA_DIR / "cache" / "poi_cache"
+CACHE_DIR = SHARED_CACHE_DIR / "poi_cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 sys.path.insert(0, str(PROJECT_ROOT))

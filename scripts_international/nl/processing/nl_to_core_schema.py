@@ -15,6 +15,7 @@ Usage:
 """
 
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -28,7 +29,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from scripts_shared.schema.core_schema import CORE_COLUMNS, schema_coverage_report
 from scripts_shared.schema.country_extensions import get_full_schema, NL_EXTENSION
 
-DATA_DIR = PROJECT_ROOT / "data_nl"
+# Overridable so the primary (basisonderwijs) pipeline reuses this unchanged:
+# NL_DATA_DIR=data_nl_po. Output filenames are derived from it too, so the two
+# levels never write over each other.
+import os
+NL_DATA_DIR = os.environ.get("NL_DATA_DIR", "data_nl")
+DATA_DIR = PROJECT_ROOT / NL_DATA_DIR
+TABLE_PREFIX = "nl_po" if NL_DATA_DIR.endswith("_po") else "nl"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
 FINAL_DIR = DATA_DIR / "final"
 FINAL_DIR.mkdir(parents=True, exist_ok=True)
@@ -128,12 +135,23 @@ def transform(input_path: Path = None) -> pd.DataFrame:
 
     # Map school type
     output["school_type_national"] = df["education_type"]
-    output["school_type"] = df["education_type"].map(SCHOOL_TYPE_MAP).fillna("secondary")
+    # The map covers VO onderwijstypes only. Primary rows arrive with school_type
+    # already set to "primary"; without this the fillna would relabel all 6,060
+    # basisscholen as secondary.
+    if "school_type" in df.columns and df["school_type"].notna().any():
+        output["school_type"] = df["school_type"]
+    else:
+        output["school_type"] = df["education_type"].map(SCHOOL_TYPE_MAP).fillna("secondary")
     output["school_subtype"] = df["education_type"]
 
     # Ownership
     output["ownership_national"] = df["denomination"]
-    output["ownership"] = df["denomination"].map(DENOMINATION_TO_OWNERSHIP).fillna("public")
+    # Every school in DUO's registry is bekostigd (state-funded). Bijzonder
+    # (denominational) schools are privately *governed* but publicly funded
+    # under Article 23 and charge no tuition — mapping them to "private" marked
+    # 3,662 primary schools private, which drives the app's public/private
+    # filter and its tuition passes. Denomination stays in ownership_national.
+    output["ownership"] = "public"
 
     output["street_address"] = df["street_address"]
     output["postal_code"] = df["postal_code"]
@@ -143,13 +161,57 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     output["website"] = df["website"]
     output["metadata_source"] = "DUO Open Onderwijsdata"
 
+    # === ADMIN HIERARCHY (country -> region -> gemeente) ===
+    # DUO ships gemeente and plaats in caps ("S GRAVENHAGE"), which is not
+    # presentable, so store a display-cased form. Dutch name particles stay
+    # lowercase and the 's-Gravenhage / 't forms keep their leading apostrophe.
+    _PARTICLES = {"van", "de", "den", "der", "des", "het", "op", "aan", "bij",
+                  "in", "ter", "te", "tot", "uit", "en"}
+
+    def _display_place(value):
+        raw = str(value or "").strip()
+        if not raw:
+            return None
+        words = []
+        for i, word in enumerate(raw.lower().split()):
+            if word in ("s", "t") and i == 0:
+                words.append(f"'{word}-")   # S GRAVENHAGE -> 's-Gravenhage
+                continue
+            piece = "-".join(w.capitalize() for w in word.split("-"))
+            if i > 0 and word in _PARTICLES:
+                piece = word
+            words.append(piece)
+        out = " ".join(words).replace("' ", "'").replace("- ", "-")
+        return out[0].lower() + out[1:] if out.startswith("'") else out
+
+    output["geo_country"] = "NL"
+    output["geo_region"] = df["province"].astype(str).str.strip()
+    output["geo_municipality"] = df["gemeente_name"].map(_display_place)
+
     # === GEO ===
     output["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
     output["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
 
     # === STUDENT / TEACHER ===
-    output["students_current"] = pd.to_numeric(df.get("students_2024_25"), errors="coerce")
-    output["students_previous"] = pd.to_numeric(df.get("students_2023_24"), errors="coerce")
+    # Resolve the newest students_<year> column DUO actually delivered rather
+    # than pinning a year: a DUO refresh otherwise lands silently in the
+    # previous year's slot and mislabels the vintage downstream.
+    student_years = sorted(
+        (m.group(1) for c in df.columns if (m := re.match(r"^students_(20\d\d_\d\d)$", c))),
+        reverse=True,
+    )
+    if student_years:
+        newest = student_years[0]
+        output["students_current"] = pd.to_numeric(df[f"students_{newest}"], errors="coerce")
+        output["students_data_year"] = newest
+        if len(student_years) > 1:
+            output["students_previous"] = pd.to_numeric(
+                df[f"students_{student_years[1]}"], errors="coerce")
+        logger.info(f"  Student vintage: {newest} (available: {', '.join(student_years)})")
+    else:
+        logger.warning("  No students_<year> column found — students_current empty")
+        output["students_data_year"] = None
+
     output["teachers_current"] = pd.to_numeric(df.get("teachers_current"), errors="coerce")
     output["teachers_previous"] = pd.to_numeric(df.get("teachers_previous"), errors="coerce")
 
@@ -157,40 +219,53 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     output["student_teacher_ratio"] = (output["students_current"] / teachers).round(1)
 
     # === NORMALIZED ACADEMIC ===
-    output["academic_performance_score"] = df.apply(compute_academic_score, axis=1)
-    output["academic_data_source"] = "DUO Exam Results"
+    # Exam results are a VO concept: DUO publishes no per-school results for
+    # basisonderwijs, so primary rows carry no exam_* columns at all. Skip the
+    # whole block rather than let df.get() return None and blow up on .notna().
+    has_exams = any(c.startswith("exam_") for c in df.columns)
+    if not has_exams:
+        logger.info("  No exam_* columns (primary) — skipping academic block")
+    if has_exams:
+        output["academic_performance_score"] = df.apply(compute_academic_score, axis=1)
+        output["academic_data_source"] = "DUO Exam Results"
 
-    # Year of data
-    has_2025 = pd.to_numeric(df.get("exam_avg_overall_2024_25"), errors="coerce").notna()
-    output["academic_data_year"] = np.where(has_2025, "2024-25", "2023-24")
+        # Year of data
+        has_2025 = pd.to_numeric(df.get("exam_avg_overall_2024_25"), errors="coerce").notna()
+        output["academic_data_year"] = np.where(has_2025, "2024-25", "2023-24")
 
-    # Compute percentile within dataset
-    scores = output["academic_performance_score"]
-    output["academic_performance_percentile"] = scores.rank(pct=True).multiply(100).round(1)
+        # Compute percentile within dataset
+        scores = output["academic_performance_score"]
+        output["academic_performance_percentile"] = scores.rank(pct=True).multiply(100).round(1)
 
-    # Trend
-    score_current = pd.to_numeric(df.get("exam_avg_overall_2024_25"), errors="coerce")
-    score_prev = pd.to_numeric(df.get("exam_avg_overall_2023_24"), errors="coerce")
-    output["academic_performance_trend"] = (score_current - score_prev).round(2)
+        # Trend
+        score_current = pd.to_numeric(df.get("exam_avg_overall_2024_25"), errors="coerce")
+        score_prev = pd.to_numeric(df.get("exam_avg_overall_2023_24"), errors="coerce")
+        output["academic_performance_trend"] = (score_current - score_prev).round(2)
 
-    # CE-SE difference as value-added proxy
-    ce = pd.to_numeric(df.get("exam_avg_ce_2024_25"), errors="coerce")
-    se = pd.to_numeric(df.get("exam_avg_se_2024_25"), errors="coerce")
-    output["academic_value_added"] = (ce - se).round(2)
+        # CE-SE difference as value-added proxy
+        ce = pd.to_numeric(df.get("exam_avg_ce_2024_25"), errors="coerce")
+        se = pd.to_numeric(df.get("exam_avg_se_2024_25"), errors="coerce")
+        output["academic_value_added"] = (ce - se).round(2)
 
-    # === NL EXTENSION COLUMNS ===
-    output["nl_exam_pass_rate"] = pd.to_numeric(df.get("exam_pass_rate_2024_25"), errors="coerce")
-    output["nl_exam_avg_grade_ce"] = pd.to_numeric(df.get("exam_avg_ce_2024_25"), errors="coerce")
-    output["nl_exam_avg_grade_se"] = pd.to_numeric(df.get("exam_avg_se_2024_25"), errors="coerce")
-    output["nl_exam_ce_se_difference"] = output["nl_exam_avg_grade_ce"] - output["nl_exam_avg_grade_se"]
-    output["nl_exam_year"] = "2024-25"
+        # === NL EXTENSION COLUMNS ===
+        output["nl_exam_pass_rate"] = pd.to_numeric(df.get("exam_pass_rate_2024_25"), errors="coerce")
+        output["nl_exam_avg_grade_ce"] = pd.to_numeric(df.get("exam_avg_ce_2024_25"), errors="coerce")
+        output["nl_exam_avg_grade_se"] = pd.to_numeric(df.get("exam_avg_se_2024_25"), errors="coerce")
+        output["nl_exam_ce_se_difference"] = output["nl_exam_avg_grade_ce"] - output["nl_exam_avg_grade_se"]
+        output["nl_exam_year"] = "2024-25"
     output["nl_denomination"] = df["denomination"]
     output["nl_brin_code"] = df["brin_code"]
     output["nl_gemeente_code"] = df["gemeente_code"]
+    # DUO ships the schoolbestuur as BEVOEGD GEZAG NUMMER -> school_board_id.
+    if "school_board_id" in df.columns:
+        output["nl_school_board"] = df["school_board_id"]
 
     # === DESCRIPTIONS from cache ===
     import json
-    desc_cache_path = PROJECT_ROOT / "data_nl" / "cache" / "description_pipeline.json"
+    # DATA_DIR, not a hardcoded data_nl: primary runs (NL_DATA_DIR=data_nl_po)
+    # keep their own cache, and reading the secondary one matched no school at
+    # all — the transform silently emitted zero descriptions.
+    desc_cache_path = DATA_DIR / "cache" / "description_pipeline.json"
     if desc_cache_path.exists():
         with open(desc_cache_path) as f:
             desc_cache = json.load(f)
@@ -229,7 +304,13 @@ def transform(input_path: Path = None) -> pd.DataFrame:
     # Transit, crime, demographics, traffic columns have identical names in intermediate
     # and core schema — just copy them directly if not already set.
     passthrough_prefixes = ["transit_", "crime_", "traffic_", "area_", "deprivation_",
-                            "poi_", "description", "woz_", "enrollment_"]
+                            "poi_", "description", "woz_", "enrollment_",
+                            # Inspectorate verdicts, NL-extension fields and the
+                            # student vintage stamp all arrive from enrichment
+                            # under their final names; without these prefixes
+                            # they were silently dropped at output[full_schema].
+                            "school_quality_", "nl_", "students_data_year",
+                            "academic_", "migration_"]
     copied = 0
     for col in full_schema:
         if col in output.columns and output[col].notna().any():
@@ -260,8 +341,8 @@ def main():
     output = transform()
 
     # Save
-    parquet_path = FINAL_DIR / "nl_school_master_table_final.parquet"
-    csv_path = FINAL_DIR / "nl_school_master_table_final.csv"
+    parquet_path = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_final.parquet"
+    csv_path = FINAL_DIR / f"{TABLE_PREFIX}_school_master_table_final.csv"
 
     output.to_parquet(parquet_path, index=False)
     logger.info(f"Saved: {parquet_path}")

@@ -26,9 +26,15 @@ import pandas as pd
 import requests
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data_nl"
+# Data dir is overridable so the primary (basisonderwijs) pipeline can reuse
+# these enrichers unchanged: NL_DATA_DIR=data_nl_po. Caches keyed by location
+# rather than by school (accidents, GTFS, CBS tables) still live under data_nl,
+# so both levels share one download.
+import os
+DATA_DIR = PROJECT_ROOT / os.environ.get("NL_DATA_DIR", "data_nl")
+SHARED_CACHE_DIR = PROJECT_ROOT / "data_nl" / "cache"
 INTERMEDIATE_DIR = DATA_DIR / "intermediate"
-CACHE_DIR = DATA_DIR / "cache"
+CACHE_DIR = SHARED_CACHE_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -114,15 +120,22 @@ def enrich_schools(schools: pd.DataFrame, crime: pd.DataFrame) -> pd.DataFrame:
     schools["_gem"] = schools["gemeente_code"].astype(str).str.strip().str.zfill(4)
     crime["_gem"] = crime["gemeente_code"].astype(str).str.strip().str.zfill(4)
 
-    merged = schools.merge(crime, on="_gem", how="left", suffixes=("", "_crime"))
+    # Rank and band the *areas*, then attach to schools. Berlin ranks its 12
+    # Bezirke (1..12); ranking school rows instead gave NL values up to 5,858,
+    # weighted every gemeente by how many schools it has, and gave the same
+    # gemeente a different rank in the primary and secondary tables. Computing
+    # it on the CBS table makes rank 1 = safest gemeente, identical everywhere.
+    if "crime_total_per_1000" in crime.columns:
+        rate = pd.to_numeric(crime["crime_total_per_1000"], errors="coerce")
+        crime["crime_safety_rank"] = rate.rank(method="min").astype("Int64")
+        # Vocabulary must match the German tertiles (safe/moderate/elevated) —
+        # the UI filters on these literals across all countries.
+        crime["crime_safety_category"] = pd.cut(
+            rate.rank(pct=True), bins=[0, 1 / 3, 2 / 3, 1.0],
+            labels=["safe", "moderate", "elevated"], include_lowest=True,
+        ).astype("object")
 
-    # Safety rank + category
-    if "crime_total_per_1000" in merged.columns:
-        merged["crime_safety_rank"] = merged["crime_total_per_1000"].rank(method="min").astype("Int64")
-        pct = merged["crime_total_per_1000"].rank(pct=True)
-        merged["crime_safety_category"] = pd.cut(
-            pct, bins=[0, 0.33, 0.66, 1.0], labels=["safe", "moderate", "high"]
-        )
+    merged = schools.merge(crime, on="_gem", how="left", suffixes=("", "_crime"))
 
     merged["crime_data_source"] = "CBS StatLine 83648NED"
     merged = merged.drop(columns=["_gem", "gemeente_code_crime"], errors="ignore")

@@ -175,9 +175,12 @@ def transform(input_path: Path = None) -> pd.DataFrame:
             output[col] = df[col]
 
     # === CRIME ===
+    # crime_area_name (police neighbourhood) must stay on this list: a column the
+    # enricher produces but the finalizer does not carry is silently dropped, the
+    # same way the OSM/GIAS name mismatch dropped establishment_type in April.
     for col in ["crime_total_per_1000", "crime_violent_per_1000", "crime_property_per_1000",
                  "crime_drug_per_1000", "crime_safety_rank", "crime_safety_category",
-                 "crime_data_source", "crime_data_year"]:
+                 "crime_area_name", "crime_data_source", "crime_data_year"]:
         if col in df.columns:
             output[col] = df[col]
 

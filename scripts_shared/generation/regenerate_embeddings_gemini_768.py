@@ -85,6 +85,10 @@ TARGETS: List[tuple[str, str]] = [
     ("nrw_secondary",       "data_nrw/final/nrw_secondary_school_master_table_final_with_embeddings.parquet"),
     ("stuttgart_primary",   "data_stuttgart/final/stuttgart_primary_school_master_table_final_with_embeddings.parquet"),
     ("stuttgart_secondary", "data_stuttgart/final/stuttgart_secondary_school_master_table_final_with_embeddings.parquet"),
+    # International. Same model and dimensionality, so these share the German
+    # vector space; similarity is still computed within each target.
+    ("nl",                  "data_nl/final/nl_school_master_table_final.parquet"),
+    ("nl_primary",          "data_nl_po/final/nl_po_school_master_table_final.parquet"),
 ]
 
 
@@ -99,10 +103,11 @@ def _text_for_row(row: pd.Series) -> str:
             val = row[col]
             if pd.notna(val) and str(val).strip() and str(val).lower() not in ("nan", "none", "null"):
                 return str(val).strip()
-    # Final fallback — cheap synthesized blurb
-    name = row.get("schulname") or ""
+    # Final fallback — cheap synthesized blurb. Accept the core-schema names
+    # too, or international rows fall back to an empty string and embed noise.
+    name = row.get("schulname") or row.get("school_name") or ""
     stype = row.get("school_type") or row.get("schulart") or ""
-    city = row.get("stadt") or ""
+    city = row.get("stadt") or row.get("city") or row.get("district") or ""
     return f"{name} — {stype} in {city}".strip(" —")
 
 
@@ -200,17 +205,37 @@ def compute_similar(df: pd.DataFrame, top_n: int = 3) -> pd.DataFrame:
     normalized = matrix / norms
     sim = normalized @ normalized.T
 
-    if "schulnummer" not in df.columns:
-        logger.warning("  no schulnummer column — skipping similar-school write-back")
+    # German tables key on schulnummer, international ones on school_id. Without
+    # this the similarity matrix was computed and then silently discarded, so NL
+    # got embeddings but no most_similar_school_* values.
+    id_col = next((c for c in ("schulnummer", "school_id") if c in df.columns), None)
+    if id_col is None:
+        logger.warning("  no schulnummer/school_id column — skipping similar-school write-back")
         return df
+
+    # Suppress other locations of the SAME institution. Dutch schools are
+    # registered per vestiging, so a scholengemeenschap appears many times with
+    # one shared name and near-identical descriptions — 66% of NL top matches
+    # were another campus of the same school, which is useless to a parent
+    # comparing options. German tables have one row per school and no grouping
+    # column, so this is a no-op there.
+    group_col = next((c for c in ("nl_brin_code", "brin_code") if c in df.columns), None)
+    if group_col is not None:
+        groups = np.asarray([str(df.at[idx, group_col]) for idx in valid_idx])
+        logger.info(f"  suppressing same-{group_col} matches "
+                    f"({len(set(groups))} institutions across {len(valid_idx)} rows)")
+    else:
+        groups = None
 
     for i, idx in enumerate(valid_idx):
         scores = sim[i].copy()
         scores[i] = -1
+        if groups is not None:
+            scores[groups == groups[i]] = -1
         top = np.argsort(scores)[-top_n:][::-1]
         for rank, j in enumerate(top):
             neighbor_idx = valid_idx[j]
-            df.at[idx, f"most_similar_school_{rank + 1:02d}"] = df.at[neighbor_idx, "schulnummer"]
+            df.at[idx, f"most_similar_school_{rank + 1:02d}"] = df.at[neighbor_idx, id_col]
     return df
 
 

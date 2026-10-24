@@ -47,19 +47,50 @@ def get_berlin_columns() -> list[str]:
         )
 
 
+# Berlin's crime columns are Häufigkeitszahlen — cases per 100,000 residents
+# (see scripts_berlin/processing/convert_crime_xlsx_to_csv.py). The core schema
+# carries rates per 1,000, so international values must be scaled before they
+# land in a Berlin-named column the UI renders on a single axis.
+CRIME_PER_1000_TO_PER_100K = 100.0
+
+# Berlin's tertile vocabulary (rebuild_final_table): safe / moderate / elevated.
+# Country enrichers emitting "high" must be normalised or UI filters miss rows.
+CRIME_CATEGORY_ALIASES = {"high": "elevated", "hoog": "elevated", "low": "safe"}
+
+# Fallback when a country pipeline does not stamp its student-data vintage.
+DEFAULT_SCHOOL_YEAR = "2024_25"
+
+
+def _student_vintage(df: pd.DataFrame) -> str:
+    """School-year vintage of students_current/teachers_current, e.g. '2024_25'.
+
+    Prefers the vintage the country pipeline recorded alongside the data; only
+    falls back to the constant when the pipeline predates that field.
+    """
+    if "students_data_year" in df.columns:
+        stamped = df["students_data_year"].dropna().astype(str)
+        if len(stamped):
+            return stamped.mode().iloc[0].replace("-", "_")
+    return DEFAULT_SCHOOL_YEAR
+
+
 def transform_to_berlin(df: pd.DataFrame, country_code: str) -> pd.DataFrame:
     """
-    Transform a core-schema DataFrame to Berlin 265-column format.
+    Transform a core-schema DataFrame to the Berlin reference schema.
 
     Args:
         df: DataFrame with core schema columns (from any country pipeline)
         country_code: ISO country code (NL, GB, FR, IT, ES)
 
     Returns:
-        DataFrame with exactly 265 Berlin-schema columns, in canonical order.
-        Country-specific academic columns are NOT included (they stay in the
-        core+extension output). Berlin-only columns (Abitur, MSA, PLZ traffic,
-        detailed crime) are filled with None.
+        DataFrame with the Berlin reference columns in canonical order, plus the
+        stable (year-agnostic) fields appended. Country-specific academic columns
+        are NOT included (they stay in the core+extension output). Berlin-only
+        columns (Abitur, MSA, PLZ traffic, detailed crime) are filled with None.
+
+    Stable fields (schueler_current, data_school_year, ...) are derived here the
+    same way every German mapper derives them, so the Lovable app can bind to one
+    set of names across all countries.
     """
     berlin_columns = get_berlin_columns()
 
@@ -70,21 +101,88 @@ def transform_to_berlin(df: pd.DataFrame, country_code: str) -> pd.DataFrame:
         if core_col in df.columns and berlin_col in berlin_columns:
             output[berlin_col] = df[core_col]
 
-    # Handle crime columns: map simplified crime to Berlin's detailed breakdown
-    # The core schema has crime_total_per_1000 etc; Berlin has crime_total_crimes_2023 etc.
-    # We populate what we can and leave the rest NULL.
-    if "crime_total_per_1000" in df.columns:
-        # Map to the _avg columns (most comparable)
-        output["crime_total_crimes_avg"] = df["crime_total_per_1000"]
-    if "crime_violent_per_1000" in df.columns:
-        output["crime_violent_crime_avg"] = df["crime_violent_per_1000"]
+    # --- Student/teacher vintage -------------------------------------------
+    # CORE_TO_BERLIN_MAP pins students_current to schueler_2024_25. That is only
+    # correct while the country's data really is 2024/25; after a refresh moves
+    # it on, the value would be mislabelled — or silently dropped, if the Berlin
+    # reference has no column for the new vintage. Write the year-suffixed column
+    # matching the real vintage and let the stable fields below carry the value
+    # regardless of which year columns the reference happens to have.
+    vintage = _student_vintage(df)
 
-    # Handle traffic: core has simplified metrics, Berlin has PLZ sensor data
-    # Map what we can
+    def _year_back(label: str, years: int) -> str:
+        start = int(label.split("_")[0]) - years
+        return f"{start}_{str(start + 1)[-2:]}"
+
+    # CORE_TO_BERLIN_MAP also pins *_previous to *_2023_24. With a 2025_26
+    # vintage the previous year is 2024_25, so the pin put last year's figures
+    # under a label two years old. Place each at its real year, or drop it if
+    # the reference has no such column.
+    for core_col, prefix in (("students_previous", "schueler"),
+                             ("teachers_previous", "lehrer")):
+        if core_col not in df.columns or vintage == DEFAULT_SCHOOL_YEAR:
+            continue
+        pinned = f"{prefix}_{_year_back(DEFAULT_SCHOOL_YEAR, 1)}"
+        real = f"{prefix}_{_year_back(vintage, 1)}"
+        if pinned in output.columns:
+            output[pinned] = None
+        if real in berlin_columns:
+            output[real] = df[core_col]
+
+    for core_col, prefix in (("students_current", "schueler"),
+                             ("teachers_current", "lehrer")):
+        if core_col not in df.columns:
+            continue
+        dated = f"{prefix}_{vintage}"
+        default_col = f"{prefix}_{DEFAULT_SCHOOL_YEAR}"
+        if vintage == DEFAULT_SCHOOL_YEAR:
+            continue  # CORE_TO_BERLIN_MAP already placed it correctly
+        if dated in berlin_columns:
+            output[dated] = df[core_col]
+        # The default-year copy of the *current* value is now mislabelled —
+        # unless the previous-year value legitimately lives there.
+        prev_col = f"{prefix}_{_year_back(vintage, 1)}"
+        if default_col in output.columns and default_col != prev_col:
+            output[default_col] = None
+
+    # --- Crime --------------------------------------------------------------
+    # Berlin: cases per 100k (Häufigkeitszahl). Core schema: per 1,000.
+    if "crime_total_per_1000" in df.columns:
+        output["crime_total_crimes_avg"] = (
+            pd.to_numeric(df["crime_total_per_1000"], errors="coerce")
+            * CRIME_PER_1000_TO_PER_100K
+        )
+    if "crime_violent_per_1000" in df.columns:
+        output["crime_violent_crime_avg"] = (
+            pd.to_numeric(df["crime_violent_per_1000"], errors="coerce")
+            * CRIME_PER_1000_TO_PER_100K
+        )
+    if "crime_safety_category" in output.columns:
+        output["crime_safety_category"] = (
+            output["crime_safety_category"].astype("object")
+            .replace(CRIME_CATEGORY_ALIASES)
+        )
+    # Berlin carries crime_total_crimes_<year>; the core schema has no such
+    # column, so write the year-suffixed slot matching the country's own crime
+    # vintage. Without it add_stable_fields finds no candidate and both
+    # crime_total_crimes_current and crime_data_year come out empty.
+    if "crime_total_per_1000" in df.columns and "crime_data_year" in df.columns:
+        scaled = (pd.to_numeric(df["crime_total_per_1000"], errors="coerce")
+                  * CRIME_PER_1000_TO_PER_100K)
+        for year in df["crime_data_year"].dropna().astype(str).str.slice(0, 4).unique():
+            dated = f"crime_total_crimes_{year}"
+            if dated in berlin_columns:
+                rows = df["crime_data_year"].astype(str).str.startswith(year)
+                if dated not in output.columns:
+                    output[dated] = None
+                output.loc[rows, dated] = scaled[rows]
+
+    # --- Traffic ------------------------------------------------------------
+    # Berlin's plz_* block is Telraam sensor data (CC-BY-NC): counts of observed
+    # vehicles. Accident counts are a different measurement and must not be
+    # written into it — traffic_accidents_* stay in the core/extension output.
     if "traffic_volume_index" in df.columns:
         output["plz_traffic_intensity"] = df["traffic_volume_index"]
-    if "traffic_accidents_1000m" in df.columns:
-        output["plz_observation_count"] = df["traffic_accidents_1000m"]
 
     # Build final output with exact Berlin column order
     final = pd.DataFrame()
@@ -94,9 +192,31 @@ def transform_to_berlin(df: pd.DataFrame, country_code: str) -> pd.DataFrame:
         else:
             final[col] = None
 
-    # Verify
-    assert list(final.columns) == berlin_columns, "Column order mismatch!"
-    assert len(final.columns) == len(berlin_columns), "Column count mismatch!"
+    # --- Stable (year-agnostic) fields, as in every German mapper -----------
+    from scripts_shared.schema.stable_fields import add_stable_fields
+    final = add_stable_fields(final)
+
+    # add_stable_fields walks the Berlin year-suffixed columns newest-first. When
+    # the country's vintage has no column in the Berlin reference, the newest
+    # column it can see is the one holding students_previous — so it would report
+    # last year's figure as current, stamped with last year's label. The country
+    # frame is authoritative about its own vintage, so override from it.
+    for core_col, stable_col in (("students_current", "schueler_current"),
+                                 ("teachers_current", "lehrer_current")):
+        if core_col in df.columns:
+            final[stable_col] = pd.to_numeric(df[core_col], errors="coerce").values
+    if "students_current" in df.columns:
+        known = pd.to_numeric(df["students_current"], errors="coerce").notna().values
+        if "data_school_year" not in final.columns:
+            final["data_school_year"] = None
+        final["data_school_year"] = final["data_school_year"].astype("object")
+        final.loc[known, "data_school_year"] = vintage
+        final.loc[~known, "data_school_year"] = None
+
+    # Stable fields are additive; the canonical block keeps its order.
+    tail = [c for c in final.columns if c not in berlin_columns]
+    final = final[berlin_columns + tail]
+    assert list(final.columns)[:len(berlin_columns)] == berlin_columns, "Column order mismatch!"
 
     return final
 

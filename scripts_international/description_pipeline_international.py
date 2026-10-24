@@ -28,6 +28,7 @@ import argparse
 import json
 import logging
 import os
+import random
 import sys
 import time
 from pathlib import Path
@@ -48,10 +49,24 @@ logger = logging.getLogger(__name__)
 # Pass 0: Gemini Flash (latest) + Google Search grounding (web research)
 # Pass 1: Gemini Flash (latest) (description generation — fast, cheap)
 # Pass 2: GPT 5.4 mini with reasoning (structured extraction — needs precision)
+# GEMINI_MODEL overrides the default. flash-lite grounds just as well for
+# thinly-documented schools and is ~3x faster; grounding is billed per request,
+# so the model choice buys wall-clock, not money.
 DEFAULT_MODELS = {
-    "gemini": "gemini-flash-latest",      # Pass 0 + Pass 1 (resolves to newest flash)
+    "gemini": os.environ.get("GEMINI_MODEL", "gemini-flash-latest"),
     "openai": "gpt-5.4-mini",            # Pass 2: structured data extraction
 }
+MAX_WORKERS = int(os.environ.get("DESC_WORKERS", "5"))
+
+# Columns this pipeline writes (Pass 1 descriptions + Pass 2 extracted facts).
+# Everything else in the final table belongs to other stages and must survive
+# a description run untouched.
+PIPELINE_OWNED_COLUMNS = [
+    "description", "description_local", "description_de", "description_en",
+    "summary_en", "summary_de", "summary_local",
+    "website", "founding_year", "languages_offered", "special_features",
+    "principal", "phone", "email", "teachers_current", "students_current",
+]
 
 # Columns that Pass 2 can populate for international schools
 # Mapped from JSON key → core schema column name
@@ -72,6 +87,7 @@ PASS2_COLUMN_MAP_INTERNATIONAL = {
 # Country-specific school type labels for prompts
 SCHOOL_TYPE_LABELS = {
     "NL": "secondary schools (voortgezet onderwijs)",
+    "NL_PO": "primary schools (basisonderwijs, ages 4-12)",
     "GB": "secondary schools",
     "FR": "secondary schools (lycées and collèges)",
     "IT": "secondary schools (scuole superiori)",
@@ -181,6 +197,45 @@ def call_openai_with_thinking(system: str, user: str, api_key: str,
     return raw
 
 
+class DailyQuotaExhausted(Exception):
+    """The free tier's per-day allowance is spent; retrying before reset is futile."""
+
+
+# Set once any call hits a per-day quota. Backoff retries suit per-minute limits,
+# but against a spent daily quota they cost ~90s per school — thousands of
+# schools would stall the run for days instead of letting it exit.
+QUOTA_EXHAUSTED = False
+
+
+def _gemini_request(req, timeout: int) -> dict:
+    """POST to Gemini, retrying transient limits and stopping on a daily quota."""
+    import urllib.request
+    import urllib.error
+    global QUOTA_EXHAUSTED
+
+    last_error = None
+    for attempt in range(5):
+        if QUOTA_EXHAUSTED:
+            raise DailyQuotaExhausted("daily quota already exhausted this run")
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            last_error = exc
+            if exc.code not in (429, 500, 503):
+                raise
+            if exc.code == 429:
+                try:
+                    body = exc.read().decode("utf-8", "replace")
+                except Exception:
+                    body = ""
+                if "PerDay" in body:
+                    QUOTA_EXHAUSTED = True
+                    raise DailyQuotaExhausted(body[:300]) from exc
+            time.sleep(min(2 ** attempt * 2 + random.uniform(0, 1.5), 45))
+    raise last_error
+
+
 def call_gemini(system: str, user: str, api_key: str,
                 model: str = "gemini-2.5-flash",
                 delay: float = 0.5) -> str:
@@ -204,8 +259,7 @@ def call_gemini(system: str, user: str, api_key: str,
     req = urllib.request.Request(url, data=payload,
                                 headers={"Content-Type": "application/json"})
 
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
+    result = _gemini_request(req, timeout=60)
 
     time.sleep(delay)
     raw = result["candidates"][0]["content"]["parts"][0]["text"].strip()
@@ -218,6 +272,21 @@ def call_gemini(system: str, user: str, api_key: str,
         raw = raw.strip()
 
     return raw
+
+
+# Measured API usage, so a --limit sample gives a real per-school cost rather
+# than an estimate. Grounded search is billed per request on top of tokens.
+USAGE = {"prompt_tokens": 0, "output_tokens": 0, "calls": 0, "grounded_calls": 0}
+
+
+def _record_usage(result: dict, grounded: bool) -> None:
+    meta = result.get("usageMetadata", {}) or {}
+    USAGE["prompt_tokens"] += int(meta.get("promptTokenCount", 0) or 0)
+    USAGE["output_tokens"] += int(
+        meta.get("candidatesTokenCount", meta.get("totalTokenCount", 0)) or 0)
+    USAGE["calls"] += 1
+    if grounded:
+        USAGE["grounded_calls"] += 1
 
 
 def call_gemini_with_search(prompt: str, api_key: str,
@@ -239,10 +308,14 @@ def call_gemini_with_search(prompt: str, api_key: str,
     req = urllib.request.Request(url, data=payload,
                                 headers={"Content-Type": "application/json"})
 
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
+    # Grounded search rate-limits hard under concurrency: a 5-worker run drew
+    # HTTP 429 on 76% of calls, and every one of those silently downgraded the
+    # school to a description written without any research. Back off and retry
+    # rather than let a transient limit decide the data quality.
+    result = _gemini_request(req, timeout=120)
 
     time.sleep(delay)
+    _record_usage(result, grounded=True)
 
     # Extract text content
     content = result["candidates"][0]["content"]["parts"][0]["text"]
@@ -455,6 +528,32 @@ def school_needs_processing(row: dict, passes: set) -> tuple:
     )
 
 
+def _cached_ok(entry: dict, *keys: str) -> bool:
+    """True only if every key holds a non-empty value.
+
+    Presence is not success: a failed generation stored as "" looks identical to
+    a cached result to an `in entry` test, so the school is skipped forever and
+    the gap never closes. This is the same trap as the cached HTTP 429s that
+    left GB crime at zero — check the value, not the key.
+    """
+    for key in keys:
+        val = entry.get(key)
+        if val is None or (isinstance(val, str) and not val.strip()):
+            return False
+    return True
+
+
+def needs_grounded_regen(entry: dict) -> bool:
+    """True if the cached description was written without research.
+
+    The row-level check in school_needs_processing cannot see this: the fallback
+    description was already applied to the table, so the row looks complete and
+    Pass 1 is never scheduled — the backfill ran daily collecting research while
+    4,578 descriptions stayed ungrounded.
+    """
+    return entry.get("pass1_grounded") is False
+
+
 def process_school(row: dict, country_code: str, passes: set, cache: dict,
                    api_keys: dict, force_rerun: bool = False) -> dict:
     """Process a single school through all requested passes."""
@@ -466,6 +565,9 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
     # Check if this school actually needs processing
     if not force_rerun:
         needs_p0, needs_p1, needs_p2 = school_needs_processing(row, passes)
+        if 1 in passes and needs_grounded_regen(entry):
+            needs_p1 = True
+            needs_p0 = needs_p0 or 0 in passes
         if not needs_p0 and not needs_p1 and not needs_p2:
             logger.debug(f"  [{school_id}] All data present — skipping")
             return entry
@@ -478,7 +580,7 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
 
     # --- Pass 0: Web Research (Gemini + Google Search grounding) ---
     if 0 in active_passes:
-        if "pass0_raw" not in entry or force_rerun:
+        if not _cached_ok(entry, "pass0_raw") or force_rerun:
             gkey = api_keys.get("gemini")
             if gkey:
                 prompt = build_pass0_prompt(row, country_code)
@@ -496,7 +598,12 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
 
     # --- Pass 1: Description Generation (Gemini — cheaper than GPT) ---
     if 1 in active_passes:
-        if ("pass1_local" not in entry or "pass1_en" not in entry) or force_rerun:
+        needs_regen = (not _cached_ok(entry, "pass1_local", "pass1_en")
+                       or force_rerun
+                       # Written without research, but research exists now.
+                       or (entry.get("pass1_grounded") is False
+                           and (entry.get("pass0_raw") or "").strip()))
+        if needs_regen:
             gkey = api_keys.get("gemini")
             okey = api_keys.get("openai")  # fallback
             raw_research = entry.get("pass0_raw")
@@ -504,7 +611,6 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
                 system, user = build_pass1_prompt(row, country_code, raw_research)
             else:
                 system, user = build_pass1_fallback_prompt(row, country_code)
-
             raw_resp = None
             if gkey:
                 # Primary: Gemini (fast + cheap)
@@ -548,6 +654,13 @@ def process_school(row: dict, country_code: str, passes: set, cache: dict,
                 if result:
                     entry["pass1_local"] = result.get("description_local", "")
                     entry["pass1_en"] = result.get("description_en", "")
+                    # Stamp provenance: a fallback description is synthesised from
+                    # the structured fields the page already shows, so it reads like
+                    # content while telling a parent nothing new. Recording this is
+                    # what lets a later run replace it once research succeeds. Stamp
+                    # only on success, or a failed regen would mark the old fallback
+                    # text as grounded.
+                    entry["pass1_grounded"] = bool(raw_research)
                     logger.info(f"  [{school_id}] Pass 1: descriptions generated")
 
     # --- Pass 2: Structured Extraction ---
@@ -688,36 +801,58 @@ def run_description_pipeline(country_code: str, passes: set = None,
 
     # Pre-scan: count how many schools actually need processing
     total = len(df)
+    def _entry_for(row_dict):
+        return cache.get(str(row_dict.get(id_col, row_dict.get("school_name", ""))), {})
+
     needs_count = 0
     for _, row in df.iterrows():
-        p0, p1, p2 = school_needs_processing(row.to_dict(), passes)
-        if p0 or p1 or p2:
+        row_dict = row.to_dict()
+        p0, p1, p2 = school_needs_processing(row_dict, passes)
+        if p0 or p1 or p2 or (1 in passes and needs_grounded_regen(_entry_for(row_dict))):
             needs_count += 1
     skipped = total - needs_count
     logger.info(f"Schools needing API calls: {needs_count}/{total} (skipping {skipped} already complete)")
 
-    # Process
-    processed = 0
-    for i, (_, row) in enumerate(df.iterrows()):
+    # Process. Work is network-bound — grounded search dominates the ~6s/school —
+    # so a thread pool converts a 6k-school run from many hours to a couple.
+    # Each school owns its own cache entry, so workers never contend on a key;
+    # the periodic snapshot takes a lock so it never serialises a dict mid-write.
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    import threading
+
+    todo = []
+    for _, row in df.iterrows():
         row_dict = row.to_dict()
-        # Normalize school_name for the prompt
         if "school_name" not in row_dict:
-            row_dict["school_name"] = row_dict.get("schulname", row_dict.get("school_name", "Unknown"))
-
-        school_id = str(row_dict.get(id_col, row_dict.get("school_name", "")))
-
-        # Check if this school needs work (log at different levels)
+            row_dict["school_name"] = row_dict.get("schulname", "Unknown")
         p0, p1, p2 = school_needs_processing(row_dict, passes)
-        if not force_rerun and not p0 and not p1 and not p2:
-            continue  # Skip silently — already complete
-        processed += 1
-        logger.info(f"[{processed}/{needs_count}] {row_dict.get('school_name', school_id)}")
-        process_school(row_dict, code, passes, cache, api_keys, force_rerun)
+        if (force_rerun or p0 or p1 or p2
+                or (1 in passes and needs_grounded_regen(_entry_for(row_dict)))):
+            todo.append(row_dict)
 
-        if (i + 1) % 10 == 0:
-            with open(cache_path, "w", encoding="utf-8") as f:
-                json.dump(cache, f, ensure_ascii=False, indent=2)
-            logger.info(f"  Cache saved ({i+1}/{total})")
+    cache_lock = threading.Lock()
+    counter = {"done": 0}
+
+    def _run(row_dict):
+        school_id = str(row_dict.get(id_col, row_dict.get("school_name", "")))
+        try:
+            process_school(row_dict, code, passes, cache, api_keys, force_rerun)
+        except Exception as exc:
+            logger.warning(f"  [{school_id}] failed: {exc}")
+        with cache_lock:
+            counter["done"] += 1
+            n = counter["done"]
+            if n % 25 == 0 or n == len(todo):
+                logger.info(f"[{n}/{len(todo)}] {row_dict.get('school_name', school_id)}")
+            if n % 100 == 0:
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    json.dump(cache, f, ensure_ascii=False, indent=2)
+                logger.info(f"  Cache saved ({n}/{len(todo)})")
+
+    if todo:
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+            list(as_completed([pool.submit(_run, r) for r in todo]))
+    processed = counter["done"]
 
     # Final cache save
     with open(cache_path, "w", encoding="utf-8") as f:
@@ -726,10 +861,62 @@ def run_description_pipeline(country_code: str, passes: set = None,
     # Apply to DataFrame
     df = apply_cache_to_dataframe(df, cache, passes, id_col=id_col)
 
-    # Save
-    output_path = csv_path  # Overwrite the input file
+    # Save. NEVER overwrite the full table from a --limit run: df holds only the
+    # sampled head, so writing it back truncates the deliverable to N rows. The
+    # cache is the real output of this pipeline anyway — the finalizer reads it
+    # back — so a limited run writes a throwaway sample file instead.
+    if limit:
+        output_path = csv_path.with_name(csv_path.stem + f".limit{limit}_sample.csv")
+        logger.warning(f"--limit run: writing sample to {output_path.name}, "
+                       f"leaving {csv_path.name} untouched "
+                       f"(cache updated as normal)")
+    else:
+        output_path = csv_path  # Overwrite the input file
     df.to_csv(output_path, index=False)
     logger.info(f"Saved: {output_path}")
+
+    # Keep the parquet sibling in step with the CSV. The finalizer carries paid
+    # columns forward from the previous final *parquet*, so descriptions written
+    # to the CSV alone are silently dropped the next time the table is rebuilt.
+    #
+    # Update only the columns this pipeline owns. df was read from CSV, which
+    # cannot hold arrays: writing it wholesale turned every 768-float embedding
+    # into a 12k-char string — valid-looking, 100% populated, and unloadable
+    # into Supabase's vector(768). Merging keeps native types for everything
+    # the pipeline does not write.
+    if not limit:
+        parquet_path = output_path.with_suffix(".parquet")
+        if parquet_path.exists():
+            base = pd.read_parquet(parquet_path)
+            owned = [c for c in PIPELINE_OWNED_COLUMNS if c in df.columns]
+            if id_col in base.columns and id_col in df.columns and owned:
+                upd = (df.drop_duplicates(id_col)
+                         .set_index(df.drop_duplicates(id_col)[id_col].astype(str))[owned])
+                keys = base[id_col].astype(str)
+                for col in owned:
+                    new = keys.map(upd[col])
+                    base[col] = new.where(new.notna(), base[col]) if col in base.columns else new
+                base.to_parquet(parquet_path, index=False)
+                logger.info(f"Saved: {parquet_path} ({len(owned)} owned columns merged)")
+            else:
+                logger.warning(f"Skipped parquet update: no shared id column "
+                               f"({id_col}) — refusing to overwrite wholesale")
+
+    # Measured cost of this run, and the extrapolation to the full set.
+    if USAGE["calls"]:
+        processed_n = max(processed, 1)
+        logger.info(f"\n{'='*60}")
+        logger.info("API USAGE (measured)")
+        logger.info(f"{'='*60}")
+        logger.info(f"  schools processed : {processed_n}")
+        logger.info(f"  API calls         : {USAGE['calls']} "
+                    f"({USAGE['grounded_calls']} grounded)")
+        logger.info(f"  prompt tokens     : {USAGE['prompt_tokens']:,}")
+        logger.info(f"  output tokens     : {USAGE['output_tokens']:,}")
+        logger.info(f"  per school        : {USAGE['calls']/processed_n:.1f} calls, "
+                    f"{USAGE['prompt_tokens']/processed_n:,.0f} in / "
+                    f"{USAGE['output_tokens']/processed_n:,.0f} out tokens, "
+                    f"{USAGE['grounded_calls']/processed_n:.1f} grounded")
 
     # Summary
     logger.info(f"\n{'='*60}")
