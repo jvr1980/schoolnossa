@@ -1,5 +1,21 @@
 # SchoolNossa Development Journal
 
+## 2026-10-25 — Netherlands public: website published, iOS 1.1.0 in review, 1.0.1 live
+
+**What.**
+- **iOS 1.0.1:** live since the morning; it carries the crime redesign and the login/usage fix.
+- **Website:** published by the user, with live-bundle checks for `school_city_counts`, Praktijkonderwijs and the launch banner. It brings:
+  - country → province → municipality navigation, up to 10 Dutch municipalities combined (Lovable 9a1f525 + 2535dfa)
+  - OR-matched track filter
+  - launch banner/hero (8f677467)
+  - the other session's 48 h trial / access gating (a8620bf)
+- **iOS 1.1.0 (28):** the Netherlands with multi-municipality, plus a server-side access row (`ensure_user_access`) and a 48 h countdown. Submitted to App Store review at 15:20 UTC with an updated DE/EN listing.
+
+**Still open.**
+- The other session's go-live backfill and stage-2 table lock.
+- NL descriptions with approximate student counts (5,298 of 7,689; user paused this).
+- Announcement email/social: drafts in `docs/LAUNCH_ANNOUNCEMENT_2026-10.md`; channel and timing need the user's OK.
+
 ## 2026-10-24 — iOS 1.0.1 submitted, App Store badge live, NL branch merged, NL navigation started
 
 **What.**
