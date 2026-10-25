@@ -41,6 +41,14 @@ The landing page, /data-coverage and the admin dashboard were confirmed by Lovab
 
 **Still open:** listing the connector in Claude/ChatGPT (directory submission; ChatGPT forbids upsell links), public discovery pages plus a robots.txt split for AI search bots, and an end-to-end test of re-signup after deletion with a disposable account.
 
+**Side effect on the pipeline** (found by the other session after stage 2): four data-repo scripts read `schools`/`primary_schools` with the anon key, and since the lock those reads return 0 rows without an error:
+- `scripts_shared/upload_to_supabase.py`
+- `scripts_shared/upload_embeddings_to_supabase.py`
+- `scripts_shared/upload_admission_open_days_to_supabase.py`
+- `scripts_munich/enrichment/munich_recover_missing_metadata.py`
+
+My pre-lock check missed them because they build the URL as `SUPABASE_URL + '/' + table`. A separate task makes them fail loudly; nothing runs them before the next refresh (~Jan 2027). Reads need an authenticated session with access, or the Lovable SQL tool.
+
 ## 2026-10-25 — Netherlands public: website published, iOS 1.1.0 in review, 1.0.1 live
 
 **What.**
