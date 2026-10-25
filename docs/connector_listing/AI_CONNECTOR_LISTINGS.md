@@ -37,7 +37,12 @@ Prepared 2026-10-25. Server: `https://whzvzoumldeqgyrqlilt.supabase.co/functions
    - scores are flat (~0.75 for the top 8), so the ranking barely discriminates
    - there's no school-type filter (an ISS came up for a "Gymnasium" query)
    - it takes 30–60 s
-5. **Connector 0.4 (MCP App cards) is in progress.** Once it's live, the Claude listing needs 3–5 carousel screenshots (PNG ≥1000 px wide, cropped to the app response, with a paired prompt each), and the allowed link URIs: https://schoolnossa.com.
+5. **Connector 0.4 (MCP App cards) is LIVE (2026-10-25).**
+   - Lovable wrapped the mcp-js handler (OAuth unchanged) in `src/lib/mcp/app/wrap.ts`. It serves `ui://schoolnossa/schools.html` (`text/html;profile=mcp-app`, ~670 KB, self-contained) and adds `_meta.ui.resourceUri` + `openai/outputTemplate` to search / AI search / get_school / pinned.
+   - **Claude:** after "Refresh tools list", the cards render (3 cards + "+6 more in SchoolNossa" + SchoolNossa footer).
+   - **ChatGPT:** after Plugin settings → Manage → "Refresh tools", the cards render with the Dutch track chips. It shows a "CSP off" tag in dev mode; check the CSP declaration before submitting.
+   - After any server rebuild, run `bun scripts/build-mcp-function.ts`; the server file is hand-owned now.
+   - Earlier note: Once it's live, the Claude listing needs 3–5 carousel screenshots (PNG ≥1000 px wide, cropped to the app response, with a paired prompt each), and the allowed link URIs: https://schoolnossa.com.
 
 ## Assets
 

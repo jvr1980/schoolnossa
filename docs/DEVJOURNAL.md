@@ -1,5 +1,30 @@
 # SchoolNossa Development Journal
 
+## 2026-10-25 — Connector 0.3 (limits, AI search, attribution, deep links) + 0.4 (MCP App cards) live
+
+**What.**
+- **0.3** (Lovable 93374f1, migrations 0002 + 0003):
+  - results default 5, max 10; `search_schools` requires a city; slim list fields
+  - 60 searches and 30 detail lookups per user per 24 h through `mcp_consume()` + `mcp_usage`; admins exempt
+  - `mcp_limit_reached` goes to the daily report only; Lovable had to widen the `usage_events` type check
+  - new `find_schools_by_description`, which reuses the app's semantic-search with the caller's token
+  - every school gets `url` (`/school/<id>?cat=`) + `source`, and every result an attribution block
+  - new `/school/:id` deep link, and AppAccessGate now passes `?next=`
+  - /terms bans bulk extraction
+  - Verified live: limit 50 rejected; 5 slim results; call logged as OAuth; deep link opens the detail modal; the AI search works in Claude.
+- **0.4** (Lovable 145d2a4 + build fix):
+  - MCP App with branded cards: list / detail / limit or subscription message / empty; DE/EN; light/dark; links only to schoolnossa.com
+  - implemented as a wrapper around the mcp-js handler, so OAuth and the challenge are unchanged; resources/* are authenticated by replaying the request as a ping
+  - Verified rendering in Claude ("public Gymnasien in Berlin-Pankow" → 3 cards + "+6 more") and ChatGPT (Amsterdam VWO → cards with track chips). Both needed a tool-list refresh in their settings.
+- **AI search diagnosis:**
+  - the key and model are fine (gemini-embedding-001, 768 d, both sides)
+  - the flat scores come from very similar school embeddings: Berlin pairwise cosine averages 0.84
+  - mean-centering widens the p10–p90 spread from 0.065 to 0.219 and brings science-profile schools to the top (tested in SQL with a real query embedding)
+  - Sent a Lovable job: DB-side `semantic_rank_schools` with centering, a school-type filter and exclusion of non-operating schools. It should also cut the 30–60 s latency.
+- **Data notes:**
+  - 2 Berlin secondary rows are "KEIN Schulbetrieb" (Mentora Gymnasium, NEWSchool ISS) and still show in the app
+  - Utrecht has duplicate "Amadeus Lyceum" rows, one without students (probably a second location)
+
 ## 2026-10-25 — ChatGPT + Claude connectors tested; discovery files live; /connectors page
 
 **What.**
