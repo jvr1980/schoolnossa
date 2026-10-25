@@ -1,5 +1,28 @@
 # SchoolNossa Development Journal
 
+## 2026-10-25 — ChatGPT + Claude connectors tested; discovery files live; /connectors page
+
+**What.**
+- **Connector tests:** the MCP server works end to end with the admin (paid) account.
+  - Claude: custom connector; auth and DCR detected automatically; query "covered cities + Gymnasien in Berlin-Pankow".
+  - ChatGPT: Plugins → Add custom MCP server; query "VWO schools in Utrecht".
+  - `auth.oauth_clients` now holds "Claude" and "ChatGPT" (dynamic).
+- **Published** (Lovable 44ea15e + 31da2ba + bd4f0d6):
+  - robots.txt lets the AI search/user fetchers (OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User) read public pages; training bots stay blocked.
+  - llms.txt rewritten in DE + EN with the current scope, access rules and connector URL.
+  - Meta and homepage descriptions changed from "600 Schulen" to "über 10.000 Schulen in Deutschland und den Niederlanden".
+  - New public page /connectors (setup in Claude and ChatGPT, requirements, privacy, disconnect).
+  - Explicit `destructiveHint: false` on the read-only MCP tools (ChatGPT requires all three hints).
+- **Submission pack:** `docs/connector_listing/AI_CONNECTOR_LISTINGS.md` (listing texts, reviewer steps, example prompts, compliance notes, draft privacy section) plus icons.
+
+**Blockers for the directory submissions:**
+- **Reviewer login:** web sign-in needs an emailed 6-digit code after the password, and there is no bypass; OpenAI forbids 2FA barriers for reviewers.
+- **Privacy policy:** it has no AI-connector section (draft awaits approval).
+- **OpenAI:** organization verification.
+- **Connector 0.3 proposed:** result caps (5 by default, max 10), daily per-user limits, call logging, an AI/semantic search tool reusing `semantic-search`, and per-school deep links + `source`. Optional 0.4: branded MCP App cards.
+
+**Process note:** when pasting into Lovable, copy with `LANG=en_US.UTF-8 pbcopy`; without it the umlauts arrived garbled (the agent repaired llms.txt itself). The auto-mode check also blocked the `--no-ff` merge to main, so it is still pending the user.
+
 ## 2026-10-25 — Access model live: 48 h trial, one trial per email, paid-only connectors, school tables locked
 
 **Why.** The user asked how to open SchoolNossa to ChatGPT/Claude without breaking the paywall. An audit showed there was no paywall below the UI:
