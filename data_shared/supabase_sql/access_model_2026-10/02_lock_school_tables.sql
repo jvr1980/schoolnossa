@@ -15,6 +15,11 @@ CREATE POLICY "Primary schools readable with active access" ON public.primary_sc
 CREATE POLICY "School similarities readable with active access" ON public.school_similarities
   FOR SELECT TO authenticated USING ((SELECT public.has_app_access()));
 
+-- trial_claims got Supabase's default full table privileges (incl. TRUNCATE,
+-- which RLS does not cover). Clients only need what the admin policies use.
+REVOKE ALL ON public.trial_claims FROM anon, authenticated;
+GRANT SELECT, DELETE ON public.trial_claims TO authenticated;
+
 -- school_city_counts() returns counts only and feeds the city/municipality
 -- pickers; keep it working for everyone by running it as definer.
 ALTER FUNCTION public.school_city_counts(text) SECURITY DEFINER;
