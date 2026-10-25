@@ -20,7 +20,17 @@
   - the key and model are fine (gemini-embedding-001, 768 d, both sides)
   - the flat scores come from very similar school embeddings: Berlin pairwise cosine averages 0.84
   - mean-centering widens the p10–p90 spread from 0.065 to 0.219 and brings science-profile schools to the top (tested in SQL with a real query embedding)
-  - Sent a Lovable job: DB-side `semantic_rank_schools` with centering, a school-type filter and exclusion of non-operating schools. It should also cut the 30–60 s latency.
+  - **Shipped** (Lovable 390d7a3, migration 0004, published):
+    - `semantic_rank_schools()` (service_role only) ranks in the DB with a country-wide centroid and excludes "KEIN Schulbetrieb" rows
+    - `similarity = (centered + 1) / 2`, so app sorting is unchanged
+    - language boost 0.15; lowConfidence when the best centered score < 0.10
+    - optional `schoolType` filter, also in the MCP tool
+  - **Result** for the bilingual + science query in Berlin:
+    - before, the top 8 sat within 0.006 of each other
+    - after, the top ranks are Willi-Graf, Marie-Curie, Rückert, Manfred-von-Ardenne, Isaac-Newton, Nelson-Mandela (bilingual), Heinrich-Hertz, Ernst-Abbe
+    - p10–p90 spread 0.119 (Berlin-only centroid would give 0.219)
+    - 1.4–3.3 s per call
+  - The 30–60 s seen through the connector wasn't reproducible in the function itself.
 - **Data notes:**
   - 2 Berlin secondary rows are "KEIN Schulbetrieb" (Mentora Gymnasium, NEWSchool ISS) and still show in the app
   - Utrecht has duplicate "Amadeus Lyceum" rows, one without students (probably a second location)
