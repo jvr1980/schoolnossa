@@ -1,5 +1,93 @@
 # SchoolNossa Development Journal
 
+## 2026-10-25 — ChatGPT + Claude connectors tested; discovery files live; /connectors page
+
+**What.**
+- **Connector tests:** the MCP server works end to end with the admin (paid) account.
+  - Claude: custom connector; auth and DCR detected automatically; query "covered cities + Gymnasien in Berlin-Pankow".
+  - ChatGPT: Plugins → Add custom MCP server; query "VWO schools in Utrecht".
+  - `auth.oauth_clients` now holds "Claude" and "ChatGPT" (dynamic).
+- **Published** (Lovable 44ea15e + 31da2ba + bd4f0d6):
+  - robots.txt lets the AI search/user fetchers (OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User) read public pages; training bots stay blocked.
+  - llms.txt rewritten in DE + EN with the current scope, access rules and connector URL.
+  - Meta and homepage descriptions changed from "600 Schulen" to "über 10.000 Schulen in Deutschland und den Niederlanden".
+  - New public page /connectors (setup in Claude and ChatGPT, requirements, privacy, disconnect).
+  - Explicit `destructiveHint: false` on the read-only MCP tools (ChatGPT requires all three hints).
+- **Submission pack:** `docs/connector_listing/AI_CONNECTOR_LISTINGS.md` (listing texts, reviewer steps, example prompts, compliance notes, draft privacy section) plus icons.
+
+**Blockers for the directory submissions:**
+- **Reviewer login:** web sign-in needs an emailed 6-digit code after the password, and there is no bypass; OpenAI forbids 2FA barriers for reviewers.
+- **Privacy policy:** it has no AI-connector section (draft awaits approval).
+- **OpenAI:** organization verification.
+- **Connector 0.3 proposed:** result caps (5 by default, max 10), daily per-user limits, call logging, an AI/semantic search tool reusing `semantic-search`, and per-school deep links + `source`. Optional 0.4: branded MCP App cards.
+
+**Process note:** when pasting into Lovable, copy with `LANG=en_US.UTF-8 pbcopy`; without it the umlauts arrived garbled (the agent repaired llms.txt itself). The auto-mode check also blocked the `--no-ff` merge to main, so it is still pending the user.
+
+## 2026-10-25 — Access model live: 48 h trial, one trial per email, paid-only connectors, school tables locked
+
+**Why.** The user asked how to open SchoolNossa to ChatGPT/Claude without breaking the paywall. An audit showed there was no paywall below the UI:
+- `schools`, `primary_schools` and `school_similarities` were readable by anyone with the anon key (`USING (true)`).
+- `/dashboard` only checked sign-in; FreeTrialBlocker was mounted nowhere; expired paid accounts were never blocked; a missing `user_access` row counted as allowed.
+- 14 of 46 accounts (Google/Apple sign-ins) had no row at all, and the client chose its own trial row. The INSERT policy allowed any `test_ended_at`.
+- The re-trial guard (`trial_used_emails` + `check_trial_used`) was checked client-side on web email signup only. iOS never checked it, and anon could call the RPC to probe whether an email had an account.
+- The web "Delete account" didn't delete the account.
+- The MCP server only checked `isAuthenticated()`.
+- `semantic-search` used the service role with no caller check.
+- `verify-payment` silently granted nothing to accounts without a row.
+
+**User decisions.** No free/premium column split. New users get a 48 h trial, then pay. Deleting the account and signing up again gives no new trial. ChatGPT/Claude connectors need a paid licence. The 44 existing non-paying accounts get one fresh 48 h window at launch.
+
+**What.** SQL, specs, rollback and a local Postgres test harness are in `data_shared/supabase_sql/access_model_2026-10/`. All assertions passed on postgres:15 before anything touched production.
+- **Stage 1** (Lovable a8620bf, 12.4 credits; `drizzle/migrations/0000_server_access_stage_1.sql`):
+  - a trigger on `auth.users` grants the trial server-side for every provider (`app_settings.trial_hours` = 48)
+  - `trial_claims` keeps one row per normalized email (lowercase, +tag, Gmail dots), recorded at grant time and never deleted; all 46 existing emails were seeded
+  - `ensure_user_access()` self-heals a missing row
+  - `has_app_access()` = trial, paid or admin; tokens with an OAuth `client_id` (ChatGPT/Claude) need `has_paid_access()`
+  - client INSERT policy dropped, `check_trial_used` closed, `public_school_stats()` added for the landing page and /data-coverage
+  - frontend: `AppAccessGate` on /menu and /dashboard, hours countdown, 48 h copy, real deletion via `delete-account`
+  - MCP (all 6 tools) and WebMCP paid-only; `semantic-search` requires a JWT with access; `verify-payment` upserts the row and extends from the later of now and the current end
+- **Go-live backfill** (SQL tool, right after the user published): 14 rows created and 30 expired trials extended, all ending 2026-10-27 15:21 UTC. Usage events were suppressed (`app.suppress_usage_events`), so no alert spam. The 2 paid rows were untouched.
+- **Stage 2** (Lovable `0001_access_stage_2_lock_school_tables.sql`): the school tables are SELECT-only for `authenticated` with `has_app_access()`; `school_city_counts` runs as definer; `trial_claims` privileges were reduced to SELECT and DELETE for authenticated.
+
+**Results** (live role-switched probes):
+
+| Caller | Secondary schools | Primary schools | City counts |
+|---|---|---|---|
+| anon | 0 | 0 | 299 rows |
+| trial, first-party | 2,814 | 7,699 | ok |
+| trial with an OAuth token | 0 | 0 | ok |
+| paid with an OAuth token | 2,814 | 7,699 | ok |
+
+The landing page, /data-coverage and the admin dashboard were confirmed by Lovable. iOS 1.1.0 (28) uses `ensure_user_access()` (other session).
+
+**Process note.** Auto mode blocks `mcp__lovable__send_message` for production changes. At the user's request, both stages were sent through the Lovable chat in Chrome; Lovable turns long pastes into an attachment.
+
+**Still open:** listing the connector in Claude/ChatGPT (directory submission; ChatGPT forbids upsell links), public discovery pages plus a robots.txt split for AI search bots, and an end-to-end test of re-signup after deletion with a disposable account.
+
+**Side effect on the pipeline** (found by the other session after stage 2): four data-repo scripts read `schools`/`primary_schools` with the anon key, and since the lock those reads return 0 rows without an error:
+- `scripts_shared/upload_to_supabase.py`
+- `scripts_shared/upload_embeddings_to_supabase.py`
+- `scripts_shared/upload_admission_open_days_to_supabase.py`
+- `scripts_munich/enrichment/munich_recover_missing_metadata.py`
+
+My pre-lock check missed them because they build the URL as `SUPABASE_URL + '/' + table`. A separate task makes them fail loudly; nothing runs them before the next refresh (~Jan 2027). Reads need an authenticated session with access, or the Lovable SQL tool.
+
+## 2026-10-25 — Netherlands public: website published, iOS 1.1.0 in review, 1.0.1 live
+
+**What.**
+- **iOS 1.0.1:** live since the morning; it carries the crime redesign and the login/usage fix.
+- **Website:** published by the user, with live-bundle checks for `school_city_counts`, Praktijkonderwijs and the launch banner. It brings:
+  - country → province → municipality navigation, up to 10 Dutch municipalities combined (Lovable 9a1f525 + 2535dfa)
+  - OR-matched track filter
+  - launch banner/hero (8f677467)
+  - the other session's 48 h trial / access gating (a8620bf)
+- **iOS 1.1.0 (28):** the Netherlands with multi-municipality, plus a server-side access row (`ensure_user_access`) and a 48 h countdown. Submitted to App Store review at 15:20 UTC with an updated DE/EN listing.
+
+**Still open.**
+- The other session's go-live backfill and stage-2 table lock.
+- NL descriptions with approximate student counts (5,298 of 7,689; user paused this).
+- Announcement email/social: drafts in `docs/LAUNCH_ANNOUNCEMENT_2026-10.md`; channel and timing need the user's OK.
+
 ## 2026-10-24 — iOS 1.0.1 submitted, App Store badge live, NL branch merged, NL navigation started
 
 **What.**
