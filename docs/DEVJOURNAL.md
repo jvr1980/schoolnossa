@@ -1,5 +1,23 @@
 # SchoolNossa Development Journal
 
+## 2026-10-26 — Connector 0.5 / 0.5.1 live: top-3 full details, travel times, card-only texts, Google hardening
+
+**What** (Lovable 0208e3d + d464c8f, published):
+- **Top-3 expansion:** the 3 expanded schools count as `detail`, with a slim fallback when the allowance is used up.
+- **`commute_times`:** uses only the caller's saved `user_pois` (no typed addresses), through google-directions. It returns labels + times, never addresses or coordinates. New `commute` bucket, 20 per 24 h (migration 0005).
+- **Card-only long texts:** descriptions, special features, admission criteria/notes and contact details go only in the tool result `_meta["schoolnossa/card"]`. The model sees key facts only.
+  - 0.5 bug: the wrapper read the AsyncLocalStorage scope before the streamed tool finished, so `_meta` was never attached in either host. 0.5.1 reads the reply inside the scope.
+  - Also new: the app-only `card_details` tool (`_meta.ui.visibility ["app"]`) as a fallback.
+- **Versioned card URI** (`ui://schoolnossa/schools.v0.5.1.html`): ChatGPT had cached the 0.4 HTML.
+- **Hardening:** google-directions and google-places-autocomplete/details now require a JWT + `has_app_access` (they were open to anyone with the anon key).
+- **Texts:** /terms bans AI training on connector content; /connectors tip to turn off training in ChatGPT/Claude; privacy §8 sentence on travel times (labels only).
+
+**Verified live:**
+- Claude: Pankow → 3 rich cards (description, languages, address, contact, admission criteria) + "+6 more"; travel times from "Home" (e.g. 18 min / 2.2 km); `card_details` hidden from Claude's tool list.
+- ChatGPT (after "Refresh tools"): Amsterdam VWO → rich cards with Dutch track chips.
+
+**Found:** founding years are still in many descriptions (secondary: en 178, de 126; primary: en 162, de 68), and they're inconsistent. E.g. Carl-von-Ossietzky: description_en says 1909, the app modal showed 1908. That's a follow-up for the description audit.
+
 ## 2026-10-26 — Privacy AI section, dashboard-reset fix, Overview tab hidden, non-operating schools removed
 
 **What (all published):**
