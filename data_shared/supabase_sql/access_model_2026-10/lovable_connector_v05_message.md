@@ -17,7 +17,7 @@ In `search_schools`, `find_schools_by_description` and `list_pinned_schools`:
 - The first 3 schools get a `details` object with the same fields `get_school` returns: description, address, website, contact, students/teachers with years, Abitur, admission criteria/window, languages, and the Dutch-only fields.
 - Each expanded school counts as one `detail` via `rpc('mcp_consume', { p_tool: '<tool>:expanded', p_bucket: 'detail' })`. When the detail allowance is used up, return those schools slim, with `details_limited: true` on the result.
 - Schools 4+ stay slim.
-- The text content includes a compact summary of the 3 expanded schools, then: "For the other N schools, the map and side-by-side comparisons, open SchoolNossa: https://schoolnossa.com · iPhone app: https://schoolnossa.com/app".
+- The text content includes the key facts (section H) of the 3 expanded schools, then: "For the other N schools, the map and side-by-side comparisons, open SchoolNossa: https://schoolnossa.com · iPhone app: https://schoolnossa.com/app".
 
 ## C. New tool `commute_times`
 
@@ -66,6 +66,34 @@ The card shows the same text, a link to /connectors and the iPhone app. No price
 - **/privacy section 8**, append one sentence:
   - DE: "Für Reisezeiten verwendet der Assistent Ihre in SchoolNossa gespeicherten Orte; dabei werden nur deren Bezeichnungen (z. B. „Zuhause“) und die berechneten Reisezeiten an den Assistenten übermittelt, nicht die Adressen."
   - EN: "For travel times, the assistant uses the places you saved in SchoolNossa; only their labels (e.g. "Home") and the calculated travel times are sent to the assistant, not the addresses."
+
+## H. Keep the long texts away from the model (card-only data)
+
+Goal: ChatGPT and Claude may use conversations for model training on consumer accounts, so the model should only see what it needs. The SchoolNossa card shows the rest.
+
+- **Model-visible** (`content` text and `structuredContent`), per school:
+  - name, category, type / tracks, public/private, district / municipality
+  - students and teachers with years
+  - Abitur average and pass rate (secondary)
+  - the admission application window dates
+  - `url`, `source`, and the attribution block
+  - for `commute_times`: the travel times, as in C
+- **Card-only:** description texts (`description_de` / `description_en`), `besonderheiten`, admission criteria bullets and admission notes, full address, phone, email and website. Put them in the tool result's `_meta` (e.g. `_meta["schoolnossa/card"]`), which the MCP Apps host passes to the UI but not to the model.
+  - Applies to `get_school` and the 3 expanded schools in the list tools.
+- **Verify** in the ext-apps / Apps SDK docs how the App receives `_meta` with the tool result, and that hosts keep it out of the model context. Cite what you found in your reply.
+  - If a host can't deliver `_meta` to the card, the card falls back to the model-visible facts plus a "Details in SchoolNossa" button. Never move the long texts back into the model-visible fields.
+- Hosts without UI simply get the key facts and the link.
+- Tests: no description or admission text appears in `content` or `structuredContent` for any tool.
+
+## I. Terms and /connectors
+
+- **/terms (DE + EN)**, next to the existing bulk-extraction rule:
+  - DE: "Inhalte, die über die SchoolNossa-Connectoren in KI-Assistenten abgerufen werden, dürfen nicht zum Training von KI-Modellen verwendet werden."
+  - EN: "Content retrieved through the SchoolNossa connectors in AI assistants may not be used to train AI models."
+- **/connectors**, privacy block, add a tip:
+  - DE: "Tipp: Damit Ihre Gespräche nicht für das Training von KI-Modellen verwendet werden, deaktivieren Sie in ChatGPT „Das Modell für alle verbessern“ (Einstellungen → Datenkontrollen) bzw. in Claude „Claude verbessern helfen“ (Einstellungen → Datenschutz)."
+  - EN: "Tip: to keep your conversations out of AI model training, turn off "Improve the model for everyone" in ChatGPT (Settings → Data controls) or "Help improve Claude" in Claude (Settings → Privacy)."
+- **The connector's first-time hint:** in the server `instructions`, add one sentence for the assistant: "If the user asks about privacy or AI training, point them to https://schoolnossa.com/connectors."
 
 ## Checks
 
