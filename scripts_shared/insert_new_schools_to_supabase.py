@@ -257,9 +257,20 @@ def main():
             logger.warning(f'  {city}/{table}: no schulnummer column in {rel}')
             continue
         present = existing_schulnummern(table, city)
+        if not present and len(df) > 0:
+            # Since the 2026-10 RLS lock, anon reads of the school tables return
+            # 0 rows; treating that as "nothing live yet" would re-insert the city.
+            raise SystemExit(f'{city}/{table}: Supabase returned no existing rows '
+                             f'(anon reads are blocked by RLS). Refusing to plan inserts.')
         local_ids = df['schulnummer'].astype(str)
         cand = df[~local_ids.isin(present) & local_ids.notna()
                   & ~local_ids.isin(['', 'nan', 'None'])]
+        # Schools the source marks as not operating are never inserted.
+        if 'schulname' in cand.columns:
+            closed = cand['schulname'].astype(str).str.contains('kein schulbetrieb', case=False, na=False)
+            if closed.any():
+                logger.info(f'  {city}/{table}: skipping {int(closed.sum())} "KEIN Schulbetrieb" row(s)')
+                cand = cand[~closed]
         if wanted is not None:
             cand = cand[cand['schulnummer'].astype(str).isin(wanted)]
         if cand.empty:
