@@ -1,5 +1,24 @@
 # SchoolNossa Development Journal
 
+## 2026-10-26 — Privacy AI section, dashboard-reset fix, Overview tab hidden, non-operating schools removed
+
+**What (all published):**
+- **Privacy:** /privacy section 8 "Nutzung über KI-Assistenten / Use through AI assistants" in DE + EN (old 8 → 9, "Oktober 2026"). Logging made to match the text:
+  - pg_cron `mcp-usage-retention` deletes `mcp_usage` rows older than 90 days (daily 03:45)
+  - semantic-search and the Google Places functions now log only the query length and scope, via `_shared/search-log.ts`
+- **Dashboard reset fix** (found by Lovable's issue scan; a regression from the stage-1 gate):
+  - the access re-check (every 60 s + on focus) unmounted the dashboard, wiping filters, search, open details and pins
+  - now the spinner shows only before the first decision
+  - background checks keep the UI; on focus at most every 5 min; an explicit refresh after payment
+  - errors keep the last decision
+- **Overview tab hidden** (user request); Search is the default tab. The code is kept (`src/lib/dashboardTabs.ts`).
+- **Data:**
+  - deleted Mentora Gymnasium (04P35) and NEWSchool ISS (09P21), both "KEIN Schulbetrieb"; 21 similarity rows cascaded; rollback in `data_shared/supabase_sql/data_fixes_2026-10/`
+  - `insert_new_schools_to_supabase.py` now skips such rows and stops when RLS returns no existing rows
+  - Utrecht "Amadeus Lyceum" ×2 = two real locations (NL-00RO00 / NL-00RO03), not a duplicate
+  - NL has 221 secondary and 35 primary same-name groups per municipality; display names could get a location suffix (open)
+- **Found:** google-directions and the Google Places functions don't check the caller; hardening is in the 0.5 spec.
+
 ## 2026-10-25 — Connector 0.3 (limits, AI search, attribution, deep links) + 0.4 (MCP App cards) live
 
 **What.**
