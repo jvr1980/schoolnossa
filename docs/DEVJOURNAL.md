@@ -1,5 +1,27 @@
 # SchoolNossa Development Journal
 
+## 2026-10-28 — Connector 0.5.3: UTM-tagged links + anonymous visit counter (built, not yet published)
+
+**Why:** to measure the traffic ChatGPT and Claude send to schoolnossa.com. Neither platform shares revenue with connector developers, so the value of the connector has to show up as our own traffic. Lovable analytics only reports referrer sources (on 10-21–10-28: chatgpt.com 1, claude.ai 1), so we count tagged visits ourselves.
+
+**What** (Lovable 164382f; spec `lovable_connector_v053_utm_message.md`):
+- **Link helper:** `src/lib/mcp/links.ts`. `trackedUrl` adds `utm_source=chatgpt|claude|ai_assistant`, `utm_medium=ai_connector`, `utm_campaign=mcp` and `utm_content` to schoolnossa.com links only. `tagText` tags links inside message texts.
+- **Source:** `public.mcp_client_source()` (SECURITY DEFINER, authenticated only) maps the JWT `client_id` → `auth.oauth_clients.client_name`. It's called once per tool call and stored in the request's AsyncLocalStorage scope.
+  - Checked: `mcp_usage.client_id` joins to `oauth_clients.id` (ChatGPT 31 rows, Claude 19).
+- **Content values:** answer, card_open, card_more, card_map, card_places, card_footer, app, connectors, message, attribution.
+  - "mehr in SchoolNossa" is now a link.
+- **Counter:** table `connector_visits` (source, content, path; RLS with admin-only SELECT). RPC `log_connector_visit` checks values against an allow-list and is callable by anon.
+  - `src/lib/connectorVisit.ts` runs in `main.tsx` before the router mounts, then strips `utm_*` with `replaceState`.
+  - No user id, IP, cookies or device storage (§25 TTDDDG).
+- **Migration:** 0006_connector_visits_and_client_source. Version 0.5.3, so the card URI is `ui://schoolnossa/schools.v0.5.3.html`. 96 tests pass.
+- **Known gaps:** the subscription-required card tags /connectors as `ai_assistant`. The server `instructions` links are untagged.
+
+**Query:** `select created_at::date, source, content, count(*) from connector_visits where created_at >= now() - interval '30 days' group by 1,2,3 order by 1 desc, 4 desc;`
+
+**Open:**
+- Publishing needs the user's click: the auto-mode classifier blocks production deploys.
+- Then: Refresh tools in ChatGPT and Claude; test that a click lands in `connector_visits`.
+
 ## 2026-10-28 — CARTO basemap key, connector 0.5.2 card map, iOS 1.1.1 submitted
 
 **Why:** since 2026-09-23 CARTO basemaps need an API key. Without it, every tile is an "API KEY REQUIRED" watermark, so the iPhone search map (and the web dark style) showed no map.
