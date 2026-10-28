@@ -20,11 +20,11 @@
   - Submitted for review: reviewSubmission → WAITING_FOR_REVIEW.
 
 **Verified in ChatGPT** (after "Refresh tools"): Steglitz-Zehlendorf Gymnasien → map with 10 numbered pins (top 3 highlighted), CARTO attribution, 3 rich cards with card-only texts (description, languages, contact, admission criteria), "+7 more in SchoolNossa".
-- Tested with "Enforce CSP for custom apps" off. Our CSP is declared both ways: `_meta.ui.csp` and `openai/widgetCSP`.
+- First test ran with "Enforce CSP for custom apps" off. The re-test with it on (the user switched it on) passed: Pankow → CARTO tiles, pins and rich cards all load, no CSP badge.
+- Re-test detail: Our CSP is declared both ways: `_meta.ui.csp` and `openai/widgetCSP`.
 - ChatGPT notes "private tools can't render their widgets: card_details"; expected for the app-only tool.
 
 **Open:**
-- Re-test with CSP enforcement on (a ChatGPT security setting; the user toggles it).
 - Check the web dark map live (the key is in the live bundle; a tile returns 200).
 - Restrict the CARTO key to schoolnossa.com and the app in the CARTO dashboard.
 
