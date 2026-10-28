@@ -1,5 +1,29 @@
 # SchoolNossa Development Journal
 
+## 2026-10-28 — CARTO basemap key, connector 0.5.2 card map, iOS 1.1.1 submitted
+
+**Why:** since 2026-09-23 CARTO basemaps need an API key. Without it, every tile is an "API KEY REQUIRED" watermark, so the iPhone search map (and the web dark style) showed no map.
+
+**What:**
+- **Key:** a CARTO Basemaps key on the free commercial tier (1M requests/month), requested under jose.vonroth@schoolnossa.com. It is public (it travels in every tile URL); attribution is mandatory.
+- **Web** (app repo 3b1a4ec): new `src/lib/mapTiles.ts` (`CARTO_BASEMAPS_KEY`, `cartoTileUrl(style)`, `CARTO_ATTRIBUTION`). The OverviewMap dark style uses it; the standard style stays on OSM.
+- **Connector 0.5.2** (published): a Leaflet map block in the list views, above the cards:
+  - numbered pins in card order, with the top 3 highlighted
+  - the link "Open the full map in SchoolNossa" → /menu
+  - CSP `resourceDomains` https://basemaps.cartocdn.com
+  - card URI `ui://schoolnossa/schools.v0.5.2.html`
+  - Verified in Claude: tiles, pins and attribution render.
+- **iOS 1.1.1 (29)** (mobile `fix/carto-api-key` 6e205df): `search_map.dart` uses `rastertiles/voyager/…{r}.png?key=…` with `RetinaMode.isHighDensity`, and no subdomains.
+  - Uploaded via altool; processed (VALID).
+  - Version 1.1.1 created via the ASC API; release notes "Fehlerbehebung: Die Karte wird wieder angezeigt." / "Bug fix: the map is displayed again."
+  - Release: AFTER_APPROVAL, the same as 1.1.0.
+  - Submitted for review: reviewSubmission → WAITING_FOR_REVIEW.
+
+**Open:**
+- Test the card map in ChatGPT; run "Refresh tools" first.
+- Check the web dark map live.
+- Restrict the CARTO key to schoolnossa.com and the app in the CARTO dashboard.
+
 ## 2026-10-26 — Connector 0.5 / 0.5.1 live: top-3 full details, travel times, card-only texts, Google hardening
 
 **What** (Lovable 0208e3d + d464c8f, published):
