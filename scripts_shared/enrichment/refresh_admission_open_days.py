@@ -22,6 +22,8 @@ Supabase here; upload with upload_admission_refresh.py.
 
 Usage:
     venv/bin/python scripts_shared/enrichment/refresh_admission_open_days.py --out <dir> [--tables schools,primary_schools] [--limit N]
+    # top-up of selected schools with a fresh crawl:
+    venv/bin/python scripts_shared/enrichment/refresh_admission_open_days.py --out <dir> --rows <rows.json> --cache-dir <new dir>
 """
 import argparse
 import concurrent.futures as cf
@@ -201,12 +203,21 @@ def main():
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--tables', default='schools,primary_schools')
     ap.add_argument('--ids', type=Path, help='only these school ids')
+    ap.add_argument('--rows', type=Path, help='JSON list of school rows (COLS + tbl) instead of reading Supabase; '
+                                              'the anon key cannot read the school tables since 2026-10-25')
+    ap.add_argument('--cache-dir', type=Path, help='page cache for this run; a new dir re-crawls the sites')
     ap.add_argument('--limit', type=int)
     ap.add_argument('--workers', type=int, default=12)
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
-    rows = [dict(r, tbl=tbl) for tbl in args.tables.split(',') for city in GERMAN_CITIES
-            for r in job.fetch(tbl, f'city=eq.{city}', COLS)]
+    if args.cache_dir:
+        global CACHE_DIR
+        CACHE_DIR = args.cache_dir
+    if args.rows:
+        rows = json.loads(args.rows.read_text(encoding='utf-8'))
+    else:
+        rows = [dict(r, tbl=tbl) for tbl in args.tables.split(',') for city in GERMAN_CITIES
+                for r in job.fetch(tbl, f'city=eq.{city}', COLS)]
     if args.ids:
         wanted = set(args.ids.read_text().split())
         rows = [r for r in rows if r['id'] in wanted]
