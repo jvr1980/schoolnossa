@@ -1,5 +1,33 @@
 # SchoolNossa Development Journal
 
+## 2026-10-29 — Admission top-up: fresh crawl of schools without upcoming open days; 3 city rules published (live)
+
+**Why:** the 10-03 refresh ran before most schools announced their November–January open days. On 10-29 only 467/1,183 German secondary and 376/1,639 primary schools showed an upcoming event, which is low for the start of the open-day season.
+
+**What:**
+- **Targets:** 1,909 German schools with a website and no open day dated today or later (676 secondary, 1,233 primary).
+- **Reading the rows:** the anon key can no longer read `schools`/`primary_schools` (RLS lock 10-25), and there's no service-role key. A temporary `security definer` RPC `_admission_topup_rows(tok, off)`, guarded by a one-time token, returned the rows; it was dropped right after.
+- **Script:** `refresh_admission_open_days.py` has two new options. `--rows` takes the rows from that JSON file, and `--cache-dir data_shared/cache/school_site_pages_admission_2026-10-29` forces a fresh crawl. The extraction, quote check and `implausible()` filter are unchanged.
+- **Promotion:** same `_admission_staging` token pattern as 10-03. The UPDATE is guarded: only schools that still have no upcoming event. Criteria, window and notes use COALESCE. `last_open_day_seen` also takes the latest past date from the old `open_days`.
+  - Backup: `_admission_backup_20261029` (1,685 rows).
+  - Staging rows deleted afterwards; no policies left.
+
+**Results:**
+- **Run:** 1,628 ok, 57 nothing on the site, 218 sites unreadable, 6 extraction failures. 1,685 schools promoted (597 secondary, 1,088 primary). Cost ≈ $21 (30.9M input / 1.7M output tokens, Gemini 3 Flash).
+- **Schools with an upcoming event (live):** secondary 467 → 647, primary 376 → 553.
+  - New events by month: Nov 321, Dec 85, Jan 119, Feb–Mar 42, later 47.
+  - Still thin: München secondary 43/129, Leipzig 36/94, Düsseldorf primary 12/88. Bavarian schools hold open days in Feb–Mar.
+
+**City rules (`city_admission_rules`):** 17/20 now `published`. Backup: `_city_admission_rules_backup_20261029`.
+- Berlin secondary: Klasse 7 registration 3–11 Mar 2027; Probeunterricht registration 8/9 Feb 2027 (berlin.de).
+- Düsseldorf secondary: 15–17 Feb 2027, appointment only; notices from 24 Feb (duesseldorf.de).
+- Bremen secondary: form due at the Grundschule by 8 Feb 2027 (2027 flyer on bildung.bremen.de).
+- Still a pattern: Köln secondary and Stuttgart primary (2027 dates not published yet), and Frankfurt primary (its 2027 intake registered in spring 2026).
+
+**Next:**
+- Early January 2027: the same top-up for late publishers (Munich, Leipzig), then the full re-run.
+- Update Köln secondary and Stuttgart primary once those cities publish their dates.
+
 ## 2026-10-28 — Connector 0.5.3: UTM-tagged links + anonymous visit counter (built, not yet published)
 
 **Why:** to measure the traffic ChatGPT and Claude send to schoolnossa.com. Neither platform shares revenue with connector developers, so the value of the connector has to show up as our own traffic. Lovable analytics only reports referrer sources (on 10-21–10-28: chatgpt.com 1, claude.ai 1), so we count tagged visits ourselves.
