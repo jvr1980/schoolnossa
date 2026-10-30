@@ -1,5 +1,26 @@
 # SchoolNossa Development Journal
 
+## 2026-10-30 — Payments: Stripe webhook, once-per-session grant, same-tab checkout (in preview)
+
+**Why:** the user asked how people subscribe and whether the paywall comes back. Reading the flow turned up four problems:
+- A paid checkout only unlocked access if `/payment-success` loaded and called `verify-payment`. There is no Stripe webhook, so a buyer who closed the tab stayed locked out and was asked to pay again.
+- `verify-payment` added 3 months on every call, so reloading the success page extended access each time.
+- Checkout opened with `window.open` after an `await`, which Safari's popup blocker stops; nothing caught it.
+- Nothing said how to subscribe: the home price card only offers "Sign up".
+
+**What** (app repo 65f213c, pushed to main):
+- **Migration 0007** `stripe_payments` + `grant_stripe_payment()` (security definer, service_role only; admins can read the table).
+  - One grant per Checkout session, renewing from the later of now and the current end.
+  - Tested on local postgres:15 (applied twice; grant, repeat, renewal, missing row, role checks all pass).
+  - Applied to production via the Lovable SQL tool before the push (catalog checks only, no test writes). The SQL is idempotent, so drizzle can re-run it.
+- **Functions:** new `stripe-webhook` (signature-checked; `checkout.session.completed` + `async_payment_succeeded`; `verify_jwt = false`). `verify-payment` uses the same `_shared/stripe-grant.ts`. Both type-check with Deno; esm.sh's supabase-js types are broken for every function, so the check used npm types.
+- **Frontend:** checkout opens in the same tab (a new tab only inside the framed editor preview). Copy DE + EN: `pricing.howToSubscribe` under the price card, how-to sentence in `connectorsTeaser.paidNote` and `connectors.req.1`. Verified in the Lovable preview.
+
+**Open:**
+- Pushing through GitHub did not deploy the edge functions (`stripe-webhook` still 404 after 5+ min); they need a Lovable deploy.
+- The user must add the webhook endpoint in Stripe and the `STRIPE_WEBHOOK_SECRET` secret in Lovable Cloud.
+- Publish the frontend.
+
 ## 2026-10-30 — Landing page: connector announcement for Claude + ChatGPT (live)
 
 **Why:** to tell visitors that paid subscribers can use SchoolNossa inside Claude and ChatGPT, with real screenshots of the connector.
