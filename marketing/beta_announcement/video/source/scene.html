@@ -1,0 +1,322 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=block" rel="stylesheet">
+<style>
+  :root {
+    --blue: #3B82F6;
+    --sky: #0EA5E9;
+    --bg: #F8FAFC;
+    --ink: #1D2633;
+    --muted: #5B6B80;
+    --tint: #EAF2FE;
+    --line: #E2E8F0;
+    --grad: linear-gradient(135deg, #3B82F6 0%, #0EA5E9 100%);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: var(--bg);
+    font-family: Inter, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+  /* Soft brand-tinted background */
+  #bg { position: absolute; inset: 0; overflow: hidden; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .55; }
+  #b1 { width: 760px; height: 760px; background: #DBEAFE; left: -260px; top: -180px; }
+  #b2 { width: 680px; height: 680px; background: #E0F2FE; right: -240px; top: 780px; }
+  #b3 { width: 560px; height: 560px; background: #EFF6FF; left: 120px; bottom: -260px; }
+  #ctaBg { position: absolute; inset: 0; background: var(--grad); opacity: 0; }
+
+  /* Brand bar */
+  #brand { position: absolute; left: 72px; right: 72px; top: 96px; display: flex; align-items: center; gap: 22px; }
+  .logo { width: 84px; height: 84px; border-radius: 20px; background: var(--blue); display: grid; place-items: center;
+    box-shadow: 0 10px 28px rgba(59,130,246,.35); }
+  .logo svg { width: 50px; height: 50px; }
+  .word { font-size: 54px; font-weight: 800; letter-spacing: -0.02em; }
+  .word b { color: var(--blue); font-weight: 800; }
+  .pill { margin-left: auto; padding: 14px 26px; border-radius: 999px; background: var(--tint); color: #1D4ED8;
+    font-size: 30px; font-weight: 700; letter-spacing: .01em; }
+
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .kicker { position: absolute; left: 72px; top: 300px; display: flex; gap: 16px; align-items: center;
+    font-size: 34px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .06em; }
+  .new { background: var(--grad); color: #fff; padding: 8px 18px; border-radius: 12px; font-size: 28px; letter-spacing: .08em; }
+  h1 { position: absolute; left: 72px; right: 72px; margin: 0; font-size: 86px; line-height: 1.06; font-weight: 800;
+    letter-spacing: -0.03em; }
+  .hl { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { position: absolute; left: 72px; right: 72px; font-size: 44px; line-height: 1.3; color: var(--muted); font-weight: 500; }
+  .caption { position: absolute; left: 72px; right: 72px; font-size: 38px; line-height: 1.35; color: var(--ink); font-weight: 600;
+    background: #fff; border: 2px solid var(--line); border-radius: 28px; padding: 26px 34px; box-shadow: 0 12px 30px rgba(15,23,42,.06); }
+
+  /* Device frames */
+  .phone { position: absolute; border-radius: 64px; background: #0F172A; padding: 16px; box-shadow: 0 40px 80px rgba(15,23,42,.28); }
+  .phone .screen { position: relative; width: 100%; height: 100%; border-radius: 50px; overflow: hidden; background: #fff; }
+  .phone .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .browser { position: absolute; border-radius: 26px; background: #fff; overflow: hidden; border: 2px solid var(--line);
+    box-shadow: 0 36px 70px rgba(15,23,42,.18); }
+  .browser .bar { height: 54px; background: #F1F5F9; display: flex; align-items: center; gap: 12px; padding: 0 22px; border-bottom: 2px solid var(--line); }
+  .browser .dot { width: 16px; height: 16px; border-radius: 50%; background: #CBD5E1; }
+  .browser .url { margin-left: 18px; flex: 1; height: 32px; border-radius: 10px; background: #fff; color: var(--muted);
+    font-size: 20px; display: flex; align-items: center; padding-left: 16px; }
+  .browser .view { position: relative; overflow: hidden; background: #fff; }
+  .browser .view img { position: absolute; left: 0; top: 0; width: 100%; }
+
+  /* Hook cards */
+  .chipcard { position: absolute; background: #fff; border: 2px solid var(--line); border-radius: 26px; padding: 26px 32px;
+    font-size: 38px; font-weight: 700; display: flex; gap: 18px; align-items: center; box-shadow: 0 18px 40px rgba(15,23,42,.10); white-space: nowrap; }
+  .chipcard span { font-size: 46px; }
+
+  .stat { position: absolute; }
+  .stat .num { font-size: 150px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+  .stat .lbl { font-size: 38px; font-weight: 600; color: var(--muted); margin-top: 10px; line-height: 1.3; }
+
+  .tabs { position: absolute; display: flex; gap: 14px; }
+  .tab { padding: 16px 30px; border-radius: 999px; font-size: 34px; font-weight: 700; border: 2px solid var(--line); background: #fff; color: var(--muted); }
+  .tab.on { background: var(--grad); color: #fff; border-color: transparent; }
+
+  .card { position: absolute; background: #fff; border-radius: 30px; overflow: hidden; border: 2px solid var(--line);
+    box-shadow: 0 36px 70px rgba(15,23,42,.16); }
+  .card img { position: absolute; left: 0; top: 0; width: 100%; }
+
+  .feat { position: absolute; display: flex; align-items: center; gap: 20px; background: #fff; border: 2px solid var(--line);
+    border-radius: 26px; padding: 24px 28px; font-size: 36px; font-weight: 700; box-shadow: 0 14px 30px rgba(15,23,42,.08); }
+  .feat .ic { width: 70px; height: 70px; border-radius: 18px; background: var(--tint); display: grid; place-items: center; font-size: 38px; }
+
+  .city { position: absolute; background: #fff; border: 2px solid var(--line); border-radius: 24px; padding: 24px 30px;
+    font-size: 40px; font-weight: 700; box-shadow: 0 12px 26px rgba(15,23,42,.07); display: flex; align-items: center; gap: 16px; }
+  .city i { width: 16px; height: 16px; border-radius: 50%; background: var(--grad); display: inline-block; }
+  .track { position: absolute; padding: 20px 40px; border-radius: 999px; background: var(--grad); color: #fff; font-size: 44px; font-weight: 800; letter-spacing: .04em; }
+
+  .flag { position: absolute; font-size: 170px; line-height: 1; }
+  .badge { position: absolute; padding: 12px 26px; border-radius: 14px; background: #FEF3C7; color: #92400E; font-size: 32px; font-weight: 800; letter-spacing: .06em; }
+  .lab { position: absolute; width: 190px; height: 190px; border-radius: 48px; background: var(--tint); display: grid; place-items: center; font-size: 110px; }
+
+  /* CTA */
+  #cta { color: #fff; }
+  #cta .bigLogo { position: absolute; left: 50%; top: 520px; width: 220px; height: 220px; margin-left: -110px; border-radius: 54px;
+    background: rgba(255,255,255,.16); display: grid; place-items: center; border: 3px solid rgba(255,255,255,.4); }
+  #cta .bigLogo svg { width: 132px; height: 132px; }
+  #cta .bigWord { position: absolute; left: 0; right: 0; top: 790px; text-align: center; font-size: 104px; font-weight: 800; letter-spacing: -0.03em; }
+  #cta .url { position: absolute; left: 0; right: 0; margin: 0 auto; width: fit-content; top: 1000px; background: #fff; color: #1D4ED8;
+    font-size: 64px; font-weight: 800; padding: 28px 56px; border-radius: 999px; box-shadow: 0 24px 50px rgba(15,23,42,.25); white-space: nowrap; }
+  #cta .where { position: absolute; left: 0; right: 0; top: 1200px; text-align: center; font-size: 42px; font-weight: 600; opacity: .95; }
+  #cta .note { position: absolute; left: 90px; right: 90px; top: 1340px; text-align: center; font-size: 36px; font-weight: 500; opacity: .9; line-height: 1.35; }
+</style>
+</head>
+<body>
+<div id="bg"><div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div><div id="ctaBg"></div></div>
+
+<div id="brand">
+  <div class="logo"><svg viewBox="0 0 20 18" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1L1 5l9 4 9-4-9-4z"/><path d="M3 7v5c0 1.5 3.5 3 7 3s7-1.5 7-3V7"/><path d="M17 5v8"/></svg></div>
+  <div class="word">School<b>Nossa</b></div>
+  <div class="pill">Experimental beta</div>
+</div>
+
+<!-- S1: the problem -->
+<section class="scene" data-s="0" data-e="6.5">
+  <h1 style="top:300px" data-in="0.15">Choosing a school is a <span class="hl">big decision.</span></h1>
+  <div class="sub" style="top:520px" data-in="1.3">But the facts are scattered across dozens of websites.</div>
+  <div class="chipcard drift" style="left:90px;top:800px;--r:-5deg" data-in="2.0" data-p="0"><span>🏫</span>School websites</div>
+  <div class="chipcard drift" style="left:520px;top:930px;--r:4deg" data-in="2.25" data-p="1"><span>📊</span>Education statistics</div>
+  <div class="chipcard drift" style="left:140px;top:1090px;--r:3deg" data-in="2.5" data-p="2"><span>🏛️</span>City portals</div>
+  <div class="chipcard drift" style="left:560px;top:1230px;--r:-4deg" data-in="2.75" data-p="3"><span>🚓</span>Police statistics</div>
+  <div class="chipcard drift" style="left:110px;top:1390px;--r:-2deg" data-in="3.0" data-p="4"><span>🚇</span>Transit maps</div>
+  <div class="chipcard drift" style="left:590px;top:1520px;--r:5deg" data-in="3.25" data-p="5"><span>🗓️</span>Open-day notices</div>
+</section>
+
+<!-- S2: one place -->
+<section class="scene" data-s="6.5" data-e="13">
+  <h1 style="top:300px" data-in="0.1">SchoolNossa brings it <span class="hl">all together.</span></h1>
+  <div class="stat" style="left:72px;top:520px" data-in="0.6"><div class="num"><span class="hl" data-count="220" data-suffix="+" data-cin="0.6">0</span></div><div class="lbl">details on every school</div></div>
+  <div class="browser" style="left:60px;top:800px;width:960px" data-in="1.0">
+    <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><div class="url">schoolnossa.com</div></div>
+    <div class="view" style="height:600px">
+      <img src="shots/web/overview-01.jpg" data-show="0" data-hide="3.3" data-pan="0.06">
+      <img src="shots/web/compare-04.jpg" data-show="3.3" data-pan="0.10">
+    </div>
+  </div>
+  <div class="caption swap" style="top:1500px" data-in="1.4" data-hide="3.3">🗺️ Every school on one map, with your own places.</div>
+  <div class="caption swap" style="top:1500px" data-in="3.3">⏱️ Real commute times from home, work or daycare.</div>
+</section>
+
+<!-- S3: iPhone app -->
+<section class="scene" data-s="13" data-e="22.5">
+  <div class="kicker" data-in="0"><span class="new">NEW</span>iPhone app</div>
+  <h1 style="top:370px" data-in="0.15">SchoolNossa is now <span class="hl">on the App Store.</span></h1>
+  <div class="phone side" style="left:40px;top:760px;width:330px;height:715px;--r:-8deg" data-in="1.0"><div class="screen"><img src="shots/ios/IMG_7812.png"></div></div>
+  <div class="phone side" style="left:710px;top:760px;width:330px;height:715px;--r:8deg" data-in="1.2"><div class="screen"><img src="shots/ios/IMG_7816.png"></div></div>
+  <div class="phone" style="left:300px;top:640px;width:480px;height:1040px" data-in="0.5">
+    <div class="screen">
+      <img src="shots/ios/IMG_7806.png" data-show="0" data-hide="3.2">
+      <img src="shots/ios/IMG_7807.png" data-show="3.2" data-hide="6.2">
+      <img src="shots/ios/IMG_7810.png" data-show="6.2">
+    </div>
+  </div>
+  <div class="caption" style="top:1720px;text-align:center" data-in="1.6">Map, filters, school details and your shortlist. Same account as the website.</div>
+</section>
+
+<!-- S4: Claude & ChatGPT -->
+<section class="scene" data-s="22.5" data-e="35">
+  <div class="kicker" data-in="0"><span class="new">NEW</span>AI assistants</div>
+  <h1 style="top:370px" data-in="0.15">Ask in plain language. <span class="hl">Get SchoolNossa answers.</span></h1>
+  <div class="tabs" style="left:72px;top:660px" data-in="0.6">
+    <div class="tab" data-on="0" data-off="6.5">Claude</div>
+    <div class="tab" data-on="6.5">ChatGPT</div>
+  </div>
+  <div class="card" style="left:60px;top:780px;width:960px;height:880px" data-in="0.8">
+    <img src="shots/web/connector-claude.jpg" data-show="0" data-hide="6.5" data-pan="0.04">
+    <img src="shots/web/connector-chatgpt.jpg" data-show="6.5" data-pan="0.04">
+  </div>
+  <div class="caption" style="top:1700px" data-in="2.6">🔒 The assistant only gets school data and your own shortlist, never your password.</div>
+</section>
+
+<!-- S5: Admission & open days -->
+<section class="scene" data-s="35" data-e="42">
+  <div class="kicker" data-in="0">Admission &amp; open days</div>
+  <h1 style="top:370px" data-in="0.15">Know <span class="hl">when to apply</span> and when to visit.</h1>
+  <div class="phone" style="left:60px;top:640px;width:440px;height:953px" data-in="0.5"><div class="screen"><img src="shots/ios/IMG_7811.png" data-zoom="0.06"></div></div>
+  <div class="feat" style="left:540px;top:680px;width:480px" data-in="1.0"><div class="ic">📅</div>Application windows</div>
+  <div class="feat" style="left:540px;top:820px;width:480px" data-in="1.3"><div class="ic">✅</div>Admission criteria</div>
+  <div class="feat" style="left:540px;top:960px;width:480px" data-in="1.6"><div class="ic">🏫</div>Open days</div>
+  <div class="stat" style="left:548px;top:1150px;width:480px" data-in="2.1"><div class="num" style="font-size:120px"><span class="hl" data-count="1100" data-suffix="+" data-cin="2.1">0</span></div><div class="lbl">German schools with an upcoming open day</div></div>
+  <div class="caption" style="top:1700px" data-in="2.8">Read from the schools' own websites, where they publish it.</div>
+</section>
+
+<!-- S6: Germany -->
+<section class="scene" data-s="42" data-e="48">
+  <div class="kicker" data-in="0">🇩🇪 More cities</div>
+  <h1 style="top:370px" data-in="0.1"><span class="hl">10 German cities.</span></h1>
+  <div class="stat" style="left:72px;top:500px" data-in="0.4"><div class="num" style="font-size:120px"><span data-count="2800" data-suffix="+" data-cin="0.4">0</span></div><div class="lbl">primary and secondary schools</div></div>
+  <div class="city" style="left:72px;top:800px;width:450px" data-in="0.8"><i></i>Berlin</div>
+  <div class="city" style="left:558px;top:800px;width:450px" data-in="0.9"><i></i>Hamburg</div>
+  <div class="city" style="left:72px;top:935px;width:450px" data-in="1.0"><i></i>Munich</div>
+  <div class="city" style="left:558px;top:935px;width:450px" data-in="1.1"><i></i>Cologne</div>
+  <div class="city" style="left:72px;top:1070px;width:450px" data-in="1.2"><i></i>Frankfurt</div>
+  <div class="city" style="left:558px;top:1070px;width:450px" data-in="1.3"><i></i>Stuttgart</div>
+  <div class="city" style="left:72px;top:1205px;width:450px" data-in="1.4"><i></i>Düsseldorf</div>
+  <div class="city" style="left:558px;top:1205px;width:450px" data-in="1.5"><i></i>Bremen</div>
+  <div class="city" style="left:72px;top:1340px;width:450px" data-in="1.6"><i></i>Leipzig</div>
+  <div class="city" style="left:558px;top:1340px;width:450px" data-in="1.7"><i></i>Dresden</div>
+</section>
+
+<!-- S7: Netherlands -->
+<section class="scene" data-s="48" data-e="51.5">
+  <div class="kicker" data-in="0">First step abroad</div>
+  <div class="flag" style="left:72px;top:420px" data-in="0.1">🇳🇱</div>
+  <div class="badge" style="left:300px;top:500px" data-in="0.3">ALPHA</div>
+  <h1 style="top:640px" data-in="0.2">The <span class="hl">Netherlands.</span></h1>
+  <div class="stat" style="left:72px;top:800px" data-in="0.4"><div class="num" style="font-size:130px"><span class="hl" data-count="7600" data-suffix="+" data-cin="0.4">0</span></div><div class="lbl">primary and secondary schools, nationwide</div></div>
+  <div class="track" style="left:72px;top:1130px" data-in="0.8">VMBO</div>
+  <div class="track" style="left:352px;top:1130px" data-in="0.95">HAVO</div>
+  <div class="track" style="left:612px;top:1130px" data-in="1.1">VWO</div>
+</section>
+
+<!-- S8: Experimental -->
+<section class="scene" data-s="51.5" data-e="58.5">
+  <div class="lab" style="left:72px;top:330px" data-in="0">🧪</div>
+  <h1 style="top:580px" data-in="0.2">Purely experimental. <span class="hl">Not commercial.</span></h1>
+  <div class="sub" style="top:800px" data-in="1.2">The data can be incomplete. Please always check important details with the school.</div>
+  <div class="feat" style="left:72px;top:1040px;right:72px;font-size:44px;padding:36px 36px" data-in="2.6"><div class="ic" style="width:96px;height:96px;font-size:52px">💬</div>Your feedback shapes what comes next.</div>
+</section>
+
+<!-- S9: CTA -->
+<section class="scene" id="cta" data-s="58.5" data-e="64.4" data-noout="1">
+  <div class="bigLogo" data-in="0.2"><svg viewBox="0 0 20 18" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1L1 5l9 4 9-4-9-4z"/><path d="M3 7v5c0 1.5 3.5 3 7 3s7-1.5 7-3V7"/><path d="M17 5v8"/></svg></div>
+  <div class="bigWord" data-in="0.4">SchoolNossa</div>
+  <div class="url" data-in="0.8">schoolnossa.com</div>
+  <div class="where" data-in="1.2">Web · iPhone · Claude · ChatGPT</div>
+  <div class="note" data-in="1.6">Experimental beta. Try it and tell us what you think.</div>
+</section>
+
+<script>
+  const clamp = (x) => Math.min(1, Math.max(0, x));
+  const seg = (t, a, b) => clamp((t - a) / (b - a));
+  const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+  const easeInOut = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const scenes = [...document.querySelectorAll('.scene')];
+  const fmt = (n) => n.toLocaleString('en-US');
+
+  window.render = function (t) {
+    // Background drift
+    document.getElementById('b1').style.transform = `translate(${Math.sin(t / 5) * 40}px, ${Math.cos(t / 6) * 30}px)`;
+    document.getElementById('b2').style.transform = `translate(${Math.cos(t / 7) * 40}px, ${Math.sin(t / 5) * 40}px)`;
+    document.getElementById('b3').style.transform = `translate(${Math.sin(t / 6) * 50}px, 0)`;
+    const cta = scenes[scenes.length - 1];
+    const ctaIn = easeInOut(seg(t, +cta.dataset.s - 0.2, +cta.dataset.s + 0.5));
+    document.getElementById('ctaBg').style.opacity = ctaIn;
+    const brand = document.getElementById('brand');
+    brand.style.opacity = (1 - ctaIn) * easeOut(seg(t, 0, 0.5));
+
+    for (const sc of scenes) {
+      const s = +sc.dataset.s, e = +sc.dataset.e;
+      const vis = seg(t, s - 0.05, s + 0.15) * (sc.dataset.noout ? 1 : 1 - seg(t, e - 0.3, e));
+      sc.style.opacity = vis;
+      sc.style.display = vis <= 0 ? 'none' : 'block';
+      if (vis <= 0) continue;
+      const lt = t - s; // local time
+      const exiting = sc.dataset.noout ? 0 : seg(t, e - 0.3, e);
+
+      sc.querySelectorAll('[data-in]').forEach((el) => {
+        const d = +el.dataset.in;
+        const p = easeOut(seg(lt, d, d + 0.45));
+        let op = p;
+        if (el.dataset.hide) op *= 1 - seg(lt, +el.dataset.hide - 0.25, +el.dataset.hide);
+        const rot = el.style.getPropertyValue('--r') || '0deg';
+        let tx = 0, ty = (1 - p) * 60 - exiting * 30, extra = '';
+        if (el.classList.contains('drift')) {
+          const k = +el.dataset.p;
+          tx = Math.sin(lt * 0.9 + k) * 14;
+          ty += Math.cos(lt * 0.8 + k * 1.7) * 12;
+          // In the last second the scattered cards pull together and shrink
+          const pull = easeInOut(seg(lt, 5.2, 6.4));
+          const cx = 540 - (el.offsetLeft + el.offsetWidth / 2), cy = 1180 - (el.offsetTop + el.offsetHeight / 2);
+          tx += cx * pull; ty += cy * pull;
+          extra = ` scale(${1 - 0.6 * pull})`;
+          op *= 1 - pull * 0.9;
+        }
+        if (el.classList.contains('side')) extra = ` scale(${0.92 + 0.08 * p})`;
+        el.style.opacity = op;
+        el.style.transform = `translate(${tx}px, ${ty}px) rotate(${rot})${extra}`;
+      });
+
+      // Images that swap inside a frame, with optional slow pan or zoom
+      sc.querySelectorAll('img[data-show]').forEach((img) => {
+        const a = +img.dataset.show, b = img.dataset.hide ? +img.dataset.hide : 1e9;
+        const op = seg(lt, a - 0.01, a + 0.35) * (1 - seg(lt, b - 0.01, b + 0.35));
+        img.style.opacity = a === 0 ? (1 - seg(lt, b - 0.01, b + 0.35)) : op;
+        const pan = +(img.dataset.pan || 0);
+        if (pan) {
+          const k = seg(lt, a, Math.min(b, e - s));
+          img.style.transform = `scale(${1 + pan * k}) translateY(${-pan * 300 * k}px)`;
+          img.style.transformOrigin = 'top center';
+        }
+      });
+      sc.querySelectorAll('img[data-zoom]').forEach((img) => {
+        const z = +img.dataset.zoom;
+        img.style.transformOrigin = '50% 30%';
+        img.style.transform = `scale(${1 + z * seg(lt, 0, e - s)})`;
+      });
+
+      // Tabs that switch on/off
+      sc.querySelectorAll('[data-on]').forEach((el) => {
+        const on = lt >= +el.dataset.on && (!el.dataset.off || lt < +el.dataset.off);
+        el.classList.toggle('on', on);
+      });
+
+      // Counting numbers
+      sc.querySelectorAll('[data-count]').forEach((el) => {
+        const k = easeOut(seg(lt, +el.dataset.cin, +el.dataset.cin + 1.3));
+        const n = Math.round(+el.dataset.count * k / (el.dataset.count >= 1000 ? 100 : 10)) * (el.dataset.count >= 1000 ? 100 : 10);
+        el.textContent = fmt(k >= 1 ? +el.dataset.count : n) + (k >= 1 ? el.dataset.suffix : '');
+      });
+    }
+  };
+
+  window.ready = Promise.all([
+    document.fonts.ready,
+    ...[...document.images].map((im) => im.complete ? 1 : new Promise((r) => { im.onload = im.onerror = r; })),
+  ]);
+</script>
+</body>
+</html>
