@@ -1,6 +1,6 @@
 # SchoolNossa Development Journal
 
-## 2026-10-30 — Payments: Stripe webhook, once-per-session grant, same-tab checkout (in preview)
+## 2026-10-30 — Payments: Stripe webhook, once-per-session grant, same-tab checkout (live; Stripe endpoint pending)
 
 **Why:** the user asked how people subscribe and whether the paywall comes back. Reading the flow turned up four problems:
 - A paid checkout only unlocked access if `/payment-success` loaded and called `verify-payment`. There is no Stripe webhook, so a buyer who closed the tab stayed locked out and was asked to pay again.
@@ -16,10 +16,18 @@
 - **Functions:** new `stripe-webhook` (signature-checked; `checkout.session.completed` + `async_payment_succeeded`; `verify_jwt = false`). `verify-payment` uses the same `_shared/stripe-grant.ts`. Both type-check with Deno; esm.sh's supabase-js types are broken for every function, so the check used npm types.
 - **Frontend:** checkout opens in the same tab (a new tab only inside the framed editor preview). Copy DE + EN: `pricing.howToSubscribe` under the price card, how-to sentence in `connectorsTeaser.paidNote` and `connectors.req.1`. Verified in the Lovable preview.
 
+**Deployed** (user OK):
+- GitHub pushes do not deploy edge functions; `stripe-webhook` stayed 404.
+- The Lovable agent deployed `stripe-webhook` + `verify-payment` unchanged (0.6 credits). Its commit 07d3794 only regenerated `src/integrations/supabase/types.ts`.
+- Live probes: the webhook answers 500 "…STRIPE_WEBHOOK_SECRET is not set" (expected); `verify-payment` reaches its handler.
+- Site published (deployment 7cd867da); the live bundle has the same-tab checkout and the new copy.
+
 **Open:**
-- Pushing through GitHub did not deploy the edge functions (`stripe-webhook` still 404 after 5+ min); they need a Lovable deploy.
-- The user must add the webhook endpoint in Stripe and the `STRIPE_WEBHOOK_SECRET` secret in Lovable Cloud.
-- Publish the frontend.
+- The user adds the Stripe endpoint (`…/functions/v1/stripe-webhook`; events `checkout.session.completed` + `checkout.session.async_payment_succeeded`) and the `STRIPE_WEBHOOK_SECRET` secret in Lovable Cloud.
+- Then send a Stripe test event and expect HTTP 200 `"granted":false`; a test event has no `user_id`.
+- Until then a webhook call returns 500 and the failure reporter alerts. The probes above may have sent a few alert emails.
+
+**Process note:** a GitHub push updates the frontend and preview, but edge functions need a Lovable deploy (ask the agent: "deploy only, do not change code").
 
 ## 2026-10-30 — Landing page: connector announcement for Claude + ChatGPT (live)
 
