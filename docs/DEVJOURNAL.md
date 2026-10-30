@@ -1,5 +1,35 @@
 # SchoolNossa Development Journal
 
+## 2026-10-30 — Payments: ask before paying again; App Store purchases stack (live; iOS 1.1.2 in review)
+
+**Why:**
+- The user doesn't want people to pay twice by accident. Someone who already paid, on either platform, should see that and pay again only on purpose, which adds 3 more months.
+- Reading the flow showed that a paid user still within their period sees no pay button on either platform: the paywall appears only after expiry. So the realistic double payment is paying on one platform while the other still shows the paywall.
+- `revenuecat-webhook` overwrote `subscription_ends_at` with purchase date + 3 months, so an App Store purchase while active added nothing.
+
+**What:**
+- **Migration 0008** (app repo):
+  - `extend_paid_access(user, from)`: a shared rule, 3 months from the later of `from` and the current end. It sets `subscription_started_at = now()`, so the usage trigger logs `paid_renewed`.
+  - `grant_stripe_payment` now uses `extend_paid_access`; its behaviour is unchanged.
+  - New `revenuecat_purchases` table and `grant_revenuecat_purchase()`: security definer, service_role only, one grant per store transaction, counted from the purchase time. Admins can read the table.
+  - Tested on local postgres:15 with a copy of the live usage trigger: applied twice; stacking, retry, web on top of app, a late webhook, a missing row and role checks all pass; the 0007 Stripe tests still pass.
+  - Applied to production with the Lovable SQL tool and verified with catalog checks only, no test writes.
+- **Web** (app PR jvr1980/schoolnossa-2d5310de#1, merge 8b00ce9):
+  - `PaymentModal` re-reads `user_access`. If paid access is still running, it shows "Sie haben bereits Zugang … läuft bis {date}". The button becomes "Erneut zahlen: +3 Monate", and "Gültig bis" shows the stacked end.
+  - A first click that finds a payment made in the meantime only shows the notice.
+  - Tests: vitest 102 tests (6 new), tsc clean.
+  - `revenuecat-webhook` sends `NON_RENEWING_PURCHASE` to the new grant; type-checked with Deno.
+- **iOS 1.1.2 (30)** (mobile PR jvr1980/schoolnossa-mobile#2, merge f149fc0): the paywall re-reads access before buying and shows "You already have access until … Buying again adds 3 more months (until …)", with "Open the app" or "Buy again: +3 months". Tests: 129 pass, analyze clean.
+
+**Deployed** (user: "Yes, ship all"):
+- The Lovable agent deployed `revenuecat-webhook` unchanged. Its commit aa93f64 only regenerated `src/integrations/supabase/types.ts`. Probes: GET returns 405, an unauthenticated POST returns 401.
+- Site published (deployment e1d7ec6a). The live bundle `index-BOVWk-tq.js` contains the new DE and EN text.
+- iOS: uploaded (delivery 9a3b86b2), build 30 VALID. Version 1.1.2 (ffc17ec6) was submitted at 18:08 UTC as review submission 7912d055: WAITING_FOR_REVIEW, release AFTER_APPROVAL.
+
+**Open:**
+- A real repeat purchase on either platform would confirm stacking end to end. Check `stripe_payments` / `revenuecat_purchases` and `usage_events` `paid_renewed`.
+- Paid users who are still active have no way to extend early (no "+3 months" button on the account page); add one only if the user wants it.
+
 ## 2026-10-30 — Payments: Stripe webhook, once-per-session grant, same-tab checkout (live, webhook active)
 
 **Why:** the user asked how people subscribe and whether the paywall comes back. Reading the flow turned up four problems:
