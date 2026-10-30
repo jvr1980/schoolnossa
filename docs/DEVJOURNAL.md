@@ -22,9 +22,15 @@
 - Live probes: the webhook answers 500 "…STRIPE_WEBHOOK_SECRET is not set" (expected); `verify-payment` reaches its handler.
 - Site published (deployment 7cd867da); the live bundle has the same-tab checkout and the new copy.
 
+**Stripe endpoint created** (user asked; their Chrome, Stripe account "SchoolNossa" acct_1SvZjF2RPaMGPZXT, **live** mode):
+- The site's checkout uses this account's `sk_live` key (API log: POST /v1/checkout/sessions, 4 Feb 2026, €9.90). There are no completed payments in live or test mode yet.
+- Event destination `schoolnossa-access-grant` (we_1UWH1n2RPaMGPZXTPrEc8SiT): Active, snapshot payload, API version 2026-01-28.clover (basil isn't offered; the fields used are stable), events `checkout.session.completed` + `checkout.session.async_payment_succeeded`.
+- A live destination offers no "send test event" (only Disable / Roll secret / Delete).
+
 **Open:**
-- The user adds the Stripe endpoint (`…/functions/v1/stripe-webhook`; events `checkout.session.completed` + `checkout.session.async_payment_succeeded`) and the `STRIPE_WEBHOOK_SECRET` secret in Lovable Cloud.
-- Then send a Stripe test event and expect HTTP 200 `"granted":false`; a test event has no `user_id`.
+- The user copies the signing secret into Lovable Cloud as `STRIPE_WEBHOOK_SECRET` (I don't handle keys).
+- Then an unsigned request should return 400 "missing stripe-signature".
+- The signature check is proven only by the first real delivery (Event deliveries tab).
 - Until then a webhook call returns 500 and the failure reporter alerts. The probes above may have sent a few alert emails.
 
 **Process note:** a GitHub push updates the frontend and preview, but edge functions need a Lovable deploy (ask the agent: "deploy only, do not change code").
