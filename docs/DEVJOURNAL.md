@@ -1,5 +1,25 @@
 # SchoolNossa Development Journal
 
+## 2026-10-30 — Landing page: connector announcement for Claude + ChatGPT (in preview, not published)
+
+**Why:** to tell visitors that paid subscribers can use SchoolNossa inside Claude and ChatGPT, with real screenshots of the connector.
+
+**What** (app repo 9d5a655, pushed to main; Lovable shows it as a developer update):
+- **Section:** new `src/components/landing/ConnectorShowcase.tsx` on the home page after "So funktioniert's / How It Works".
+  - Contents: badge, title, 3 highlights, the two screenshots side by side (stacked on phones), a highlighted "Nur für zahlende Abonnenten. / For paying subscribers only." notice and a button to `/connectors`.
+  - The notice says the trial doesn't include the connectors and that a Claude or ChatGPT plan with custom connectors is needed.
+  - Copy in DE + EN: `connectorsTeaser.*` keys in `src/lib/translations.ts`.
+- **Screenshots:** `public/screenshots/connector-claude.jpg` and `connector-chatgpt.jpg`, 1200 px wide, about 120 KB each.
+  - Query: Gymnasien in Steglitz-Zehlendorf, in German in Claude and in English in ChatGPT. Both rendered the map card with numbered pins and the Arndt-Gymnasium Dahlem card.
+  - Taken in the user's signed-in Chrome at 200% CSS zoom with the sidebar hidden in that tab only, then stitched from 3 frames and cropped to the chat column.
+  - No name, initials, avatar or email in either image. The crop ends above the card description, so the unverified founding year isn't shown.
+- **Verified:** `tsc` and `vite build` pass. In the Lovable preview the section renders in DE + EN, the images load and the button opens `/connectors`.
+
+**Open:**
+- Publishing needs the user's OK. It also ships connector 0.5.3 (UTM tags + visit counter, Lovable 164382f), which is still unpublished.
+- The two test chats are still in the user's Claude and ChatGPT history.
+- The screenshots show 2025/26 figures and the 2026-02 application window; retake them after the next data refresh.
+
 ## 2026-10-29 — Admission top-up: fresh crawl of schools without upcoming open days; 3 city rules published (live)
 
 **Why:** the 10-03 refresh ran before most schools announced their November–January open days. On 10-29 only 467/1,183 German secondary and 376/1,639 primary schools showed an upcoming event, which is low for the start of the open-day season.
