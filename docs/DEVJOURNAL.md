@@ -1,6 +1,6 @@
 # SchoolNossa Development Journal
 
-## 2026-10-30 — Landing page: connector announcement for Claude + ChatGPT (in preview, not published)
+## 2026-10-30 — Landing page: connector announcement for Claude + ChatGPT (live)
 
 **Why:** to tell visitors that paid subscribers can use SchoolNossa inside Claude and ChatGPT, with real screenshots of the connector.
 
@@ -15,8 +15,10 @@
   - No name, initials, avatar or email in either image. The crop ends above the card description, so the unverified founding year isn't shown.
 - **Verified:** `tsc` and `vite build` pass. In the Lovable preview the section renders in DE + EN, the images load and the button opens `/connectors`.
 
+**Published** (user OK, deployment ddc9535d via the Lovable MCP): live on schoolnossa.com in EN + DE, images served, CTA → /connectors. This also released **connector 0.5.3** (UTM tags + visit counter, Lovable 164382f); the MCP endpoint still answers with the OAuth challenge.
+
 **Open:**
-- Publishing needs the user's OK. It also ships connector 0.5.3 (UTM tags + visit counter, Lovable 164382f), which is still unpublished.
+- 0.5.3 follow-up: "Refresh tools" in ChatGPT and Claude, then check that a click lands in `connector_visits`.
 - The two test chats are still in the user's Claude and ChatGPT history.
 - The screenshots show 2025/26 figures and the 2026-02 application window; retake them after the next data refresh.
 
