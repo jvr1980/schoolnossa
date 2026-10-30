@@ -1,5 +1,182 @@
 # SchoolNossa Development Journal
 
+## 2026-10-30 — Payments: Stripe webhook, once-per-session grant, same-tab checkout (live, webhook active)
+
+**Why:** the user asked how people subscribe and whether the paywall comes back. Reading the flow turned up four problems:
+- A paid checkout only unlocked access if `/payment-success` loaded and called `verify-payment`. There is no Stripe webhook, so a buyer who closed the tab stayed locked out and was asked to pay again.
+- `verify-payment` added 3 months on every call, so reloading the success page extended access each time.
+- Checkout opened with `window.open` after an `await`, which Safari's popup blocker stops; nothing caught it.
+- Nothing said how to subscribe: the home price card only offers "Sign up".
+
+**What** (app repo 65f213c, pushed to main):
+- **Migration 0007** `stripe_payments` + `grant_stripe_payment()` (security definer, service_role only; admins can read the table).
+  - One grant per Checkout session, renewing from the later of now and the current end.
+  - Tested on local postgres:15 (applied twice; grant, repeat, renewal, missing row, role checks all pass).
+  - Applied to production via the Lovable SQL tool before the push (catalog checks only, no test writes). The SQL is idempotent, so drizzle can re-run it.
+- **Functions:** new `stripe-webhook` (signature-checked; `checkout.session.completed` + `async_payment_succeeded`; `verify_jwt = false`). `verify-payment` uses the same `_shared/stripe-grant.ts`. Both type-check with Deno; esm.sh's supabase-js types are broken for every function, so the check used npm types.
+- **Frontend:** checkout opens in the same tab (a new tab only inside the framed editor preview). Copy DE + EN: `pricing.howToSubscribe` under the price card, how-to sentence in `connectorsTeaser.paidNote` and `connectors.req.1`. Verified in the Lovable preview.
+
+**Deployed** (user OK):
+- GitHub pushes do not deploy edge functions; `stripe-webhook` stayed 404.
+- The Lovable agent deployed `stripe-webhook` + `verify-payment` unchanged (0.6 credits). Its commit 07d3794 only regenerated `src/integrations/supabase/types.ts`.
+- Live probes: the webhook answers 500 "…STRIPE_WEBHOOK_SECRET is not set" (expected); `verify-payment` reaches its handler.
+- Site published (deployment 7cd867da); the live bundle has the same-tab checkout and the new copy.
+
+**Stripe endpoint created** (user asked; their Chrome, Stripe account "SchoolNossa" acct_1SvZjF2RPaMGPZXT, **live** mode):
+- The site's checkout uses this account's `sk_live` key (API log: POST /v1/checkout/sessions, 4 Feb 2026, €9.90). There are no completed payments in live or test mode yet.
+- Event destination `schoolnossa-access-grant` (we_1UWH1n2RPaMGPZXTPrEc8SiT): Active, snapshot payload, API version 2026-01-28.clover (basil isn't offered; the fields used are stable), events `checkout.session.completed` + `checkout.session.async_payment_succeeded`.
+- A live destination offers no "send test event" (only Disable / Roll secret / Delete).
+
+**Secret added:**
+- The user pasted the signing secret into Lovable → More → Settings → **Secrets** → Add secret. Not "Build secrets" (`/settings/secrets`), which is a workspace feature.
+- No redeploy needed. The webhook now answers 400 "missing stripe-signature" (unsigned) and 400 "invalid signature" (fake signature).
+
+**Open:**
+- The first real delivery proves a valid signature end to end; check Stripe → Workbench → Webhooks → schoolnossa-access-grant → Event deliveries, and `select * from stripe_payments`.
+- A live destination has no "send test event".
+
+**Process note:** the Lovable "Add new secret" dialog closes when the browser pane resizes or reloads; open it at the pane's own size.
+- Until the secret was added, webhook calls returned 500 and the failure reporter alerted; the probes sent a few alert emails.
+
+**Process note:** a GitHub push updates the frontend and preview, but edge functions need a Lovable deploy (ask the agent: "deploy only, do not change code").
+
+## 2026-10-30 — Landing page: connector announcement for Claude + ChatGPT (live)
+
+**Why:** to tell visitors that paid subscribers can use SchoolNossa inside Claude and ChatGPT, with real screenshots of the connector.
+
+**What** (app repo 9d5a655, pushed to main; Lovable shows it as a developer update):
+- **Section:** new `src/components/landing/ConnectorShowcase.tsx` on the home page after "So funktioniert's / How It Works".
+  - Contents: badge, title, 3 highlights, the two screenshots side by side (stacked on phones), a highlighted "Nur für zahlende Abonnenten. / For paying subscribers only." notice and a button to `/connectors`.
+  - The notice says the trial doesn't include the connectors and that a Claude or ChatGPT plan with custom connectors is needed.
+  - Copy in DE + EN: `connectorsTeaser.*` keys in `src/lib/translations.ts`.
+- **Screenshots:** `public/screenshots/connector-claude.jpg` and `connector-chatgpt.jpg`, 1200 px wide, about 120 KB each.
+  - Query: Gymnasien in Steglitz-Zehlendorf, in German in Claude and in English in ChatGPT. Both rendered the map card with numbered pins and the Arndt-Gymnasium Dahlem card.
+  - Taken in the user's signed-in Chrome at 200% CSS zoom with the sidebar hidden in that tab only, then stitched from 3 frames and cropped to the chat column.
+  - No name, initials, avatar or email in either image. The crop ends above the card description, so the unverified founding year isn't shown.
+- **Verified:** `tsc` and `vite build` pass. In the Lovable preview the section renders in DE + EN, the images load and the button opens `/connectors`.
+
+**Published** (user OK, deployment ddc9535d via the Lovable MCP): live on schoolnossa.com in EN + DE, images served, CTA → /connectors. This also released **connector 0.5.3** (UTM tags + visit counter, Lovable 164382f); the MCP endpoint still answers with the OAuth challenge.
+
+**Open:**
+- 0.5.3 follow-up: "Refresh tools" in ChatGPT and Claude, then check that a click lands in `connector_visits`.
+- The two test chats are still in the user's Claude and ChatGPT history.
+- The screenshots show 2025/26 figures and the 2026-02 application window; retake them after the next data refresh.
+
+## 2026-10-29 — Admission top-up: fresh crawl of schools without upcoming open days; 3 city rules published (live)
+
+**Why:** the 10-03 refresh ran before most schools announced their November–January open days. On 10-29 only 467/1,183 German secondary and 376/1,639 primary schools showed an upcoming event, which is low for the start of the open-day season.
+
+**What:**
+- **Targets:** 1,909 German schools with a website and no open day dated today or later (676 secondary, 1,233 primary).
+- **Reading the rows:** the anon key can no longer read `schools`/`primary_schools` (RLS lock 10-25), and there's no service-role key. A temporary `security definer` RPC `_admission_topup_rows(tok, off)`, guarded by a one-time token, returned the rows; it was dropped right after.
+- **Script:** `refresh_admission_open_days.py` has two new options. `--rows` takes the rows from that JSON file, and `--cache-dir data_shared/cache/school_site_pages_admission_2026-10-29` forces a fresh crawl. The extraction, quote check and `implausible()` filter are unchanged.
+- **Promotion:** same `_admission_staging` token pattern as 10-03. The UPDATE is guarded: only schools that still have no upcoming event. Criteria, window and notes use COALESCE. `last_open_day_seen` also takes the latest past date from the old `open_days`.
+  - Backup: `_admission_backup_20261029` (1,685 rows).
+  - Staging rows deleted afterwards; no policies left.
+
+**Results:**
+- **Run:** 1,628 ok, 57 nothing on the site, 218 sites unreadable, 6 extraction failures. 1,685 schools promoted (597 secondary, 1,088 primary). Cost ≈ $21 (30.9M input / 1.7M output tokens, Gemini 3 Flash).
+- **Schools with an upcoming event (live):** secondary 467 → 647, primary 376 → 553.
+  - New events by month: Nov 321, Dec 85, Jan 119, Feb–Mar 42, later 47.
+  - Still thin: München secondary 43/129, Leipzig 36/94, Düsseldorf primary 12/88. Bavarian schools hold open days in Feb–Mar.
+
+**City rules (`city_admission_rules`):** 17/20 now `published`. Backup: `_city_admission_rules_backup_20261029`.
+- Berlin secondary: Klasse 7 registration 3–11 Mar 2027; Probeunterricht registration 8/9 Feb 2027 (berlin.de).
+- Düsseldorf secondary: 15–17 Feb 2027, appointment only; notices from 24 Feb (duesseldorf.de).
+- Bremen secondary: form due at the Grundschule by 8 Feb 2027 (2027 flyer on bildung.bremen.de).
+- Still a pattern: Köln secondary and Stuttgart primary (2027 dates not published yet), and Frankfurt primary (its 2027 intake registered in spring 2026).
+
+**Next:**
+- Early January 2027: the same top-up for late publishers (Munich, Leipzig), then the full re-run.
+- Update Köln secondary and Stuttgart primary once those cities publish their dates.
+
+## 2026-10-28 — Connector 0.5.3: UTM-tagged links + anonymous visit counter (built, not yet published)
+
+**Why:** to measure the traffic ChatGPT and Claude send to schoolnossa.com. Neither platform shares revenue with connector developers, so the value of the connector has to show up as our own traffic. Lovable analytics only reports referrer sources (on 10-21–10-28: chatgpt.com 1, claude.ai 1), so we count tagged visits ourselves.
+
+**What** (Lovable 164382f; spec `lovable_connector_v053_utm_message.md`):
+- **Link helper:** `src/lib/mcp/links.ts`. `trackedUrl` adds `utm_source=chatgpt|claude|ai_assistant`, `utm_medium=ai_connector`, `utm_campaign=mcp` and `utm_content` to schoolnossa.com links only. `tagText` tags links inside message texts.
+- **Source:** `public.mcp_client_source()` (SECURITY DEFINER, authenticated only) maps the JWT `client_id` → `auth.oauth_clients.client_name`. It's called once per tool call and stored in the request's AsyncLocalStorage scope.
+  - Checked: `mcp_usage.client_id` joins to `oauth_clients.id` (ChatGPT 31 rows, Claude 19).
+- **Content values:** answer, card_open, card_more, card_map, card_places, card_footer, app, connectors, message, attribution.
+  - "mehr in SchoolNossa" is now a link.
+- **Counter:** table `connector_visits` (source, content, path; RLS with admin-only SELECT). RPC `log_connector_visit` checks values against an allow-list and is callable by anon.
+  - `src/lib/connectorVisit.ts` runs in `main.tsx` before the router mounts, then strips `utm_*` with `replaceState`.
+  - No user id, IP, cookies or device storage (§25 TTDDDG).
+- **Migration:** 0006_connector_visits_and_client_source. Version 0.5.3, so the card URI is `ui://schoolnossa/schools.v0.5.3.html`. 96 tests pass.
+- **Known gaps:** the subscription-required card tags /connectors as `ai_assistant`. The server `instructions` links are untagged.
+
+**Query:** `select created_at::date, source, content, count(*) from connector_visits where created_at >= now() - interval '30 days' group by 1,2,3 order by 1 desc, 4 desc;`
+
+**Open:**
+- Publishing needs the user's click: the auto-mode classifier blocks production deploys.
+- Then: Refresh tools in ChatGPT and Claude; test that a click lands in `connector_visits`.
+
+## 2026-10-28 — CARTO basemap key, connector 0.5.2 card map, iOS 1.1.1 submitted
+
+**Why:** since 2026-09-23 CARTO basemaps need an API key. Without it, every tile is an "API KEY REQUIRED" watermark, so the iPhone search map (and the web dark style) showed no map.
+
+**What:**
+- **Key:** a CARTO Basemaps key on the free commercial tier (1M requests/month), requested under jose.vonroth@schoolnossa.com. It is public (it travels in every tile URL); attribution is mandatory.
+- **Web** (app repo 3b1a4ec): new `src/lib/mapTiles.ts` (`CARTO_BASEMAPS_KEY`, `cartoTileUrl(style)`, `CARTO_ATTRIBUTION`). The OverviewMap dark style uses it; the standard style stays on OSM.
+- **Connector 0.5.2** (published): a Leaflet map block in the list views, above the cards:
+  - numbered pins in card order, with the top 3 highlighted
+  - the link "Open the full map in SchoolNossa" → /menu
+  - CSP `resourceDomains` https://basemaps.cartocdn.com
+  - card URI `ui://schoolnossa/schools.v0.5.2.html`
+  - Verified in Claude: tiles, pins and attribution render.
+- **iOS 1.1.1 (29)** (mobile `fix/carto-api-key` 6e205df): `search_map.dart` uses `rastertiles/voyager/…{r}.png?key=…` with `RetinaMode.isHighDensity`, and no subdomains.
+  - Uploaded via altool; processed (VALID).
+  - Version 1.1.1 created via the ASC API; release notes "Fehlerbehebung: Die Karte wird wieder angezeigt." / "Bug fix: the map is displayed again."
+  - Release: AFTER_APPROVAL, the same as 1.1.0.
+  - Submitted for review: reviewSubmission → WAITING_FOR_REVIEW.
+
+**Verified in ChatGPT** (after "Refresh tools"): Steglitz-Zehlendorf Gymnasien → map with 10 numbered pins (top 3 highlighted), CARTO attribution, 3 rich cards with card-only texts (description, languages, contact, admission criteria), "+7 more in SchoolNossa".
+- First test ran with "Enforce CSP for custom apps" off. The re-test with it on (the user switched it on) passed: Pankow → CARTO tiles, pins and rich cards all load, no CSP badge.
+- Re-test detail: Our CSP is declared both ways: `_meta.ui.csp` and `openai/widgetCSP`.
+- ChatGPT notes "private tools can't render their widgets: card_details"; expected for the app-only tool.
+
+**Open:**
+- Check the web dark map live (the key is in the live bundle; a tile returns 200).
+- Restrict the CARTO key to schoolnossa.com and the app in the CARTO dashboard.
+
+## 2026-10-26 — Connector 0.5 / 0.5.1 live: top-3 full details, travel times, card-only texts, Google hardening
+
+**What** (Lovable 0208e3d + d464c8f, published):
+- **Top-3 expansion:** the 3 expanded schools count as `detail`, with a slim fallback when the allowance is used up.
+- **`commute_times`:** uses only the caller's saved `user_pois` (no typed addresses), through google-directions. It returns labels + times, never addresses or coordinates. New `commute` bucket, 20 per 24 h (migration 0005).
+- **Card-only long texts:** descriptions, special features, admission criteria/notes and contact details go only in the tool result `_meta["schoolnossa/card"]`. The model sees key facts only.
+  - 0.5 bug: the wrapper read the AsyncLocalStorage scope before the streamed tool finished, so `_meta` was never attached in either host. 0.5.1 reads the reply inside the scope.
+  - Also new: the app-only `card_details` tool (`_meta.ui.visibility ["app"]`) as a fallback.
+- **Versioned card URI** (`ui://schoolnossa/schools.v0.5.1.html`): ChatGPT had cached the 0.4 HTML.
+- **Hardening:** google-directions and google-places-autocomplete/details now require a JWT + `has_app_access` (they were open to anyone with the anon key).
+- **Texts:** /terms bans AI training on connector content; /connectors tip to turn off training in ChatGPT/Claude; privacy §8 sentence on travel times (labels only).
+
+**Verified live:**
+- Claude: Pankow → 3 rich cards (description, languages, address, contact, admission criteria) + "+6 more"; travel times from "Home" (e.g. 18 min / 2.2 km); `card_details` hidden from Claude's tool list.
+- ChatGPT (after "Refresh tools"): Amsterdam VWO → rich cards with Dutch track chips.
+
+**Found:** founding years are still in many descriptions (secondary: en 178, de 126; primary: en 162, de 68), and they're inconsistent. E.g. Carl-von-Ossietzky: description_en says 1909, the app modal showed 1908. That's a follow-up for the description audit.
+
+## 2026-10-26 — Privacy AI section, dashboard-reset fix, Overview tab hidden, non-operating schools removed
+
+**What (all published):**
+- **Privacy:** /privacy section 8 "Nutzung über KI-Assistenten / Use through AI assistants" in DE + EN (old 8 → 9, "Oktober 2026"). Logging made to match the text:
+  - pg_cron `mcp-usage-retention` deletes `mcp_usage` rows older than 90 days (daily 03:45)
+  - semantic-search and the Google Places functions now log only the query length and scope, via `_shared/search-log.ts`
+- **Dashboard reset fix** (found by Lovable's issue scan; a regression from the stage-1 gate):
+  - the access re-check (every 60 s + on focus) unmounted the dashboard, wiping filters, search, open details and pins
+  - now the spinner shows only before the first decision
+  - background checks keep the UI; on focus at most every 5 min; an explicit refresh after payment
+  - errors keep the last decision
+- **Overview tab hidden** (user request); Search is the default tab. The code is kept (`src/lib/dashboardTabs.ts`).
+- **Data:**
+  - deleted Mentora Gymnasium (04P35) and NEWSchool ISS (09P21), both "KEIN Schulbetrieb"; 21 similarity rows cascaded; rollback in `data_shared/supabase_sql/data_fixes_2026-10/`
+  - `insert_new_schools_to_supabase.py` now skips such rows and stops when RLS returns no existing rows
+  - Utrecht "Amadeus Lyceum" ×2 = two real locations (NL-00RO00 / NL-00RO03), not a duplicate
+  - NL has 221 secondary and 35 primary same-name groups per municipality; display names could get a location suffix (open)
+- **Found:** google-directions and the Google Places functions don't check the caller; hardening is in the 0.5 spec.
+
 ## 2026-10-25 — Connector 0.3 (limits, AI search, attribution, deep links) + 0.4 (MCP App cards) live
 
 **What.**
