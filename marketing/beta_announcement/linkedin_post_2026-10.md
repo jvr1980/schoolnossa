@@ -85,3 +85,12 @@ paste this into the focus box:
 > SchoolNossa is an experimental, non-commercial beta, that the data can be incomplete, and
 > that feedback is very welcome. Do not mention prices, payments, subscriptions or trials.
 > End with the website schoolnossa.com.
+
+Made on 2026-10-30 in the notebook "SchoolNossa: The Comprehensive School Finder Platform"
+(Gemini Notebook, von.roth@gmail.com). Neither video's slides mention pricing:
+- **"What's New in the SchoolNossa Beta"**: Short format, 1:04, vertical 9:16, paper-craft
+  style with captions burned in. Use this one for LinkedIn. It covers the iPhone app, Claude and
+  ChatGPT ("never your password"), admission information and open days, 10 German cities,
+  the Netherlands, "purely … non-commercial", a feedback request and schoolnossa.com.
+- **"SchoolNossa Explained"**: Explainer format, 6:56, 16:9, Classic style. It is the longer
+  walkthrough, for the website or for people who want the details.
