@@ -1,5 +1,41 @@
 # SchoolNossa Development Journal
 
+## 2026-10-30 — Beta launch: first 500 emails get a 3-month free trial (live)
+
+**Why:** For the beta launch to friends and family, the user wants up to 500 users to get 3 months of free access; user 501 onward gets the 48-hour trial. The old "test phase" settings (`test_phase_enabled`, `test_phase_max_users` = 200, `can_join_test_phase`) are no longer used by sign-up, which has granted access server-side since 10-25. So the beta is a new mechanism.
+
+**Decisions (user, 2026-10-30):**
+- The 44 existing accounts get 3 months too, counted in the 500.
+- Connectors stay paid-only.
+- No places-left counter.
+- A payment during the free months starts after them.
+
+**What** (migration 0009, app PR jvr1980/schoolnossa-2d5310de#2, merge 942c3a3):
+- **Setting:** `app_settings.beta_trial` = `{"enabled": true, "max_users": 500, "months": 3}`. A place counts as used when `trial_claims.beta_granted_at` is set (new column). So it's one per email, and a deleted account keeps its place.
+- **Sign-up:** `grant_initial_access` gives a new email `test_ended_at = now() + 3 months` while places are left, and 48 hours otherwise. A re-signup still gets an already-ended trial. An advisory lock stops simultaneous sign-ups from passing the limit.
+- **`beta_trial_open()`:** can be called anonymously and returns only yes or no. While it's yes, the sign-up page, the home-page price card and the how-to page say "Beta: 3 Monate kostenlos testen" in place of the 48-hour copy.
+- **Paying:** `extend_paid_access` now renews from the latest of now, the paid end and a running trial's end. So a payment during the beta (or the 48 hours) keeps the free time. `PaymentModal` shows "Ihr kostenloser Zugang läuft noch … bis {date}".
+- **Texts:** the trial countdown shows days above 48 hours (`testPhase.daysLeft`). The expiry and connector texts say "kostenlose Testphase" instead of 48 hours. `nextPaidEnd` now matches Postgres month arithmetic (31 Jan + 3 months = 30 Apr).
+- **iOS:** no change needed. Access is decided on the server, and My Info already shows days above 48 hours.
+
+**Tests:** postgres:15, with copies of the live trial functions:
+- the limit, re-signup, beta switched off, paying during a beta or 48-hour trial, and a manually ended trial
+- the backfill, run twice
+- anon permissions
+- the 0007 and 0008 tests again
+
+Also vitest 106 tests, tsc and eslint pass.
+
+**Deployed** (user: "Yes, ship it"):
+- 0009 applied with the Lovable SQL tool; catalog check passed (open, 0 places used, 44 eligible).
+- Backfill: a guarded UPDATE for trials that had ended, were not manually ended and had no beta yet. It marked 44 places and extended 44 trials to 2027-01-30 18:22 UTC. No `trial_started` events fired, because an update from test to test doesn't trigger one.
+- Site published (deployment db73056c). The live bundle `index-C_6dZ0JG.js` has the beta copy. Anonymous `beta_trial_open` returns true; anonymous reads of `trial_claims` are denied.
+
+**Open:**
+- The 44 accounts don't know they have access again; telling them is the natural beta announcement.
+- iOS 1.1.2's "buy again" dialog can show its end date one day late at month ends (Dart DateTime overflow); the server's date is right. Fix it in the next iOS release.
+- To change the beta, edit `app_settings.beta_trial`. For example, `enabled: false` ends it; places are counted in `trial_claims.beta_granted_at`.
+
 ## 2026-10-30 — Payments: ask before paying again; App Store purchases stack (live; iOS 1.1.2 in review)
 
 **Why:**
