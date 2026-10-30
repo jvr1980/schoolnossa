@@ -1,6 +1,6 @@
 # SchoolNossa Development Journal
 
-## 2026-10-30 — Payments: Stripe webhook, once-per-session grant, same-tab checkout (live; Stripe endpoint pending)
+## 2026-10-30 — Payments: Stripe webhook, once-per-session grant, same-tab checkout (live, webhook active)
 
 **Why:** the user asked how people subscribe and whether the paywall comes back. Reading the flow turned up four problems:
 - A paid checkout only unlocked access if `/payment-success` loaded and called `verify-payment`. There is no Stripe webhook, so a buyer who closed the tab stayed locked out and was asked to pay again.
@@ -27,11 +27,16 @@
 - Event destination `schoolnossa-access-grant` (we_1UWH1n2RPaMGPZXTPrEc8SiT): Active, snapshot payload, API version 2026-01-28.clover (basil isn't offered; the fields used are stable), events `checkout.session.completed` + `checkout.session.async_payment_succeeded`.
 - A live destination offers no "send test event" (only Disable / Roll secret / Delete).
 
+**Secret added:**
+- The user pasted the signing secret into Lovable → More → Settings → **Secrets** → Add secret. Not "Build secrets" (`/settings/secrets`), which is a workspace feature.
+- No redeploy needed. The webhook now answers 400 "missing stripe-signature" (unsigned) and 400 "invalid signature" (fake signature).
+
 **Open:**
-- The user copies the signing secret into Lovable Cloud as `STRIPE_WEBHOOK_SECRET` (I don't handle keys).
-- Then an unsigned request should return 400 "missing stripe-signature".
-- The signature check is proven only by the first real delivery (Event deliveries tab).
-- Until then a webhook call returns 500 and the failure reporter alerts. The probes above may have sent a few alert emails.
+- The first real delivery proves a valid signature end to end; check Stripe → Workbench → Webhooks → schoolnossa-access-grant → Event deliveries, and `select * from stripe_payments`.
+- A live destination has no "send test event".
+
+**Process note:** the Lovable "Add new secret" dialog closes when the browser pane resizes or reloads; open it at the pane's own size.
+- Until the secret was added, webhook calls returned 500 and the failure reporter alerted; the probes sent a few alert emails.
 
 **Process note:** a GitHub push updates the frontend and preview, but edge functions need a Lovable deploy (ask the agent: "deploy only, do not change code").
 
