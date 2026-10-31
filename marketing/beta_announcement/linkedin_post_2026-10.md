@@ -10,11 +10,16 @@ The post doesn't mention pricing. Attach the video
 with the NotebookLM voice-over), or the QR card from `marketing/app_store_qr/`. LinkedIn shows posts with a link in the body to fewer
 people, so you can also put the link in the first comment.
 
+Wording about money: describe only what is true today. It is a side project built in free
+time, it is an early beta, and the first 500 testers get 3 months of free access. Don't call
+it "non-commercial" or "free" without that limit: SchoolNossa OÜ has paid plans on the
+website and in the App Store. Make no promises about the future either, such as "free forever".
+
 ---
 
 ## English
 
-🧪 SchoolNossa is now open as a free, experimental beta.
+🧪 SchoolNossa is now open as an experimental beta.
 
 Over the past months, some of you tried early versions of SchoolNossa, my side project that helps parents find the right school for their child. Your feedback shaped almost everything that changed since. Thank you! 🙏
 
@@ -32,9 +37,9 @@ What's new:
 
 For every school, SchoolNossa brings together 220+ details that are usually scattered across many websites: commute times from your own places, academic results, languages, safety and traffic around the school, public transport and much more.
 
-⚠️ SchoolNossa is a purely experimental project and not commercial. The data comes from open sources and from the schools' own websites. It can be incomplete or out of date, so please always check with the school.
+🧪 SchoolNossa is a side project I build in my free time, and it's still an early, experimental beta. The first 500 testers get 3 months of free access. The data comes from open sources and from the schools' own websites, so it can be incomplete or out of date. Please always check important details with the school.
 
-The first 500 testers get 3 months of free access: 👉 https://schoolnossa.com
+👉 Try it at https://schoolnossa.com
 
 I'd love your honest feedback: what's missing, what's wrong, what helps you? Comment here or send me a message. And if you know parents who are looking for a school right now, please pass this on. 💛
 
@@ -44,7 +49,7 @@ I'd love your honest feedback: what's missing, what's wrong, what helps you? Com
 
 ## Deutsch
 
-🧪 SchoolNossa ist jetzt als kostenlose, experimentelle Beta online.
+🧪 SchoolNossa ist jetzt als experimentelle Beta online.
 
 In den letzten Monaten haben einige von euch frühe Versionen von SchoolNossa ausprobiert, meinem Side Project, das Eltern hilft, die passende Schule für ihr Kind zu finden. Euer Feedback steckt in fast allem, was sich seitdem verändert hat. Danke! 🙏
 
@@ -62,9 +67,9 @@ Was neu ist:
 
 Zu jeder Schule bringt SchoolNossa über 220 Details zusammen, die sonst auf vielen Websites verstreut sind: Pendelzeiten von euren eigenen Orten, Abiturergebnisse, Sprachen, Sicherheit und Verkehr rund um die Schule, ÖPNV und vieles mehr.
 
-⚠️ SchoolNossa ist ein rein experimentelles Projekt und nicht kommerziell. Die Daten stammen aus offenen Quellen und von den Websites der Schulen. Sie können unvollständig oder veraltet sein, also bitte immer bei der Schule nachfragen.
+🧪 SchoolNossa ist ein Nebenprojekt, das ich in meiner Freizeit entwickle, und noch eine frühe, experimentelle Beta. Die ersten 500 Testerinnen und Tester bekommen 3 Monate kostenlosen Zugang. Die Daten stammen aus offenen Quellen und von den Websites der Schulen. Sie können unvollständig oder veraltet sein, also bitte wichtige Details immer bei der Schule prüfen.
 
-Die ersten 500 Testerinnen und Tester bekommen 3 Monate kostenlosen Zugang: 👉 https://schoolnossa.com
+👉 Ausprobieren: https://schoolnossa.com
 
 Ich freue mich über ehrliches Feedback: Was fehlt, was stimmt nicht, was hilft euch? Schreibt es in die Kommentare oder mir direkt. Und wenn ihr Eltern kennt, die gerade eine Schule suchen, teilt den Beitrag gern. 💛
 
@@ -83,8 +88,8 @@ paste this into the focus box:
 > features: 220+ details per school, commute times from your own places, the map, comparing
 > schools, admission information and open days, the iPhone app and the Claude and ChatGPT
 > connectors. Cover the 10 German cities and the Netherlands as an alpha. Say clearly that
-> SchoolNossa is an experimental, non-commercial beta, that the data can be incomplete, and
-> that feedback is very welcome. Do not mention prices, payments, subscriptions or trials.
+> SchoolNossa is an early, experimental beta and a side project built in free time, that the
+> data can be incomplete, and that feedback is very welcome. Do not mention prices, payments, subscriptions or trials.
 > End with the website schoolnossa.com.
 
 Made on 2026-10-30 in the notebook "SchoolNossa: The Comprehensive School Finder Platform"
@@ -92,8 +97,9 @@ Made on 2026-10-30 in the notebook "SchoolNossa: The Comprehensive School Finder
 - **"What's New in the SchoolNossa Beta"**: Short format, 1:04, vertical 9:16, paper-craft
   style with captions burned in. It covers the iPhone app, Claude and ChatGPT ("never your
   password"), admission information and open days, 10 German cities, the Netherlands,
-  "purely … non-commercial", a feedback request and schoolnossa.com. Its voice-over is laid
+  "experimental side project", a feedback request and schoolnossa.com. Its voice-over is laid
   under our own screenshot video, `video/schoolnossa_beta_9x16_narrated.mp4`, and that is the
-  one to post on LinkedIn (see `video/README.md`).
+  one to post on LinkedIn (see `video/README.md`). The word "non-commercial" is cut out of
+  that voice-over. The NotebookLM original still says it, so don't post the original.
 - **"SchoolNossa Explained"**: Explainer format, 6:56, 16:9, Classic style. It is the longer
   walkthrough, for the website or for people who want the details.

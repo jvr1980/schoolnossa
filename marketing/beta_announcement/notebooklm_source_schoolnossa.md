@@ -1,6 +1,6 @@
 # SchoolNossa: finding the right school, with all the facts in one place
 
-Status: experimental beta, October 2026. SchoolNossa is a non-commercial side project and still experimental. Feedback from testers shapes what comes next.
+Status: experimental beta, October 2026. SchoolNossa is a side project built in free time and still experimental. Feedback from testers shapes what comes next.
 
 ## The problem
 
@@ -41,6 +41,6 @@ SchoolNossa uses open data: official school registers, education statistics, pol
 
 ## Important: experimental
 
-SchoolNossa is a purely experimental project and not a commercial product. The data can be incomplete or out of date, so parents should always confirm important details, such as registration dates, directly with the school. Feedback is very welcome: what is missing, what is wrong, and what helps.
+SchoolNossa is an early, experimental beta and a side project built in free time. The data can be incomplete or out of date, so parents should always confirm important details, such as registration dates, directly with the school. Feedback is very welcome: what is missing, what is wrong, and what helps.
 
 Website: schoolnossa.com
