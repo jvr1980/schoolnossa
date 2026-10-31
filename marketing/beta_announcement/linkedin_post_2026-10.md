@@ -5,8 +5,9 @@ Numbers checked against the live database on 2026-10-30:
 - 1,177 German schools have an upcoming open day.
 - The Netherlands: 6,060 primary and 1,629 secondary schools, so 7,600+.
 
-The post doesn't mention pricing. Attach the NotebookLM video, or the QR card from
-`marketing/app_store_qr/`. LinkedIn shows posts with a link in the body to fewer
+The post doesn't mention pricing. Attach the video
+`video/schoolnossa_beta_9x16_narrated.mp4` (real app screenshots in SchoolNossa colours,
+with the NotebookLM voice-over), or the QR card from `marketing/app_store_qr/`. LinkedIn shows posts with a link in the body to fewer
 people, so you can also put the link in the first comment.
 
 ---
@@ -89,8 +90,10 @@ paste this into the focus box:
 Made on 2026-10-30 in the notebook "SchoolNossa: The Comprehensive School Finder Platform"
 (Gemini Notebook, von.roth@gmail.com). Neither video's slides mention pricing:
 - **"What's New in the SchoolNossa Beta"**: Short format, 1:04, vertical 9:16, paper-craft
-  style with captions burned in. Use this one for LinkedIn. It covers the iPhone app, Claude and
-  ChatGPT ("never your password"), admission information and open days, 10 German cities,
-  the Netherlands, "purely … non-commercial", a feedback request and schoolnossa.com.
+  style with captions burned in. It covers the iPhone app, Claude and ChatGPT ("never your
+  password"), admission information and open days, 10 German cities, the Netherlands,
+  "purely … non-commercial", a feedback request and schoolnossa.com. Its voice-over is laid
+  under our own screenshot video, `video/schoolnossa_beta_9x16_narrated.mp4`, and that is the
+  one to post on LinkedIn (see `video/README.md`).
 - **"SchoolNossa Explained"**: Explainer format, 6:56, 16:9, Classic style. It is the longer
   walkthrough, for the website or for people who want the details.
