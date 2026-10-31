@@ -1,5 +1,18 @@
 # SchoolNossa Development Journal
 
+## 2026-10-31 — Feedback from the connectors and the website (live)
+
+**Why:** the beta announcement asks for feedback, but only the web dashboard had a feedback path (3 submissions ever). The Claude/ChatGPT connectors had none, so "this school's data is wrong" in a chat never reached us. Goal: one channel, `app_feedback`, everywhere (iOS is a separate session).
+
+**What (app PR jvr1980/schoolnossa-2d5310de#5, merge f5a3502 + Lovable manifest 2e6b461):**
+- Connector 0.6.0: new `send_feedback` tool (`message` ≤ 5000, optional `topic` wrong_data/idea/problem, optional `schoolId`/`schoolCategory`). It inserts as the OAuth caller with `page_url` `mcp://claude|chatgpt|ai_assistant`, `user_agent` `SchoolNossa connector 0.6.0 (<client>)` and `tab_feedback.report` = topic + school id/category/name. It works without a subscription, allows 10 per user per 24 h (counted from the user's own rows) and is logged in `mcp_usage` (bucket other). The tool description says: only when the user explicitly asks, and show the text first. The server instructions point to `send_feedback` or /contact. Card URI v0.5.3 stays readable as legacy.
+- Web: the floating button reads "Beta feedback" / "Beta-Feedback" and now also appears on /menu. A new "Report wrong data" / "Fehler melden" link sits next to the data date in the school details: a short form prefilled with the school, same `tab_feedback.report` shape, not linked to the session record (kept for the NPS survey).
+- /contact: the Berlin-only sentence now names 10 German cities and the Netherlands. The reply time is now "within a few days" instead of 24 hours (user's choice) and the page lists the new channels.
+- `usage-report`: each of the 5 latest suggestions is labelled channel · topic · school, plus a per-channel 7-day count.
+- No DDL: RLS checked via `pg_policies` (INSERT "Anyone can submit feedback", text ≤ 5000; users read their own rows). No test writes.
+
+**Results:** 115/115 vitest (6 new connector tests, 3 component tests), `tsc` clean, `vite build` ok. `usage-report` was deployed by the Lovable agent (0.8 credits). The agent holds `mcp` back until publish, so it shipped with the publish (deployment 93f66a7c, user OK). Live bundle `index-DUsz5A_P.js` has the new button, link and contact copy. Pending: refresh the tools list in Claude/ChatGPT and see `send_feedback`. The convention for iOS rows (`ios://…` page_url) is in the side-session notes.
+
 ## 2026-10-30 — Beta launch: first 500 emails get a 3-month free trial (live)
 
 **Why:** For the beta launch to friends and family, the user wants up to 500 users to get 3 months of free access; user 501 onward gets the 48-hour trial. The old "test phase" settings (`test_phase_enabled`, `test_phase_max_users` = 200, `can_join_test_phase`) are no longer used by sign-up, which has granted access server-side since 10-25. So the beta is a new mechanism.
