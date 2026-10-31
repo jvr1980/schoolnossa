@@ -1,5 +1,28 @@
 # SchoolNossa Development Journal
 
+## 2026-10-31 — support@schoolnossa.com as the support address (live)
+
+**Why:** the user does not want user support to go to a personal address. All support contacts now use the generic `support@schoolnossa.com`. The instant feedback email shows only `page_url` and the text, so feedback rows now also name the school there.
+
+**What:**
+- **Mailbox:** `support@schoolnossa.com` was created as a Microsoft 365 alias of jose.vonroth@schoolnossa.com (GoDaddy Email & Office Dashboard → Administrator → E-Mail-Aliasnamen), next to developer@ and info@. The user confirmed a test mail arrived. schoolnossa.com MX stays on Microsoft 365. ImprovMX/forwardemail.net would need the MX and would cut off the M365 inbox, including the Apple ID developer@.
+- **App PR jvr1980/schoolnossa-2d5310de#6** (merge 8b82a25, Lovable deploy commit d15290f):
+  - Contact, Connectors and About show support@.
+  - Privacy and Terms keep info@ as the legal contact.
+  - Connector 0.6.1: the `send_feedback` description, its replies and the server instructions point to support@ and https://schoolnossa.com/contact.
+  - Card URI v0.6.0 kept as legacy.
+- **page_url convention** (same shape on every channel):
+  - connectors: `mcp://<client>/school/<id>?cat=…&topic=…`
+  - web report: `https://schoolnossa.com/school/<id>?cat=…&topic=wrong_data`
+  - iOS: `ios://school/<id>?cat=…`
+  - `usage-report` takes the client from the first segment after `mcp://`.
+
+**Results:**
+- 68/68 vitest on merged main (connector and feedback suites).
+- `usage-report` was deployed by the Lovable agent (0.7 credits). It is byte-identical to 8b82a25. Its live probe returned `not_report_hour`, so no email was sent.
+- The site was published (deployment 96d0dd9f), which also ships mcp 0.6.1. The live bundle `index-2GYL0Ntk.js` has support@ 8×. info@ remains only on Privacy and Terms.
+- Not yet seen in a client: send_feedback and 0.6.1. This needs "Refresh tools" in Claude/ChatGPT.
+
 ## 2026-10-31 — Feedback from the connectors and the website (live)
 
 **Why:** the beta announcement asks for feedback, but only the web dashboard had a feedback path (3 submissions ever). The Claude/ChatGPT connectors had none, so "this school's data is wrong" in a chat never reached us. Goal: one channel, `app_feedback`, everywhere (iOS is a separate session).
