@@ -1,5 +1,28 @@
 # SchoolNossa Development Journal
 
+## 2026-11-07 — GTM build, part 1: public open-day pages, campaign codes, content generator
+
+**Why:** the user said yes to the GTM plan (`docs/GTM_PLAN_2026-11.md`): the €100/month cap, public open-day pages, and reviewing the first 6 sample posts once. Paid clicks need a landing page with real data (the May campaign sent everyone to the homepage), and every new account must show which ad or post brought it.
+
+**What:**
+- **Database (applied, migration `0011_public_open_days_and_campaign_codes.sql` in the app repo):**
+  - `public_open_days(city, category, days)`: a definer RPC, the only school data visible without an account. It returns name, type, district, date, time, event type and website of upcoming open days. Included: Tag der offenen Tür, Infoabend, Schnuppertag, Kennlernnachmittag, and "Sonstiges" when the audience is clearly Year 4/5 families or school starters (shown as "Veranstaltung"). Excluded: events for already admitted children, evening and vocational schools. The school tables stay RLS-locked.
+  - `campaign_visits` + `log_campaign_visit`, `signup_sources` + `record_signup_source` (only accounts younger than 24 h), `growth_campaign_counts(token, since)` guarded by a SHA-256 token in `growth_api_keys` (no policies). Tables are admin-read only.
+- **App PR jvr1980/schoolnossa-2d5310de#7** (not merged, not published):
+  - `/schulen/:city/tage-der-offenen-tuer` (10 cities, `?typ=grundschule`): open days for the next 6 weeks by date, district filter, the official registration window with its source, the beta offer.
+  - `/schulen`: the city list for the Instagram bio link.
+  - `?c=` campaign codes live only in the URL. They are counted on landing and saved once with a new account (email and Google sign-up). Nothing is stored on the device, no pixel. Privacy section 5 explains this (DE + EN).
+  - `?lang=de|en` sets the first-visit language; `/schulen` pages default to German (new visitors otherwise get English).
+  - Sitemap entries for the 11 pages.
+- **Growth repo** `schoolnossa-growth` (local; GitHub repo creation is waiting for the user's OK):
+  - `growth/generate.py` builds posts from `config/plan.json`. Templates: open days of the week (carousel), city explainer, deadline card, intro.
+  - `growth/slides.py` + `growth/render.js` render the slides (1080×1350 JPEG, deck look, overflow check).
+  - `growth/factcheck.py` re-reads the data and blocks a post when a shown open day disappeared, a count changed, a rule changed, any written date or time is not backed by the data, or the wording breaks a rule (unit tests: 5).
+  - Meta publisher and ad rules: written by a helper agent; under review.
+- **First 6 posts** (drafts, 16–27 Nov): `marketing/gtm_2026-11/samples/` (slides + `CAPTIONS.md`). Your setup steps: `marketing/gtm_2026-11/SETUP_STEPS.md`.
+
+**Results:** Hamburg secondary shows 148 dates in 6 weeks, Berlin 90. Every planned post passes the fact check. The test visit row written during the browser check was deleted.
+
 ## 2026-10-31 — support@schoolnossa.com as the support address (live)
 
 **Why:** the user does not want user support to go to a personal address. All support contacts now use the generic `support@schoolnossa.com`. The instant feedback email shows only `page_url` and the text, so feedback rows now also name the school there.
