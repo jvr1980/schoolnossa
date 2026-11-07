@@ -95,34 +95,45 @@ Parents search YouTube for "Anmeldung Gymnasium Berlin 2027", "Übergang 4 nach 
 - **1 longer video per city** (2–3 min): "Schulwahl {Stadt} 2027: Termine, Regeln, Tage der offenen Tür", landscape, captions, chapters, link in the description.
 - Search-style titles and descriptions; link to the city page with `?c=yt-<city>`.
 
-## 7. What has to exist before the first ad
+## 7. What has to exist before the first ad (all built by me)
 
-| # | Piece | Who | Effort |
+| # | Piece | How | Effort |
 |---|---|---|---|
-| 1 | **Public city pages** `/schulen/<city>/tage-der-offenen-tuer` (+ NL page): open days for the next 4–6 weeks (school name, date, link to the school's site), the official deadline and the beta offer. Needs a definer RPC that returns only these public fields (school tables stay RLS-locked). | me, via Lovable | ~20–30 credits |
-| 2 | **Campaign capture**: the `c` URL parameter goes into the sign-up link and is saved with the new account. No cookies, no pixel, no consent banner needed. | me | small |
-| 3 | `scripts_marketing/`: content generator (DB → slides/videos), Meta Graph poster (IG + FB), Meta Marketing API flights + rules, YouTube uploader, weekly metrics report | me | 2–3 days |
-| 4 | Scheduling: GitHub Actions cron for posting and rules (works when the Mac is off) + a weekly Claude task for the report and next week's content | me | small |
+| 1 | **Public city pages** `/schulen/<city>/tage-der-offenen-tuer` (+ NL page): open days for the next 4–6 weeks (school name, date, link to the school's site), the official deadline and the beta offer. A definer RPC returns only these public fields; the school tables stay RLS-locked. | SQL tool + Lovable (sent via Chrome), I click Publish | ~20–30 credits |
+| 2 | **Campaign capture**: the `c` URL parameter goes into the sign-up link (also through Google/Apple sign-in) and is saved with the new account. No cookies, no pixel, no consent banner. | Lovable | small |
+| 3 | **Growth repo** `schoolnossa-growth` (private): templates, generator, publisher, ad rules, reports | me | 2–3 days |
+| 4 | **Marketing lines in the existing 08:00 daily email**: new accounts by source, ad spend this month | Lovable (usage-report function) | small |
 
-## 8. One-time set-up only you can do (~45 min)
+## 8. Hands-off design: who does what
 
-I can't create accounts or handle passwords, so these steps are yours:
-1. **Instagram:** create **@schoolnossa** as a Professional (Business) account and link it to the **SchoolNossa** Facebook Page. (In May the ads ran under the personal account jvr.1980.)
-2. **Meta Business:** create a Meta developer app (Business type) and a **System User** with access to the Page, the Instagram account and the ad account. Generate a non-expiring token with `ads_management`, `ads_read`, `pages_manage_posts`, `pages_read_engagement`, `instagram_basic`, `instagram_content_publish`, and put it in the git-ignored `secrets/meta.env`. For our own accounts the app can stay in development mode (no App Review).
-3. **YouTube:** create the **SchoolNossa** channel (brand account) and a Google Cloud OAuth client. Approve the OAuth once. Request the free **YouTube API audit**: until it passes, API uploads are private only, so for the first weeks I upload through Chrome.
-4. Check that the ad account's payment method and VAT details are SchoolNossa OÜ.
+**I cannot create accounts, type passwords or generate keys for you.** Everything else is mine.
+
+**Your one-time part (~20 minutes, once):**
+1. Create **@schoolnossa** on Instagram as a Professional account and link it to the SchoolNossa Facebook Page (5 min, phone).
+2. Create the **SchoolNossa** YouTube channel in your Google account (2 min).
+3. Meta: I set up the developer app, the System User and its access in Chrome (with your go-ahead). You press **Generate token** and paste it into `secrets/meta.env` (3 min).
+4. Say yes to: the €100/month cap, public open-day pages, and the first 6 sample posts (10 min, one message).
+
+**Ongoing: nothing required.**
+- Daily: two marketing lines in the 08:00 email you already get.
+- Weekly: a one-page report (link). You only hear from me when a decision is yours: a budget change, Meta rejecting an ad twice, a comment that needs a human, or the 31 December checkpoint.
+- Optional: say "stop" or "pause" in any Claude chat. Ads stop within minutes, and posting stops.
 
 ## 9. How the automation runs
 
-```
-Mon 07:00  weekly Claude task: pulls Meta/IG/YouTube stats + new accounts by campaign code
-           → report in marketing/reports/YYYY-WW.md → applies the budget rules
-           → generates next week's posts into marketing/queue/YYYY-WW/
-Daily      GitHub Action: publishes the queue items due today, runs the ad rules
-48 h       every queued item is visible in the queue before it publishes
-```
+Three parts, so that no single failure stops everything:
 
-**Approval model:** you approve the templates, the guardrails and the monthly split once. After that, posts from approved templates publish without asking. **Weeks 1–4: review-ahead.** Each item sits in the queue for 48 h and you can delete it to veto. From week 5: fully automatic, if you're happy. I ask you again only for a new template type, a new country, or a budget change.
+| Part | Runs where | Does what |
+|---|---|---|
+| **Weekly brain** | Claude scheduled task on your Mac, Mondays 07:00 (catches up when the Mac wakes) | Pulls stats and new accounts by code. Picks the cities from the deadline calendar. Writes 2 weeks of posts from the data. **A fact check**: every date and number in a caption must match a database row, or the post is dropped. Renders images and videos (Playwright + ffmpeg; voice from Gemini TTS). Pushes the queue. Sets up next week's ad flights by API. Uploads the YouTube video through YouTube Studio in Chrome. Writes the report. |
+| **Daily hands** | GitHub Actions in `schoolnossa-growth`, 07:30 Berlin; runs with the Mac off | Publishes the posts due today to Instagram and the Facebook Page (Graph API). Pulls ad stats. Applies the pause rules. Errors go to the existing `client-errors` → failure email. |
+| **Safety net** | Meta itself | The campaign spending limit (€100) per month. A token with **no messaging, comment-reply or group permissions**: the system technically cannot DM, comment or post in groups. |
+
+**Why posts are queued 2 weeks ahead:** if the Mac is off for a week, nothing visible stops. Only the YouTube upload waits.
+
+**YouTube detail:** videos uploaded by a new, unaudited API project are locked as private ([Google docs](https://developers.google.com/youtube/v3/docs/videos/insert)). So I upload through YouTube Studio in Chrome (the file-upload tool now works there). I request the API audit in parallel, and switch once it passes.
+
+**Instagram detail:** the API fetches each image from a public URL (JPEG). The rendered images go to a small public repo `schoolnossa-media`; they are public posts anyway. Publishing limit: 50+ per day; we use 3 per week.
 
 ## 10. KPIs (in the weekly report)
 
@@ -132,10 +143,21 @@ Daily      GitHub Action: publishes the queue items due today, runs the ad rules
 - First paid conversions (€9.99 / 3 months) by source
 - Anti-spam check: 7-day ad frequency ≤ 2.5, posts per week ≤ 3, hides/negative feedback
 
-**Review after 6 weeks (end of December):** keep, change or stop. If the cost per account is above €10 after €150 spend, the money moves to YouTube Shorts promotion or stops.
+**Checkpoint, 31 December (automatic default):** if the cost per account is above €10 after €150 spend, **ads stop by themselves** and the posts continue. You get one message and can overrule it.
 
-## 11. Decisions needed
+## 11. Risks and what happens
+
+| Risk | What happens |
+|---|---|
+| Mac off on Monday | The queue covers 2 weeks; the ad rules run in the cloud. Only the YouTube upload waits. |
+| Meta rejects an ad | The next variant goes in automatically. After 2 rejections you get one message. |
+| Token stops working (e.g. password change) | Failure email the same morning; ads keep their caps. You generate a new token (3 min). |
+| A wrong date or number in a post | The fact check blocks it before the queue. Corrections: I delete the post and post a correction. |
+| Low organic reach at first (0 followers) | Expected. Paid reach + YouTube search carry the first months. |
+| Meta's look-alike or detailed targeting changes | The creative carries the targeting ("Familien in Hamburg, Anmeldewoche 1.–5. Februar"). |
+
+## 12. Decisions needed
 
 1. **Public open-day pages:** OK to show a few weeks of open days per city without an account? This is a small exception to the "school data needs an account" rule. It is the landing page and the SEO page. (Recommended: yes.)
-2. **Approval mode:** review-ahead for the first 4 weeks, then automatic? (Recommended: yes.)
-3. **Budget split** in section 4: OK, or different cities first?
+2. **€100/month cap** with the monthly split in section 4: OK?
+3. **The first 6 sample posts:** you look once; after that, posts from the same templates go out without asking.
