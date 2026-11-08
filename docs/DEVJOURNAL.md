@@ -1,5 +1,31 @@
 # SchoolNossa Development Journal
 
+## 2026-11-08 — GTM build, part 2: Meta access, open-day pages live, first date check
+
+**What**
+- **Meta:**
+  - developer app "SchoolNossa Growth" (1214248814891797);
+  - system user `schoolnossa-growth` with Page Content/Ads/Insights, ad account Manage campaigns (no billing), app Develop;
+  - never-expiring token (9 permissions) in `schoolnossa-growth/secrets/meta.env` and as GitHub secrets.
+- **Publisher guards:**
+  - Instagram only to @schoolnossa (the Page is still linked to a personal profile);
+  - Facebook posts no longer wait for the Instagram ID.
+- **First manual daily run:** green.
+- **Posts:** the user approved the 6 November posts; the templates intro, opendays_week and explainer are approved.
+- **App PR jvr1980/schoolnossa-2d5310de#7:**
+  - merged (df34fac) and published in Lovable;
+  - `/schulen/:city/tage-der-offenen-tuer` is live;
+  - visits with `?c=` are logged.
+- **Date check:** all 99 open days in the 6 posts were re-checked against the schools' own pages (`schoolnossa-growth/tools/verify_post_dates.py`):
+  - 91 confirmed automatically, 8 checked by hand;
+  - 4 wrong or unconfirmed: CvO MINT-Tag fully booked; Allermöhe and Sander Straße not on the pages any more; Turmweg info evening moved 1.12. → 30.11.;
+  - 1 time changed (GTS Elbe 14:30 → 15:00);
+  - 2 times not on the page (Dahme, Sethweg).
+
+**Why:** a hands-off posting loop needs its own Meta identity, and it must never post a wrong date. The October crawl is five weeks old and schools change their pages.
+
+**Results:** the pipeline runs end to end. Findings are in `schoolnossa-growth/reports/2026-11-08-date-check.md`. The data corrections and post regeneration are pending the user's OK.
+
 ## 2026-11-07 — GTM build, part 1: public open-day pages, campaign codes, content generator
 
 **Why:** the user said yes to the GTM plan (`docs/GTM_PLAN_2026-11.md`): the €100/month cap, public open-day pages, and reviewing the first 6 sample posts once. Paid clicks need a landing page with real data (the May campaign sent everyone to the homepage), and every new account must show which ad or post brought it.
