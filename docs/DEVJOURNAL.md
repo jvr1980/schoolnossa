@@ -24,7 +24,17 @@
 
 **Why:** a hands-off posting loop needs its own Meta identity, and it must never post a wrong date. The October crawl is five weeks old and schools change their pages.
 
-**Results:** the pipeline runs end to end. Findings are in `schoolnossa-growth/reports/2026-11-08-date-check.md`. The data corrections and post regeneration are pending the user's OK.
+**Results:** the pipeline runs end to end. Findings are in `schoolnossa-growth/reports/2026-11-08-date-check.md`.
+
+**Follow-up the same day (the user said: fix it for all schools in the post cities):**
+- **Source links:** every upcoming open day now carries `source_url` (2,020 events backfilled from the Oct refresh/top-up JSONL; 1,075 rows). `upload_admission_refresh.py` keeps `source_url` from now on. App migration 0012 makes `public_open_days` return it and skip elements flagged `unverified`.
+- **City audit:** Berlin + Hamburg, 583 upcoming dates (`schoolnossa-growth/growth/sourcecheck.py city`):
+  - 542 confirmed automatically, 41 read by hand;
+  - 11 corrected, 5 removed (4 placeholder dates of 1 Jan 2027, 1 vague), 22 flagged `unverified` (hidden on the site and in posts, kept in the DB), 5 confirmed as stored;
+  - backups in `_open_days_backup_20261108` and `_open_days_backup_20261108_src`; report in `schoolnossa-growth/reports/2026-11-08-city-audit.md`.
+- **Posts rebuilt:** all 97 dates in the 3 open-day posts are confirmed on the school pages. Captions now name the iPhone app (schoolnossa.com/app).
+- **Daily job:** a source-check guard blocks a post whose dates have left the school pages. A Mac daily rebuild task is proposed in `docs/DAILY_TASK.md`; creating it was blocked pending the user's OK.
+- **App PR jvr1980/schoolnossa-2d5310de#8** (App Store badge on the /schulen pages, unverified dates hidden on school pages): open; merging was blocked pending the user's OK. The iOS app still shows unverified dates until it filters them too.
 
 ## 2026-11-07 — GTM build, part 1: public open-day pages, campaign codes, content generator
 
