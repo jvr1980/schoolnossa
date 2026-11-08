@@ -1,5 +1,22 @@
 # SchoolNossa Development Journal
 
+## 2026-11-08 — GTM build, part 3: PR #8 live, daily date check, ad creatives, iOS 1.1.4 (32)
+
+**What**
+- **Web:** PR jvr1980/schoolnossa-2d5310de#8 merged (458baa4) and published in Lovable. The App Store badge is on `/schulen` and the city open-day pages; school pages hide open days flagged `unverified`.
+- **Daily date check:** Mac scheduled task `schoolnossa-daily-open-day-check` (05:15, Auto mode). It re-checks the posts due within 3 days against the school pages, rebuilds them, and corrects or flags the database with a backup row. Prompt: `schoolnossa-growth/docs/DAILY_TASK.md`.
+- **Ads:** `schoolnossa-growth/tools/make_ads.py` renders the November Berlin and Hamburg creatives (1080x1350) and writes the texts into `config/ads.json`.
+  - They link to the public open-day pages and name no school or date. Their only fact is the registration window from the published admission rules (Berlin Klasse 7: 3–11 March 2027; Hamburg Klasse 5: 1–5 February 2027).
+  - `ads sync` now refuses creatives without `approved_on`. Waiting for the user's OK.
+- **iOS:** 1.1.4 (32) on TestFlight, internal testers only (build a271dc42, VALID). `visibleOpenDays()` in `lib/data/school.dart` drops elements flagged unverified; 140/140 tests pass. Branch `feature/hide-unverified-open-days` (f841b53), based on the top-up branch (1.1.3, 31). Not submitted for review; in-app feedback is not included.
+
+**Why**
+The user wanted dates that are actually true everywhere (web, iPhone, posts), and ads that cannot spend money before they approve them.
+
+**Results**
+- @schoolnossa / .de / _de do not exist publicly on Instagram, and the Page is still linked to the personal @jvr.1980.
+- Open: ad approval, the Instagram account, and an App Store release of 1.1.4.
+
 ## 2026-11-08 — GTM build, part 2: Meta access, open-day pages live, first date check
 
 **What**
