@@ -31,3 +31,8 @@ I set up the developer app and a "system user" in Meta Business Settings in Chro
 ## 4. Check the ad account (~3 min)
 
 In Meta Ads Manager → Billing: a payment method is on file, and the account currency is EUR. I set the monthly spending limits myself.
+
+## 5. Switch the Meta app to Live (~2 min, needs your OK)
+
+developers.facebook.com → **SchoolNossa Growth** → **App settings → Basic**: privacy policy URL `https://schoolnossa.com/privacy`, category **Education**. Then **Publish** (Development → Live).
+Without this, Meta refuses every ad creative (error subcode 1885183, "app is in development mode"), even with a valid token. Posting and reads work in Development mode, so this only shows at the first ad sync.
