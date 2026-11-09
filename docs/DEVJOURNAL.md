@@ -1,5 +1,24 @@
 # SchoolNossa Development Journal
 
+## 2026-11-09 — KI-Suche crash on production: one-line fix plus hardening (both live)
+
+**What**
+- **The bug.** `[SchoolNossa] 🔴 PERMANENT · web · code_bug` twice on 2026-11-08 (14:58 and 21:32 Berlin), 1 distinct user, Firefox 158/macOS, on `https://schoolnossa.com/dashboard`: `TypeError: can't access property "trim", H is undefined`, stage `unhandledrejection`.
+- **Cause**, in `src/components/ki-search/KISearchTab.tsx`, `handleOptimize`: the local is defined already trimmed and possibly undefined (`const semanticQuery = semanticConfig?.semanticQuery?.trim()`), then trimmed a second time in the analytics payload (`hasSemanticQuery: semanticQuery.trim().length > 0`). It threw on every run of the AI-search wizard **without** a configured `semantic_relevance` criterion — the ordinary path. Confirmed against the deployed bundle: `hasSemanticQuery:H.trim().length>0` at the exact offset in the reported stack.
+- **Why it cost more than a logged error.** `handleOptimize` is `async`, so the throw became an unhandled rejection and aborted everything after that line: `onResultsChange?.(ranked, weights)` never ran (results lost on tab switch) and the commute-time block never ran (the spinner on the results view never resolved).
+- **Fix** (Lovable commit `64d46de`): `hasSemanticQuery: (semanticQuery?.length ?? 0) > 0` — the value is already trimmed, so the second `.trim()` was redundant as well as unsafe.
+- **Hardening** (Lovable commit `63ba970`): the tail of `handleOptimize` is now results → **persist** → analytics in `try/catch` → commute times. A tracking failure reports via `console.error` + `reportClientError(err, { handled: true, stage: "track-semantic-search" })` instead of aborting the function.
+- Both published to production (deployments `69c7c1f3`, `0e0f5c69`). 119 tests, typecheck and build pass on each. 4.3 Lovable credits.
+
+**Why**
+The error mail looked like noise but was costing two real features on the `dashboard/ki` tab silently — which fits that tab showing only 0.9 min of use in 7 days. The one-line fix removed the throw; the reordering removed the arrangement that let any trivial analytics bug cost results and commute times.
+
+**Results**
+- Verified in the shipped bundle, not from deploy status: production serves `index-C5p7gjdW.js` → `KISearchTab-CPHTKttf.js` containing `u==null||u(me,G);try{C("semantic_search",…)}catch(I){…stage:"track-semantic-search"}`; `.trim().length>0` is gone (0 occurrences); the earlier chunks `KISearchTab-DxFQu80l.js` and `-CWPizDZL.js` both return HTTP 404, so no cached path serves the broken code.
+- The hardening was regression-checked by deliberately re-inserting the old crashing expression: it was caught and reported, no unhandled rejection, and results persistence *and* commute times both survived.
+- **Open:** commit `64d46de` also carried a regenerated `src/integrations/supabase/types.ts` (drift from the GTM database work: `campaign_visits`, `growth_api_keys`, `signup_sources`, `growth_campaign_counts`, `valid_campaign_code`, the `_open_days_backup_20261108` tables). In it `public_open_days` return fields `district`, `start_time`, `end_time`, `school_type`, `source_url`, `website` went from `string | null` to `string`. Compile-time only, but worth confirming those columns really are non-null.
+- Also on 2026-11-08, the five `pipeline/ads_sync` failures in the same daily report were the November ads chain, now resolved: campaign `SN 2026-11` and both flights ACTIVE, 0.00 EUR spent, delivery gated to 2026-11-18.
+
 ## 2026-11-08 — GTM build, part 3: PR #8 live, daily date check, ad creatives, iOS 1.1.4 (32)
 
 **What**
