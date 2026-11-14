@@ -1,5 +1,202 @@
 # SchoolNossa Development Journal
 
+## 2026-11-09 — KI-Suche crash on production: one-line fix plus hardening (both live)
+
+**What**
+- **The bug.** `[SchoolNossa] 🔴 PERMANENT · web · code_bug` twice on 2026-11-08 (14:58 and 21:32 Berlin), 1 distinct user, Firefox 158/macOS, on `https://schoolnossa.com/dashboard`: `TypeError: can't access property "trim", H is undefined`, stage `unhandledrejection`.
+- **Cause**, in `src/components/ki-search/KISearchTab.tsx`, `handleOptimize`: the local is defined already trimmed and possibly undefined (`const semanticQuery = semanticConfig?.semanticQuery?.trim()`), then trimmed a second time in the analytics payload (`hasSemanticQuery: semanticQuery.trim().length > 0`). It threw on every run of the AI-search wizard **without** a configured `semantic_relevance` criterion — the ordinary path. Confirmed against the deployed bundle: `hasSemanticQuery:H.trim().length>0` at the exact offset in the reported stack.
+- **Why it cost more than a logged error.** `handleOptimize` is `async`, so the throw became an unhandled rejection and aborted everything after that line: `onResultsChange?.(ranked, weights)` never ran (results lost on tab switch) and the commute-time block never ran (the spinner on the results view never resolved).
+- **Fix** (Lovable commit `64d46de`): `hasSemanticQuery: (semanticQuery?.length ?? 0) > 0` — the value is already trimmed, so the second `.trim()` was redundant as well as unsafe.
+- **Hardening** (Lovable commit `63ba970`): the tail of `handleOptimize` is now results → **persist** → analytics in `try/catch` → commute times. A tracking failure reports via `console.error` + `reportClientError(err, { handled: true, stage: "track-semantic-search" })` instead of aborting the function.
+- Both published to production (deployments `69c7c1f3`, `0e0f5c69`). 119 tests, typecheck and build pass on each. 4.3 Lovable credits.
+
+**Why**
+The error mail looked like noise but was costing two real features on the `dashboard/ki` tab silently — which fits that tab showing only 0.9 min of use in 7 days. The one-line fix removed the throw; the reordering removed the arrangement that let any trivial analytics bug cost results and commute times.
+
+**Results**
+- Verified in the shipped bundle, not from deploy status: production serves `index-C5p7gjdW.js` → `KISearchTab-CPHTKttf.js` containing `u==null||u(me,G);try{C("semantic_search",…)}catch(I){…stage:"track-semantic-search"}`; `.trim().length>0` is gone (0 occurrences); the earlier chunks `KISearchTab-DxFQu80l.js` and `-CWPizDZL.js` both return HTTP 404, so no cached path serves the broken code.
+- The hardening was regression-checked by deliberately re-inserting the old crashing expression: it was caught and reported, no unhandled rejection, and results persistence *and* commute times both survived.
+- **Open:** commit `64d46de` also carried a regenerated `src/integrations/supabase/types.ts` (drift from the GTM database work: `campaign_visits`, `growth_api_keys`, `signup_sources`, `growth_campaign_counts`, `valid_campaign_code`, the `_open_days_backup_20261108` tables). In it `public_open_days` return fields `district`, `start_time`, `end_time`, `school_type`, `source_url`, `website` went from `string | null` to `string`. Compile-time only, but worth confirming those columns really are non-null.
+- Also on 2026-11-08, the five `pipeline/ads_sync` failures in the same daily report were the November ads chain, now resolved: campaign `SN 2026-11` and both flights ACTIVE, 0.00 EUR spent, delivery gated to 2026-11-18.
+
+## 2026-11-08 — GTM build, part 3: PR #8 live, daily date check, ad creatives, iOS 1.1.4 (32)
+
+**What**
+- **Web:** PR jvr1980/schoolnossa-2d5310de#8 merged (458baa4) and published in Lovable. The App Store badge is on `/schulen` and the city open-day pages; school pages hide open days flagged `unverified`.
+- **Daily date check:** Mac scheduled task `schoolnossa-daily-open-day-check` (05:15, Auto mode). It re-checks the posts due within 3 days against the school pages, rebuilds them, and corrects or flags the database with a backup row. Prompt: `schoolnossa-growth/docs/DAILY_TASK.md`.
+- **Ads:** `schoolnossa-growth/tools/make_ads.py` renders the November Berlin and Hamburg creatives (1080x1350) and writes the texts into `config/ads.json`.
+  - They link to the public open-day pages and name no school or date. Their only fact is the registration window from the published admission rules (Berlin Klasse 7: 3–11 March 2027; Hamburg Klasse 5: 1–5 February 2027).
+  - `ads sync` now refuses creatives without `approved_on`. Waiting for the user's OK.
+- **iOS:** 1.1.4 (32) on TestFlight, internal testers only (build a271dc42, VALID). `visibleOpenDays()` in `lib/data/school.dart` drops elements flagged unverified; 140/140 tests pass. Branch `feature/hide-unverified-open-days` (f841b53), based on the top-up branch (1.1.3, 31). Not submitted for review; in-app feedback is not included.
+
+**Why**
+The user wanted dates that are actually true everywhere (web, iPhone, posts), and ads that cannot spend money before they approve them.
+
+**Results**
+- @schoolnossa / .de / _de do not exist publicly on Instagram, and the Page is still linked to the personal @jvr.1980.
+- Open: ad approval, the Instagram account, and an App Store release of 1.1.4.
+
+## 2026-11-08 — GTM build, part 2: Meta access, open-day pages live, first date check
+
+**What**
+- **Meta:**
+  - developer app "SchoolNossa Growth" (1214248814891797);
+  - system user `schoolnossa-growth` with Page Content/Ads/Insights, ad account Manage campaigns (no billing), app Develop;
+  - never-expiring token (9 permissions) in `schoolnossa-growth/secrets/meta.env` and as GitHub secrets.
+- **Publisher guards:**
+  - Instagram only to @schoolnossa (the Page is still linked to a personal profile);
+  - Facebook posts no longer wait for the Instagram ID.
+- **First manual daily run:** green.
+- **Posts:** the user approved the 6 November posts; the templates intro, opendays_week and explainer are approved.
+- **App PR jvr1980/schoolnossa-2d5310de#7:**
+  - merged (df34fac) and published in Lovable;
+  - `/schulen/:city/tage-der-offenen-tuer` is live;
+  - visits with `?c=` are logged.
+- **Date check:** all 99 open days in the 6 posts were re-checked against the schools' own pages (`schoolnossa-growth/tools/verify_post_dates.py`):
+  - 91 confirmed automatically, 8 checked by hand;
+  - 4 wrong or unconfirmed: CvO MINT-Tag fully booked; Allermöhe and Sander Straße not on the pages any more; Turmweg info evening moved 1.12. → 30.11.;
+  - 1 time changed (GTS Elbe 14:30 → 15:00);
+  - 2 times not on the page (Dahme, Sethweg).
+
+**Why:** a hands-off posting loop needs its own Meta identity, and it must never post a wrong date. The October crawl is five weeks old and schools change their pages.
+
+**Results:** the pipeline runs end to end. Findings are in `schoolnossa-growth/reports/2026-11-08-date-check.md`.
+
+**Follow-up the same day (the user said: fix it for all schools in the post cities):**
+- **Source links:** every upcoming open day now carries `source_url` (2,020 events backfilled from the Oct refresh/top-up JSONL; 1,075 rows). `upload_admission_refresh.py` keeps `source_url` from now on. App migration 0012 makes `public_open_days` return it and skip elements flagged `unverified`.
+- **City audit:** Berlin + Hamburg, 583 upcoming dates (`schoolnossa-growth/growth/sourcecheck.py city`):
+  - 542 confirmed automatically, 41 read by hand;
+  - 11 corrected, 5 removed (4 placeholder dates of 1 Jan 2027, 1 vague), 22 flagged `unverified` (hidden on the site and in posts, kept in the DB), 5 confirmed as stored;
+  - backups in `_open_days_backup_20261108` and `_open_days_backup_20261108_src`; report in `schoolnossa-growth/reports/2026-11-08-city-audit.md`.
+- **Posts rebuilt:** all 97 dates in the 3 open-day posts are confirmed on the school pages. Captions now name the iPhone app (schoolnossa.com/app).
+- **Daily job:** a source-check guard blocks a post whose dates have left the school pages. A Mac daily rebuild task is proposed in `docs/DAILY_TASK.md`; creating it was blocked pending the user's OK.
+- **App PR jvr1980/schoolnossa-2d5310de#8** (App Store badge on the /schulen pages, unverified dates hidden on school pages): open; merging was blocked pending the user's OK. The iOS app still shows unverified dates until it filters them too.
+
+## 2026-11-07 — GTM build, part 1: public open-day pages, campaign codes, content generator
+
+**Why:** the user said yes to the GTM plan (`docs/GTM_PLAN_2026-11.md`): the €100/month cap, public open-day pages, and reviewing the first 6 sample posts once. Paid clicks need a landing page with real data (the May campaign sent everyone to the homepage), and every new account must show which ad or post brought it.
+
+**What:**
+- **Database (applied, migration `0011_public_open_days_and_campaign_codes.sql` in the app repo):**
+  - `public_open_days(city, category, days)`: a definer RPC, the only school data visible without an account. It returns name, type, district, date, time, event type and website of upcoming open days. Included: Tag der offenen Tür, Infoabend, Schnuppertag, Kennlernnachmittag, and "Sonstiges" when the audience is clearly Year 4/5 families or school starters (shown as "Veranstaltung"). Excluded: events for already admitted children, evening and vocational schools. The school tables stay RLS-locked.
+  - `campaign_visits` + `log_campaign_visit`, `signup_sources` + `record_signup_source` (only accounts younger than 24 h), `growth_campaign_counts(token, since)` guarded by a SHA-256 token in `growth_api_keys` (no policies). Tables are admin-read only.
+- **App PR jvr1980/schoolnossa-2d5310de#7** (not merged, not published):
+  - `/schulen/:city/tage-der-offenen-tuer` (10 cities, `?typ=grundschule`): open days for the next 6 weeks by date, district filter, the official registration window with its source, the beta offer.
+  - `/schulen`: the city list for the Instagram bio link.
+  - `?c=` campaign codes live only in the URL. They are counted on landing and saved once with a new account (email and Google sign-up). Nothing is stored on the device, no pixel. Privacy section 5 explains this (DE + EN).
+  - `?lang=de|en` sets the first-visit language; `/schulen` pages default to German (new visitors otherwise get English).
+  - Sitemap entries for the 11 pages.
+- **Growth repo** `schoolnossa-growth` (local; GitHub repo creation is waiting for the user's OK):
+  - `growth/generate.py` builds posts from `config/plan.json`. Templates: open days of the week (carousel), city explainer, deadline card, intro.
+  - `growth/slides.py` + `growth/render.js` render the slides (1080×1350 JPEG, deck look, overflow check).
+  - `growth/factcheck.py` re-reads the data and blocks a post when a shown open day disappeared, a count changed, a rule changed, any written date or time is not backed by the data, or the wording breaks a rule (unit tests: 5).
+  - Meta publisher and ad rules: written by a helper agent; under review.
+- **First 6 posts** (drafts, 16–27 Nov): `marketing/gtm_2026-11/samples/` (slides + `CAPTIONS.md`). Your setup steps: `marketing/gtm_2026-11/SETUP_STEPS.md`.
+
+**Results:** Hamburg secondary shows 148 dates in 6 weeks, Berlin 90. Every planned post passes the fact check. The test visit row written during the browser check was deleted.
+
+## 2026-10-31 — support@schoolnossa.com as the support address (live)
+
+**Why:** the user does not want user support to go to a personal address. All support contacts now use the generic `support@schoolnossa.com`. The instant feedback email shows only `page_url` and the text, so feedback rows now also name the school there.
+
+**What:**
+- **Mailbox:** `support@schoolnossa.com` was created as a Microsoft 365 alias of jose.vonroth@schoolnossa.com (GoDaddy Email & Office Dashboard → Administrator → E-Mail-Aliasnamen), next to developer@ and info@. The user confirmed a test mail arrived. schoolnossa.com MX stays on Microsoft 365. ImprovMX/forwardemail.net would need the MX and would cut off the M365 inbox, including the Apple ID developer@.
+- **App PR jvr1980/schoolnossa-2d5310de#6** (merge 8b82a25, Lovable deploy commit d15290f):
+  - Contact, Connectors and About show support@.
+  - Privacy and Terms keep info@ as the legal contact.
+  - Connector 0.6.1: the `send_feedback` description, its replies and the server instructions point to support@ and https://schoolnossa.com/contact.
+  - Card URI v0.6.0 kept as legacy.
+- **page_url convention** (same shape on every channel):
+  - connectors: `mcp://<client>/school/<id>?cat=…&topic=…`
+  - web report: `https://schoolnossa.com/school/<id>?cat=…&topic=wrong_data`
+  - iOS: `ios://school/<id>?cat=…`
+  - `usage-report` takes the client from the first segment after `mcp://`.
+
+**Results:**
+- 68/68 vitest on merged main (connector and feedback suites).
+- `usage-report` was deployed by the Lovable agent (0.7 credits). It is byte-identical to 8b82a25. Its live probe returned `not_report_hour`, so no email was sent.
+- The site was published (deployment 96d0dd9f), which also ships mcp 0.6.1. The live bundle `index-2GYL0Ntk.js` has support@ 8×. info@ remains only on Privacy and Terms.
+- Not yet seen in a client: send_feedback and 0.6.1. This needs "Refresh tools" in Claude/ChatGPT.
+
+## 2026-10-31 — Feedback from the connectors and the website (live)
+
+**Why:** the beta announcement asks for feedback, but only the web dashboard had a feedback path (3 submissions ever). The Claude/ChatGPT connectors had none, so "this school's data is wrong" in a chat never reached us. Goal: one channel, `app_feedback`, everywhere (iOS is a separate session).
+
+**What (app PR jvr1980/schoolnossa-2d5310de#5, merge f5a3502 + Lovable manifest 2e6b461):**
+- Connector 0.6.0: new `send_feedback` tool (`message` ≤ 5000, optional `topic` wrong_data/idea/problem, optional `schoolId`/`schoolCategory`). It inserts as the OAuth caller with `page_url` `mcp://claude|chatgpt|ai_assistant`, `user_agent` `SchoolNossa connector 0.6.0 (<client>)` and `tab_feedback.report` = topic + school id/category/name. It works without a subscription, allows 10 per user per 24 h (counted from the user's own rows) and is logged in `mcp_usage` (bucket other). The tool description says: only when the user explicitly asks, and show the text first. The server instructions point to `send_feedback` or /contact. Card URI v0.5.3 stays readable as legacy.
+- Web: the floating button reads "Beta feedback" / "Beta-Feedback" and now also appears on /menu. A new "Report wrong data" / "Fehler melden" link sits next to the data date in the school details: a short form prefilled with the school, same `tab_feedback.report` shape, not linked to the session record (kept for the NPS survey).
+- /contact: the Berlin-only sentence now names 10 German cities and the Netherlands. The reply time is now "within a few days" instead of 24 hours (user's choice) and the page lists the new channels.
+- `usage-report`: each of the 5 latest suggestions is labelled channel · topic · school, plus a per-channel 7-day count.
+- No DDL: RLS checked via `pg_policies` (INSERT "Anyone can submit feedback", text ≤ 5000; users read their own rows). No test writes.
+
+**Results:** 115/115 vitest (6 new connector tests, 3 component tests), `tsc` clean, `vite build` ok. `usage-report` was deployed by the Lovable agent (0.8 credits). The agent holds `mcp` back until publish, so it shipped with the publish (deployment 93f66a7c, user OK). Live bundle `index-DUsz5A_P.js` has the new button, link and contact copy. Pending: refresh the tools list in Claude/ChatGPT and see `send_feedback`. The convention for iOS rows (`ios://…` page_url) is in the side-session notes.
+
+## 2026-10-30 — Beta launch: first 500 emails get a 3-month free trial (live)
+
+**Why:** For the beta launch to friends and family, the user wants up to 500 users to get 3 months of free access; user 501 onward gets the 48-hour trial. The old "test phase" settings (`test_phase_enabled`, `test_phase_max_users` = 200, `can_join_test_phase`) are no longer used by sign-up, which has granted access server-side since 10-25. So the beta is a new mechanism.
+
+**Decisions (user, 2026-10-30):**
+- The 44 existing accounts get 3 months too, counted in the 500.
+- Connectors stay paid-only.
+- No places-left counter.
+- A payment during the free months starts after them.
+
+**What** (migration 0009, app PR jvr1980/schoolnossa-2d5310de#2, merge 942c3a3):
+- **Setting:** `app_settings.beta_trial` = `{"enabled": true, "max_users": 500, "months": 3}`. A place counts as used when `trial_claims.beta_granted_at` is set (new column). So it's one per email, and a deleted account keeps its place.
+- **Sign-up:** `grant_initial_access` gives a new email `test_ended_at = now() + 3 months` while places are left, and 48 hours otherwise. A re-signup still gets an already-ended trial. An advisory lock stops simultaneous sign-ups from passing the limit.
+- **`beta_trial_open()`:** can be called anonymously and returns only yes or no. While it's yes, the sign-up page, the home-page price card and the how-to page say "Beta: 3 Monate kostenlos testen" in place of the 48-hour copy.
+- **Paying:** `extend_paid_access` now renews from the latest of now, the paid end and a running trial's end. So a payment during the beta (or the 48 hours) keeps the free time. `PaymentModal` shows "Ihr kostenloser Zugang läuft noch … bis {date}".
+- **Texts:** the trial countdown shows days above 48 hours (`testPhase.daysLeft`). The expiry and connector texts say "kostenlose Testphase" instead of 48 hours. `nextPaidEnd` now matches Postgres month arithmetic (31 Jan + 3 months = 30 Apr).
+- **iOS:** no change needed. Access is decided on the server, and My Info already shows days above 48 hours.
+
+**Tests:** postgres:15, with copies of the live trial functions:
+- the limit, re-signup, beta switched off, paying during a beta or 48-hour trial, and a manually ended trial
+- the backfill, run twice
+- anon permissions
+- the 0007 and 0008 tests again
+
+Also vitest 106 tests, tsc and eslint pass.
+
+**Deployed** (user: "Yes, ship it"):
+- 0009 applied with the Lovable SQL tool; catalog check passed (open, 0 places used, 44 eligible).
+- Backfill: a guarded UPDATE for trials that had ended, were not manually ended and had no beta yet. It marked 44 places and extended 44 trials to 2027-01-30 18:22 UTC. No `trial_started` events fired, because an update from test to test doesn't trigger one.
+- Site published (deployment db73056c). The live bundle `index-C_6dZ0JG.js` has the beta copy. Anonymous `beta_trial_open` returns true; anonymous reads of `trial_claims` are denied.
+
+**Open:**
+- The 44 accounts don't know they have access again; telling them is the natural beta announcement.
+- iOS 1.1.2's "buy again" dialog can show its end date one day late at month ends (Dart DateTime overflow); the server's date is right. Fix it in the next iOS release.
+- To change the beta, edit `app_settings.beta_trial`. For example, `enabled: false` ends it; places are counted in `trial_claims.beta_granted_at`.
+
+## 2026-10-30 — Payments: ask before paying again; App Store purchases stack (live; iOS 1.1.2 in review)
+
+**Why:**
+- The user doesn't want people to pay twice by accident. Someone who already paid, on either platform, should see that and pay again only on purpose, which adds 3 more months.
+- Reading the flow showed that a paid user still within their period sees no pay button on either platform: the paywall appears only after expiry. So the realistic double payment is paying on one platform while the other still shows the paywall.
+- `revenuecat-webhook` overwrote `subscription_ends_at` with purchase date + 3 months, so an App Store purchase while active added nothing.
+
+**What:**
+- **Migration 0008** (app repo):
+  - `extend_paid_access(user, from)`: a shared rule, 3 months from the later of `from` and the current end. It sets `subscription_started_at = now()`, so the usage trigger logs `paid_renewed`.
+  - `grant_stripe_payment` now uses `extend_paid_access`; its behaviour is unchanged.
+  - New `revenuecat_purchases` table and `grant_revenuecat_purchase()`: security definer, service_role only, one grant per store transaction, counted from the purchase time. Admins can read the table.
+  - Tested on local postgres:15 with a copy of the live usage trigger: applied twice; stacking, retry, web on top of app, a late webhook, a missing row and role checks all pass; the 0007 Stripe tests still pass.
+  - Applied to production with the Lovable SQL tool and verified with catalog checks only, no test writes.
+- **Web** (app PR jvr1980/schoolnossa-2d5310de#1, merge 8b00ce9):
+  - `PaymentModal` re-reads `user_access`. If paid access is still running, it shows "Sie haben bereits Zugang … läuft bis {date}". The button becomes "Erneut zahlen: +3 Monate", and "Gültig bis" shows the stacked end.
+  - A first click that finds a payment made in the meantime only shows the notice.
+  - Tests: vitest 102 tests (6 new), tsc clean.
+  - `revenuecat-webhook` sends `NON_RENEWING_PURCHASE` to the new grant; type-checked with Deno.
+- **iOS 1.1.2 (30)** (mobile PR jvr1980/schoolnossa-mobile#2, merge f149fc0): the paywall re-reads access before buying and shows "You already have access until … Buying again adds 3 more months (until …)", with "Open the app" or "Buy again: +3 months". Tests: 129 pass, analyze clean.
+
+**Deployed** (user: "Yes, ship all"):
+- The Lovable agent deployed `revenuecat-webhook` unchanged. Its commit aa93f64 only regenerated `src/integrations/supabase/types.ts`. Probes: GET returns 405, an unauthenticated POST returns 401.
+- Site published (deployment e1d7ec6a). The live bundle `index-BOVWk-tq.js` contains the new DE and EN text.
+- iOS: uploaded (delivery 9a3b86b2), build 30 VALID. Version 1.1.2 (ffc17ec6) was submitted at 18:08 UTC as review submission 7912d055: WAITING_FOR_REVIEW, release AFTER_APPROVAL.
+
+**Open:**
+- A real repeat purchase on either platform would confirm stacking end to end. Check `stripe_payments` / `revenuecat_purchases` and `usage_events` `paid_renewed`.
+- Paid users who are still active have no way to extend early (no "+3 months" button on the account page); add one only if the user wants it.
+
 ## 2026-10-30 — Payments: Stripe webhook, once-per-session grant, same-tab checkout (live, webhook active)
 
 **Why:** the user asked how people subscribe and whether the paywall comes back. Reading the flow turned up four problems:

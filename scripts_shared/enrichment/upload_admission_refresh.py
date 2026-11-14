@@ -38,7 +38,9 @@ def events(evs, lang):
         out.append({'date': e['date'], 'start_time': e.get('start_time'), 'end_time': e.get('end_time'),
                     'event_type': e.get(f'event_type_{lang}') or e.get('event_type_de'),
                     'audience': e.get(f'audience_{lang}') or e.get('audience_de'),
-                    'notes': e.get(f'notes_{lang}') or e.get('notes_de')})
+                    'notes': e.get(f'notes_{lang}') or e.get('notes_de'),
+                    # kept so posts and pages can re-check the date on the school's own page
+                    'source_url': e.get('source_url')})
     return out
 
 

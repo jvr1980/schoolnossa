@@ -1,0 +1,403 @@
+1
+00:00:00,600 --> 00:00:06,104
+This is the go-to-market plan for SchoolNossa, from November 2026 to May 2027.
+
+2
+00:00:06,154 --> 00:00:09,166
+It runs on Instagram, Facebook and YouTube.
+
+3
+00:00:09,216 --> 00:00:12,726
+It costs at most one hundred euros a month in ads.
+
+4
+00:00:12,776 --> 00:00:18,351
+And it is built so that Claude runs it, with about twenty minutes of your time.
+
+5
+00:00:18,401 --> 00:00:21,270
+No spam, and no emails to existing users.
+
+6
+00:00:22,220 --> 00:00:23,672
+Here is where we stand.
+
+7
+00:00:23,722 --> 00:00:27,200
+One hundred and nine website visitors in three months.
+
+8
+00:00:27,250 --> 00:00:28,441
+Fifty-one accounts.
+
+9
+00:00:28,491 --> 00:00:35,234
+Four hundred and fifty-two of the five hundred free beta places are still open, and nobody has paid yet.
+
+10
+00:00:35,284 --> 00:00:39,807
+The data, the website, the iPhone app and the AI connectors are ready.
+
+11
+00:00:39,857 --> 00:00:43,661
+The problem is that almost nobody knows SchoolNossa exists.
+
+12
+00:00:43,711 --> 00:00:45,490
+So this plan is about reach.
+
+13
+00:00:46,440 --> 00:00:53,119
+In May we spent two hundred and forty euros in one week, on Meta and Google, across fourteen cities.
+
+14
+00:00:53,169 --> 00:00:57,492
+It felt expensive and converted badly, and the reasons are clear.
+
+15
+00:00:57,542 --> 00:00:58,703
+May is off-season.
+
+16
+00:00:58,753 --> 00:01:00,722
+The money was spread too thin.
+
+17
+00:01:00,772 --> 00:01:03,279
+The message gave no reason to act now.
+
+18
+00:01:03,329 --> 00:01:08,460
+Every click landed on the homepage, where visitors can't see any school data.
+
+19
+00:01:08,510 --> 00:01:10,277
+And we only counted clicks.
+
+20
+00:01:10,327 --> 00:01:12,430
+This plan changes each of these.
+
+21
+00:01:13,380 --> 00:01:17,798
+The idea in one sentence: be there when parents have to choose.
+
+22
+00:01:17,848 --> 00:01:24,677
+Every city has fixed dates for open days and for registration, and we have them for every school.
+
+23
+00:01:24,727 --> 00:01:30,917
+So we show up in one city, in exactly those weeks, with information parents need anyway.
+
+24
+00:01:30,967 --> 00:01:32,690
+That is useful, not spam.
+
+25
+00:01:33,640 --> 00:01:34,950
+This is the calendar.
+
+26
+00:01:35,000 --> 00:01:40,908
+Each light blue bar is an ad flight, and the orange mark is that city's registration window.
+
+27
+00:01:40,958 --> 00:01:46,024
+Hamburg and Berlin start this month, because their open days are happening now.
+
+28
+00:01:46,074 --> 00:01:56,645
+Then come Bremen, Düsseldorf and Köln, Dresden and Leipzig in February, Berlin, Frankfurt and Stuttgart in early March, the Netherlands in March, and Munich in May.
+
+29
+00:01:56,695 --> 00:01:59,430
+The money always follows the next deadline.
+
+30
+00:02:00,380 --> 00:02:02,993
+Three channels, each with one job.
+
+31
+00:02:03,043 --> 00:02:07,536
+Meta ads buy reach in one city, right before its deadline.
+
+32
+00:02:07,586 --> 00:02:18,346
+Instagram and Facebook posts are the free, steady part: open days this week, deadline reminders, and how school choice works in each city.
+
+33
+00:02:18,396 --> 00:02:25,082
+YouTube answers what parents type into search, like "Anmeldung Gymnasium Berlin 2027".
+
+34
+00:02:25,132 --> 00:02:30,330
+Few videos answer that city by city, so that is our free advantage.
+
+35
+00:02:31,280 --> 00:02:34,941
+Here is what parents will actually see, with real data.
+
+36
+00:02:34,991 --> 00:02:40,811
+A weekly list of open days in their city, for the two cities with the nearest deadline.
+
+37
+00:02:40,861 --> 00:02:45,263
+A deadline card, fourteen days and three days before registration.
+
+38
+00:02:45,313 --> 00:02:51,538
+A short explainer of how school choice works, taken from the official rules, with the source.
+
+39
+00:02:51,588 --> 00:02:55,249
+And every two weeks, a demo of one SchoolNossa feature.
+
+40
+00:02:55,299 --> 00:02:58,150
+Every post is useful even if nobody clicks.
+
+41
+00:02:59,100 --> 00:03:01,944
+This is the path from a post to an account.
+
+42
+00:03:01,994 --> 00:03:05,039
+Every ad, post and video links to a city page.
+
+43
+00:03:05,089 --> 00:03:11,364
+That page shows the open days of the next weeks and the official deadline, without an account.
+
+44
+00:03:11,414 --> 00:03:16,411
+Then comes the offer: the first five hundred testers get three months free.
+
+45
+00:03:16,461 --> 00:03:21,593
+The link carries a short campaign code, and it is saved with the new account.
+
+46
+00:03:21,643 --> 00:03:27,515
+So we know which ad brought which account, without a tracking pixel and without cookies.
+
+47
+00:03:27,565 --> 00:03:30,610
+Every ad is judged by accounts, not by clicks.
+
+48
+00:03:31,560 --> 00:03:33,851
+The budget follows the same calendar.
+
+49
+00:03:33,901 --> 00:03:39,609
+Fifty euros for the rest of November, for Berlin and Hamburg, while we test three messages.
+
+50
+00:03:39,659 --> 00:03:45,177
+Then a hundred euros a month, always split across the cities with the nearest deadlines.
+
+51
+00:03:45,227 --> 00:03:50,429
+In the summer it drops to thirty to fifty euros, for families moving to a new city.
+
+52
+00:03:50,479 --> 00:03:59,350
+Ads run only on Instagram and Facebook, in the city plus fifteen kilometres, for ages twenty-eight to fifty-five, at about three euros a day.
+
+53
+00:04:00,300 --> 00:04:03,900
+No spam is enforced by rules, not by good intentions.
+
+54
+00:04:03,950 --> 00:04:09,065
+At most three posts a week, one story a day, and one YouTube upload a week.
+
+55
+00:04:09,115 --> 00:04:14,299
+An ad pauses as soon as people see it more than two and a half times a week.
+
+56
+00:04:14,349 --> 00:04:16,985
+The spending cap is set in Meta itself.
+
+57
+00:04:17,035 --> 00:04:19,808
+And some things are impossible by design.
+
+58
+00:04:19,858 --> 00:04:28,141
+The access key has no messaging permission, so it cannot send DMs or write comments, and it cannot post in parent groups.
+
+59
+00:04:28,191 --> 00:04:34,890
+We never upload user emails to Meta, we never email users, and we don't retarget website visitors.
+
+60
+00:04:35,840 --> 00:04:37,732
+Here is how it runs without you.
+
+61
+00:04:37,782 --> 00:04:42,343
+Once a week, on Monday morning, a Claude task on your Mac does the thinking.
+
+62
+00:04:42,393 --> 00:04:57,025
+It reads the stats and the new accounts, writes the next two weeks of posts from our data, checks every date and number against the database, renders the images and videos with a voice-over, sets up the next ads and uploads the YouTube video.
+
+63
+00:04:57,075 --> 00:04:59,634
+The posts wait in a queue, two weeks ahead.
+
+64
+00:04:59,684 --> 00:05:06,248
+Every day, a small cloud job publishes the posts that are due and pauses weak ads, even when your Mac is off.
+
+65
+00:05:06,298 --> 00:05:09,888
+Meta's own spending limit sits underneath as the safety net.
+
+66
+00:05:09,938 --> 00:05:15,470
+You get two lines in the morning email you already receive, and a one-page report each week.
+
+67
+00:05:16,420 --> 00:05:18,180
+A normal week looks like this.
+
+68
+00:05:18,230 --> 00:05:24,937
+On Monday, Claude plans, writes, checks and renders, sets up the ads, uploads to YouTube and writes your report.
+
+69
+00:05:24,987 --> 00:05:30,064
+On Tuesday, the week's open days go out for the two cities with the nearest deadline.
+
+70
+00:05:30,114 --> 00:05:33,020
+On Thursday, a deadline card or a city explainer.
+
+71
+00:05:33,070 --> 00:05:37,666
+On Saturday, a feature demo or an explainer, and the YouTube Short goes live.
+
+72
+00:05:37,716 --> 00:05:42,130
+Every day, the ad rules run, and the numbers appear in your morning email.
+
+73
+00:05:43,080 --> 00:05:43,865
+What you do.
+
+74
+00:05:43,915 --> 00:05:45,744
+Once, about twenty minutes.
+
+75
+00:05:45,794 --> 00:05:50,058
+Create the Instagram account and link it to the Facebook Page.
+
+76
+00:05:50,108 --> 00:05:51,937
+Create the YouTube channel.
+
+77
+00:05:51,987 --> 00:05:56,251
+Press Generate token in Meta, and paste the key into one file.
+
+78
+00:05:56,301 --> 00:06:00,914
+And say yes to the budget cap, the city pages and six sample posts.
+
+79
+00:06:00,964 --> 00:06:07,246
+These are the only steps I'm not allowed to do: creating accounts and handling access keys.
+
+80
+00:06:07,296 --> 00:06:09,473
+After that, nothing is required.
+
+81
+00:06:09,523 --> 00:06:16,710
+I only come back to you for real decisions, and you can say pause in any Claude chat to stop everything.
+
+82
+00:06:17,660 --> 00:06:19,072
+What success looks like.
+
+83
+00:06:19,122 --> 00:06:22,057
+Our target is five euros or less per new account.
+
+84
+00:06:22,107 --> 00:06:30,402
+With a hundred euros we expect roughly six to thirty-three new accounts a month from ads, plus whatever the free posts and YouTube bring.
+
+85
+00:06:30,452 --> 00:06:34,117
+These are estimates; after two weeks we'll have real numbers.
+
+86
+00:06:34,167 --> 00:06:37,407
+On the thirty-first of December there is a checkpoint.
+
+87
+00:06:37,457 --> 00:06:45,630
+If an account costs more than ten euros after a hundred and fifty euros spent, the ads stop by themselves, and the free posts continue.
+
+88
+00:06:45,680 --> 00:06:46,970
+You can overrule that.
+
+89
+00:06:47,920 --> 00:06:50,572
+What could go wrong, and what happens then.
+
+90
+00:06:50,622 --> 00:06:56,731
+If your Mac is off on Monday, the queue still covers two weeks, and the ad rules run in the cloud.
+
+91
+00:06:56,781 --> 00:06:59,748
+If Meta rejects an ad, the next variant goes in.
+
+92
+00:06:59,798 --> 00:07:05,970
+If the access key stops working, you get a failure email the same morning, and the caps still hold.
+
+93
+00:07:06,020 --> 00:07:10,055
+A wrong date can't get through, because the fact check blocks it.
+
+94
+00:07:10,105 --> 00:07:15,523
+Reach will start small, which is why the ads and YouTube search carry the first months.
+
+95
+00:07:15,573 --> 00:07:23,190
+And because YouTube locks uploads from new API projects, I upload through YouTube Studio in Chrome until the audit passes.
+
+96
+00:07:24,140 --> 00:07:24,810
+Next steps.
+
+97
+00:07:24,860 --> 00:07:28,935
+This week, you do the twenty-minute setup and give three yeses.
+
+98
+00:07:28,985 --> 00:07:34,108
+I build the city pages, the campaign codes, the automation and the first posts.
+
+99
+00:07:34,158 --> 00:07:41,377
+The first posts go out on the sixteenth of November, and the first ads in Berlin and Hamburg on the eighteenth.
+
+100
+00:07:41,427 --> 00:07:45,043
+On the thirty-first of December, we look at the numbers.
+
+101
+00:07:45,093 --> 00:07:52,770
+To start, I need three yeses: the hundred-euro monthly cap, the public open-day pages, and the first six sample posts.
