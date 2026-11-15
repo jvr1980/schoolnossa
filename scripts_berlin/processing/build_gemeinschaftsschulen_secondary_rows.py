@@ -206,13 +206,13 @@ def clean(v):
     if isinstance(v, float):
         if math.isnan(v):
             return None
-        return int(v) if v.is_integer() else v
+        return int(v) if v.is_integer() else round(v, 7)  # 7 dp ~ 1 cm; drops float noise
     if hasattr(v, 'item'):
         return clean(v.item())
     return v
 
 
-CHUNK_ROWS = 25  # ~65 KB per statement
+CHUNK_ROWS = 10  # ~30 KB per statement
 
 
 def emit_sql(out, stem):
@@ -270,7 +270,8 @@ update public.schools n set
 {env_set}
 from public.primary_schools p
 where n.schulnummer in ({ids}) and p.schulnummer = n.schulnummer
-  and p.latitude = n.latitude and p.longitude = n.longitude and n.env_aqi_fetched_at is null;
+  and abs(p.latitude - n.latitude) < 1e-6 and abs(p.longitude - n.longitude) < 1e-6
+  and n.env_aqi_fetched_at is null;  -- float coords: compare with a tolerance
 """
     p = stem.with_name(f'{stem.name}_updates.sql')
     p.write_text(sql, encoding='utf-8')
