@@ -8,15 +8,17 @@ import json, os, re, sys, time, urllib.request, urllib.error
 from pathlib import Path
 
 # Cache/output live under data_shared (gitignored); the template ships with the repo.
-SCRATCH = Path('/Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/data_shared/cache/lovable_description_jobs')
+# Paths are relative to the repo (they pointed at an external drive until 2026-11).
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+SCRATCH = PROJECT_ROOT / 'data_shared' / 'cache' / 'lovable_description_jobs'
 SCRATCH.mkdir(parents=True, exist_ok=True)
 CACHE = SCRATCH / "results"
 CACHE.mkdir(exist_ok=True)
 SQLDIR = SCRATCH / "sql"
 SQLDIR.mkdir(exist_ok=True)
-sys.path.insert(0, '/Volumes/Patriot SSD/AI-Side-Projects/schoolnossa')
+sys.path.insert(0, str(PROJECT_ROOT))
 from dotenv import load_dotenv
-load_dotenv('/Volumes/Patriot SSD/AI-Side-Projects/schoolnossa/.env')
+load_dotenv(PROJECT_ROOT / '.env')
 API_KEY = os.environ['GEMINI_API_KEY']
 import scripts_shared.upload_to_supabase as up
 

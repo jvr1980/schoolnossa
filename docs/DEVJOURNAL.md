@@ -1,5 +1,34 @@
 # SchoolNossa Development Journal
 
+## 2026-11-16 — Admin jobs for the 50 Gemeinschaftsschulen, run locally
+
+**What**
+- The four Lovable admin "Fehlende" jobs (descriptions, embeddings, environment, tuition pass 1+2) were run **locally** instead of through the admin wizard, to rule out overwriting existing data. `scripts_shared/enrichment/run_admin_jobs_from_snapshot.py` replicates the edge functions (`fetch-environment-data`, `generate-tuition-tiers`, `generate-tuition-granular`) and reuses `replicate_lovable_description_jobs.py` for research → DE/EN → embedding. Input: a Lovable SQL snapshot of the 50 rows; per-row cache in `data_shared/cache/gms_admin_jobs/results/`. On AI failure nothing is written (the edge functions would write a "medium"/€200 fallback).
+- **Env + tuition**: fill-gaps SQL (`COALESCE`) via the Lovable SQL tool.
+- **Descriptions + embeddings** (1.29 MB): too large to retype through SQL calls. A first attempt with SQL-file copies by subagents corrupted one row (truncated grounding JSON, no embedding); stopped after 4 rows. Switched to the staging pattern: `_gms_desc_staging (row_id, token, payload)`, insert-only anon policy limited to the one-time token **and** the 50 ids, posted by `upload_gms_descriptions_staging.py`, policy dropped right after the POST. Staged payload checked against local fingerprints (md5 of the three texts, source count, embedding dims/sum/abs-sum): 50/50. Promotion overwrote only rows that were empty or written by this same run (all 50 were empty before; verified), then `_gms_desc_staging` dropped.
+
+**Results**
+- 50/50 rows: description, description_de, description_en, description_grounding, description_researched_at and embedding (768 dims) — exact match with the staged data in the database.
+- env_aqi 50/50 (29 newly fetched); pollen null with `env_pollen_fetched_at` set (Google returns nothing in November — same as the edge function).
+- 21/21 private schools: `tuition_tier` (19 medium, 1 high APEGO €320, 1 premium Klax €550) and `tuition_income_matrix`.
+- **Still open:** `tuition_display` (the short fee label) stays null for the 21 private schools — it comes from the pipeline, not the admin jobs.
+
+## 2026-11-15 — Berlin Gemeinschaftsschulen added to the secondary table (50 schools)
+
+**What**
+- **Gap.** The Berlin directory scrape (`bildung_berlin_iss_scraper.py`) searched only Schulart 41 (ISS) and 14 (Gymnasien). Gemeinschaftsschulen are Schulart 42, so none of them reached `schools`, although their Sekundarstufe is an ISS in all but name. 21 of them existed only as primary entries (mostly private); 29 were in neither table. Found via HvS (01K04), whose Mittel-/Oberstufe open day sat on its primary entry only.
+- **Scraper.** Now also searches Schulart 42 (deduplicated by Schulnummer). 2026/27 directory: 151 ISS + 50 Gemeinschaftsschulen (43 in the 2025/26 statistics, 3 private ones missing from that file, 4 new public schools: 09K10, 05K10, 04K11, 02K11 — all confirmed to teach Klasse 7).
+- **Delta build** (`scripts_berlin/processing/build_gemeinschaftsschulen_secondary_rows.py`) instead of a full pipeline rerun: stats from the combined master, 2025/26 counts, stable fields, `ISS-Gymnasium` when Abitur data exists (mirrors `reclassify_iss_with_abitur`), else `ISS`; `schulart = Gemeinschaftsschule`. Coordinates from the same-site primary entry (21) or Google geocoding (29); BVG transit and Google Places POIs for all 50; email `%09` prefix stripped. 09K10 and 05K10 use their interim sites (Alfred-Randt-Str. 56; Am Forstacker 11 until 2029/30), permanent site in `besonderheiten`.
+- **Inserted** via the Lovable SQL tool in 5 parts (column names once + value arrays, `jsonb_populate_record` casts). Per-row fingerprints (md5 of text columns + numeric sum) checked against the local CSV: 49/50 matched; 03P22 had one mistyped POI address, fixed. Crime copied in-database from a same-Bezirk row (Berlin crime is district-level, one variant per Bezirk), env from the same-site primary entry (21).
+- **Open days + admission**: `refresh_admission_open_days.py --rows` (no Supabase read), prompt scoped to Klasse 7 / Oberstufe entry; 43 ok, 4 sites unreadable, 2 without website. 41 upcoming events. Written as fill-gaps SQL (the staging upload needs a temporary anon policy); fingerprints matched 44/44.
+- **Abitur estimates** (`abitur_estimates_for_gms_rows.py`): same Ridge model (R² 0.41, n=196), new rows appended to a temp copy of the Berlin input, their own Abitur labels excluded from training. 50/50 estimates (2.12–2.63); vs the 18 actual averages MAE 0.34, same optimistic bias as existing ISS estimates.
+- **Fixes on the way:** `replicate_lovable_description_jobs.py` had hard-coded paths to the dead external drive (now repo-relative); the anon key can no longer read `schools`/`primary_schools` (RLS), so reference data came from Lovable SQL snapshots.
+
+**Results**
+- Berlin `schools`: 258 → 308 rows; `school_city_counts('secondary')` shows 308. No row missing location, transit, POIs or crime.
+- Growth: the 20 Nov Berlin post now counts 22 dates at 21 schools (4 new GMS events); rebuilt on `fix/berlin-20nov-gemeinschaftsschulen` (schoolnossa-growth), slide row-height estimate tightened.
+- **Still open:** descriptions (DE/EN), embeddings, env for the 29 geocoded schools and fees for the 21 private schools — Lovable admin jobs ("Fehlende"). 61 existing Berlin rows carry the `%09` email prefix. Most public Gemeinschaftsschulen are missing from `primary_schools`. Freie Waldorfschulen (Schulart 16) likely have the same secondary gap.
+
 ## 2026-11-09 — KI-Suche crash on production: one-line fix plus hardening (both live)
 
 **What**

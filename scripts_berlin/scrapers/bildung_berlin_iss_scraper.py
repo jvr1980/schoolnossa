@@ -39,6 +39,17 @@ HEADERS = {
 # School type codes from bildung.berlin.de dropdown
 SCHULART_ISS = "41"  # Integrierte Sekundarschule
 SCHULART_GYMNASIUM = "14"  # Gymnasien
+# Gemeinschaftsschulen (Klasse 1-10/13) are a separate Schulart in the
+# directory. Their secondary stage is an ISS in all but name, so they belong in
+# the secondary table too (their Grundstufe is in primary_schools already).
+SCHULART_GEMEINSCHAFTSSCHULE = "42"
+
+# (dropdown code, schulart label) searched for the ISS table, in order.
+# A school found under more than one code is kept once (first match wins).
+SECONDARY_ISS_SEARCHES = [
+    (SCHULART_ISS, 'Integrierte Sekundarschule'),
+    (SCHULART_GEMEINSCHAFTSSCHULE, 'Gemeinschaftsschule'),
+]
 
 
 
@@ -235,26 +246,34 @@ def scrape_school_detail(session: requests.Session, school_url: str, school_name
 
 def scrape_all_iss_schools() -> pd.DataFrame:
     """
-    Scrape all Integrierte Sekundarschule schools from bildung.berlin.de
+    Scrape all Integrierte Sekundarschulen and Gemeinschaftsschulen from
+    bildung.berlin.de (see SECONDARY_ISS_SEARCHES).
     """
-    # Get session and school list
-    session, schools = get_session_with_search(SCHULART_ISS)
-
-    if not schools:
-        logger.error("No schools found!")
-        return pd.DataFrame()
-
-    logger.info(f"Starting to scrape {len(schools)} schools...")
-
     all_data = []
-    for i, school in enumerate(schools, 1):
-        logger.info(f"[{i}/{len(schools)}] Scraping: {school['name']}")
+    seen = set()
+    for code, schulart in SECONDARY_ISS_SEARCHES:
+        session, schools = get_session_with_search(code)
+        if not schools:
+            logger.error(f"No schools found for Schulart {code} ({schulart})!")
+            continue
 
-        data = scrape_school_detail(session, school['url'], school['name'])
-        all_data.append(data)
+        logger.info(f"Starting to scrape {len(schools)} {schulart} entries...")
+        for i, school in enumerate(schools, 1):
+            logger.info(f"[{i}/{len(schools)}] Scraping: {school['name']}")
 
-        # Be polite to the server
-        time.sleep(0.5)
+            data = scrape_school_detail(session, school['url'], school['name'], schulart=schulart)
+            key = data.get('schulnummer') or school['url']
+            if key in seen:
+                logger.info(f"  already scraped under another Schulart, skipping {key}")
+            else:
+                seen.add(key)
+                all_data.append(data)
+
+            # Be polite to the server
+            time.sleep(0.5)
+
+    if not all_data:
+        return pd.DataFrame()
 
     df = pd.DataFrame(all_data)
 
