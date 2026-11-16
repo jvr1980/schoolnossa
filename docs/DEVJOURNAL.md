@@ -11,7 +11,7 @@
 - 50/50 rows: description, description_de, description_en, description_grounding, description_researched_at and embedding (768 dims) — exact match with the staged data in the database.
 - env_aqi 50/50 (29 newly fetched); pollen null with `env_pollen_fetched_at` set (Google returns nothing in November — same as the edge function).
 - 21/21 private schools: `tuition_tier` (19 medium, 1 high APEGO €320, 1 premium Klax €550) and `tuition_income_matrix`.
-- **Still open:** `tuition_display` (the short fee label) stays null for the 21 private schools — it comes from the pipeline, not the admin jobs.
+- **Fee labels** (`tuition_display`, follow-up the same day): written for the 21 private schools, fill-gaps only (`data_shared/supabase_sql/gms_tuition_display_2026-11-16.sql`). Same style as `format_income_based_tuition.create_tuition_display`, but built from what each school's `tuition_tier_reasoning` actually reports, because the €45k-income estimate alone would read like a flat fee: published range → `Income-based: €a-b/mo` (4), percentage → `x% of income` (2), official table → `€X/mo at €45k income | Income-based` (6), special models (tiered, Kindergeld-linked, max-with-reductions, hardship, self-set) (5), fees not published → `Income-based (contact school)` / `Contact school` (4). All 50 Gemeinschaftsschulen now have a label (29 public `Free (public)`).
 
 ## 2026-11-15 — Berlin Gemeinschaftsschulen added to the secondary table (50 schools)
 
