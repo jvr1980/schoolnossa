@@ -1,5 +1,18 @@
 # SchoolNossa Development Journal
 
+## 2026-11-16 — Admin jobs for the 50 Gemeinschaftsschulen, run locally
+
+**What**
+- The four Lovable admin "Fehlende" jobs (descriptions, embeddings, environment, tuition pass 1+2) were run **locally** instead of through the admin wizard, to rule out overwriting existing data. `scripts_shared/enrichment/run_admin_jobs_from_snapshot.py` replicates the edge functions (`fetch-environment-data`, `generate-tuition-tiers`, `generate-tuition-granular`) and reuses `replicate_lovable_description_jobs.py` for research → DE/EN → embedding. Input: a Lovable SQL snapshot of the 50 rows; per-row cache in `data_shared/cache/gms_admin_jobs/results/`. On AI failure nothing is written (the edge functions would write a "medium"/€200 fallback).
+- **Env + tuition**: fill-gaps SQL (`COALESCE`) via the Lovable SQL tool.
+- **Descriptions + embeddings** (1.29 MB): too large to retype through SQL calls. A first attempt with SQL-file copies by subagents corrupted one row (truncated grounding JSON, no embedding); stopped after 4 rows. Switched to the staging pattern: `_gms_desc_staging (row_id, token, payload)`, insert-only anon policy limited to the one-time token **and** the 50 ids, posted by `upload_gms_descriptions_staging.py`, policy dropped right after the POST. Staged payload checked against local fingerprints (md5 of the three texts, source count, embedding dims/sum/abs-sum): 50/50. Promotion overwrote only rows that were empty or written by this same run (all 50 were empty before; verified), then `_gms_desc_staging` dropped.
+
+**Results**
+- 50/50 rows: description, description_de, description_en, description_grounding, description_researched_at and embedding (768 dims) — exact match with the staged data in the database.
+- env_aqi 50/50 (29 newly fetched); pollen null with `env_pollen_fetched_at` set (Google returns nothing in November — same as the edge function).
+- 21/21 private schools: `tuition_tier` (19 medium, 1 high APEGO €320, 1 premium Klax €550) and `tuition_income_matrix`.
+- **Still open:** `tuition_display` (the short fee label) stays null for the 21 private schools — it comes from the pipeline, not the admin jobs.
+
 ## 2026-11-15 — Berlin Gemeinschaftsschulen added to the secondary table (50 schools)
 
 **What**
