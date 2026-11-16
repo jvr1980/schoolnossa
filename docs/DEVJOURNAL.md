@@ -1,5 +1,19 @@
 # SchoolNossa Development Journal
 
+## 2026-11-16 — URL-encoded whitespace in school emails
+
+**What**
+- 62 Berlin rows in `schools` and 162 in `primary_schools` had emails like `%09sekretariat@…` (sometimes `%09%09`). One row (12P04) had a `;%20` separator. Two Bremen rows in `schools` had a leading or trailing non-breaking space.
+- Cleaned in the database with `data_shared/supabase_sql/fix_email_url_encoded_whitespace_2026-11-16.sql`. The SQL removes only the leading encoded/whitespace run, decodes `%20` and trims the outer spaces.
+- Root cause: the bildung.berlin.de mailto links are URL-encoded, and `bildung_berlin_iss_scraper.py`, `bildung_berlin_gymnasien_scraper.py` and `scrape_bildung_berlin_v2.py` stripped only literal whitespace. All three now `unquote()` the href, drop any `?subject=` and trim it.
+
+**Why**
+- A `mailto:%09…` link and the displayed address are both broken in the app.
+
+**Results**
+- No `%xx` sequences and no leading/trailing whitespace remain in `schools.email` or `primary_schools.email`, in any city.
+- The local `data_berlin/final/school_master_table_final.csv` still has the old values. Re-scraping fixes them.
+
 ## 2026-11-16 — Admin jobs for the 50 Gemeinschaftsschulen, run locally
 
 **What**

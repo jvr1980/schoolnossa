@@ -20,7 +20,7 @@ import pandas as pd
 import re
 import time
 from typing import Optional
-from urllib.parse import urljoin
+from urllib.parse import urljoin, unquote
 import logging
 from pathlib import Path
 
@@ -205,9 +205,9 @@ def scrape_school_detail(session: requests.Session, school_url: str, school_name
         if email_link:
             href = email_link.get('href', '')
             # Clean up mailto: prefix and any whitespace/special chars
-            email = href.replace('mailto:', '').strip()
-            # Remove any leading/trailing whitespace encoded chars
-            email = re.sub(r'^[\s\t\n\r]+', '', email)
+            # The directory's mailto links are URL-encoded ("%09name@..."): decode first
+            email = unquote(href.replace('mailto:', '')).split('?')[0]
+            email = email.replace('\xa0', ' ').strip()
             result['email'] = email
 
         # Extract website - look for hyperlink with ID HLinkWeb

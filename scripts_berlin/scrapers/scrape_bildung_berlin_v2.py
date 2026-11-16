@@ -536,7 +536,9 @@ class BildungBerlinScraperV2:
 
         email_link = soup.find('a', href=lambda x: x and x.startswith('mailto:') if x else False)
         if email_link:
-            data['email'] = email_link.get('href').replace('mailto:', '')
+            # mailto links are URL-encoded ("%09name@..."): decode, drop ?subject=, trim
+            from urllib.parse import unquote
+            data['email'] = unquote(email_link.get('href').replace('mailto:', '')).split('?')[0].replace('\xa0', ' ').strip()
 
         # Save navigation links for sub-pages
         nav_links = {}
